@@ -220,7 +220,7 @@ class PattayaWorkflowTests(unittest.TestCase):
                                           json={"confirmed": True}).status_code, 404)
         with patch.dict(os.environ, WORKSPACE_AUTH_MODE="staff"):
             self.assertEqual(self.client.get(path + "/pattaya?revision=1").status_code, 401)
-            with patch("app.staff_access._staff", return_value=("finance", "Hospital finance")):
+            with patch("app.staff_access._staff", return_value=("finance", "Hospital finance", None)):
                 self.assertEqual(self.action(path, "record_short_credit", 3).status_code, 404)
                 self.assertEqual(self.client.get(path + "/pattaya?revision=1").status_code, 404)
                 self.assertEqual(self.client.get(path + "/pattaya/bank-documents/initial_credit?revision=1").status_code, 404)

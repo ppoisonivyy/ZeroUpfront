@@ -32,6 +32,8 @@ CREATE TABLE IF NOT EXISTS zeroupfront_demo.staff_accounts (
     username text PRIMARY KEY, display_name text NOT NULL, password_hash text NOT NULL,
     active boolean NOT NULL DEFAULT true
 );
+ALTER TABLE zeroupfront_demo.staff_accounts
+    ADD COLUMN IF NOT EXISTS insurer_scope text CHECK (insurer_scope = btrim(insurer_scope) AND length(insurer_scope) BETWEEN 1 AND 200);
 CREATE TABLE IF NOT EXISTS zeroupfront_demo.staff_sessions (
     token_hash bytea PRIMARY KEY, username text NOT NULL REFERENCES zeroupfront_demo.staff_accounts,
     expires_at timestamptz NOT NULL
@@ -66,13 +68,19 @@ def _username(raw):
     return value
 
 
-def provision(dsn, username, display_name, password, *, reset=False):
+def provision(dsn, username, display_name, password, *, reset=False, insurer=None):
     username = _username(username)
     display_name = display_name.strip()
     if not (1 <= len(display_name) <= 100 and display_name.isprintable()):
         raise ValueError("Enter a printable staff name of up to 100 characters.")
     if not 14 <= len(password) <= 256:
         raise ValueError("Use a passphrase between 14 and 256 characters.")
+    if insurer is not None:
+        if reset:
+            raise ValueError("A password reset preserves the existing insurer assignment.")
+        if (not isinstance(insurer, str) or not 1 <= len(insurer) <= 200
+                or not insurer.isprintable() or insurer != insurer.strip()):
+            raise ValueError("Enter the exact payer name, up to 200 printable characters.")
     encoded = HASHER.hash(password)
     with psycopg.connect(dsn) as db:
         if reset:
@@ -85,9 +93,9 @@ def provision(dsn, username, display_name, password, *, reset=False):
             db.execute("DELETE FROM zeroupfront_demo.staff_sessions WHERE username=%s", (username,))
         else:
             result = db.execute("""
-                INSERT INTO zeroupfront_demo.staff_accounts VALUES (%s,%s,%s,true)
+                INSERT INTO zeroupfront_demo.staff_accounts (username, display_name, password_hash, insurer_scope) VALUES (%s,%s,%s,%s)
                 ON CONFLICT DO NOTHING
-            """, (username, display_name, encoded))
+            """, (username, display_name, encoded, insurer))
             if not result.rowcount:
                 raise ValueError("This username already exists. Use reset to rotate its passphrase.")
 
@@ -110,7 +118,7 @@ def _staff(dsn, token):
         return None
     with psycopg.connect(dsn) as db:
         return db.execute("""
-            SELECT a.username, a.display_name FROM zeroupfront_demo.staff_sessions s
+            SELECT a.username, a.display_name, a.insurer_scope FROM zeroupfront_demo.staff_sessions s
             JOIN zeroupfront_demo.staff_accounts a USING (username)
             WHERE s.token_hash=%s AND s.expires_at>now() AND a.active
         """, (_digest(token),)).fetchone()
@@ -151,8 +159,10 @@ def install_access(app):
             return JSONResponse({"detail": "Enter a valid username and password."}, status_code=422)
         return await request_validation_exception_handler(request, exc)
 
-    def session_data(request, actor, username):
+    def session_data(request, actor, username, insurer=None):
         data = {"mode": mode(), "actor": actor, "username": username}
+        if insurer is not None:
+            data.update(role="insurer", insurer=insurer)
         if request.app.state.hospital_name:
             data["hospital_name"] = request.app.state.hospital_name
         return data
@@ -177,6 +187,17 @@ def install_access(app):
             if path not in PUBLIC_ROUTES and not account:
                 return JSONResponse({"detail": "Sign in to this hospital workspace."}, 401,
                                     headers={"Cache-Control": "no-store"})
+        insurer = account[2] if account else None
+        insurer_api = path == "/api/insurer" or path.startswith("/api/insurer/")
+        access_api = path in PUBLIC_ROUTES or path == "/api/access/logout"
+        if not access_api and insurer_api != (insurer is not None):
+            return JSONResponse({"detail": "Sign in with the appropriate workspace account."}, 403,
+                                headers={"Cache-Control": "no-store"})
+        if insurer_api and request.method not in {"GET", "HEAD", "OPTIONS"}:
+            return JSONResponse({"detail": "The insurer inbox is read-only."}, 403,
+                                headers={"Cache-Control": "no-store"})
+        request.state.insurer = insurer
+        request.state.role = "insurer" if insurer is not None else "hospital"
         request.state.actor = account[1] if account else None
         request.state.username = account[0] if account else None
         response = await call_next(request)
@@ -186,7 +207,7 @@ def install_access(app):
 
     @app.get("/api/access/session")
     def session(request: Request):
-        return session_data(request, request.state.actor, request.state.username)
+        return session_data(request, request.state.actor, request.state.username, request.state.insurer)
 
     @app.post("/api/access/login")
     def login(request: Request, credentials: Login, response: Response):
@@ -200,7 +221,7 @@ def install_access(app):
             raise HTTPException(429, "Too many sign-in attempts. Try again in ten minutes.", headers={"Retry-After":"600"})
         with psycopg.connect(dsn) as db:
             record = db.execute("""
-                SELECT password_hash, display_name FROM zeroupfront_demo.staff_accounts
+                SELECT password_hash, display_name, insurer_scope FROM zeroupfront_demo.staff_accounts
                 WHERE username=%s AND active FOR SHARE
             """, (username,)).fetchone()
             try:
@@ -218,7 +239,7 @@ def install_access(app):
             db.execute("DELETE FROM zeroupfront_demo.login_attempts WHERE bucket=%s", (_digest("account/"+username),))
         response.set_cookie(COOKIE, token, httponly=True, secure=request.url.scheme == "https",
                             samesite="strict", max_age=SESSION_SECONDS, path=hospital_path("/api"))
-        return session_data(request, record[1], username)
+        return session_data(request, record[1], username, record[2])
 
     @app.post("/api/access/logout")
     def logout(request: Request, response: Response):
@@ -238,7 +259,10 @@ def main():
     parser.add_argument("action", choices=("add", "reset", "disable"))
     parser.add_argument("username")
     parser.add_argument("--name", help="Name recorded on staff reviews")
+    parser.add_argument("--insurer", help="Create an insurer reviewer limited to this exact payer name")
     args = parser.parse_args()
+    if args.insurer is not None and args.action != "add":
+        parser.error("--insurer is available when adding an account.")
     dsn = os.environ.get("DATABASE_URL")
     if not dsn:
         parser.exit(1, "Set DATABASE_URL to the hospital workspace database.\n")
@@ -252,7 +276,7 @@ def main():
             first = getpass("Staff passphrase: ")
             if first != getpass("Confirm passphrase: "):
                 parser.exit(1, "The passphrases do not match.\n")
-            provision(dsn, args.username, args.name, first, reset=args.action == "reset")
+            provision(dsn, args.username, args.name, first, reset=args.action == "reset", insurer=args.insurer)
     except ValueError as exc:
         parser.exit(1, f"{exc}\n")
     print("Staff account updated.")
