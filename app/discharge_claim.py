@@ -14,6 +14,9 @@ from reportlab.platypus import PageBreak, SimpleDocTemplate
 
 from .document_text import normalized
 from .finance import AMOUNT, money
+from .payer_aia import screen_aia
+from .payer_pages import CaseOriginals
+from .payer_us import screen_us
 from .intake_documents import PLACEHOLDERS, _read, pdf_filename
 from .workspace_documents import _embed_originals, _paragraph
 
@@ -407,6 +410,24 @@ def evaluate_discharge(metadata: dict, originals: dict[str, bytes], filenames: d
         cap, share = None, None
     if any(code in review.findings for code in ("member_mismatch", "encounter_mismatch", "facility_mismatch", "page_identity", "page_order")):
         currency, total, cap, share = None, None, None, None
+    # The typed form readers add cited findings for unfamiliar exhibits already held by
+    # the general review. Recognition of an official layout cannot clear those holds.
+    if "unrecognized_layout" in review.findings or any(k.startswith("unreadable_") for k in review.findings):
+        original_pages = CaseOriginals(originals)
+        screen_aia(meta, original_pages, review)
+        screen_us(meta, original_pages, review)
+        observed_codes = [*review.findings, *(c["code"] for c in review.checks)]
+        if any(code.startswith(("aia_", "cms_", "fep_")) for code in observed_codes):
+            messages = {
+                "unrecognized_layout": "Some fields in this packet require manual review on the original form.",
+                "missing_itemization": "The checker could not verify every service line and credit in this account. Inspect the itemized original.",
+                "page_order": "Confirm exhibit boundaries and pagination on the original combined PDF.",
+                "page_identity": "The checker could not verify the identity and role of every exhibit page.",
+                "missing_letter": "No separate payer letter was supplied. Confirm which authorization evidence the payer requires for this encounter.",
+            }
+            for code, message in messages.items():
+                if code in review.findings:
+                    review.findings[code]["message"] = message
     status = "needs_review" if review.findings else "ready_for_review"
     findings = list(review.findings.values())
     return {**meta, "input_kind": "discharge", "status": status, "currency": currency, "sources": sources, "letter_kind": letter_kind,

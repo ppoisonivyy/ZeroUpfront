@@ -34,6 +34,10 @@ The image defaults to staff authentication. The local launcher selects rehearsal
 
 Digital PDFs can be screened without an API key. On a service authorized to send document pages to OpenAI, set `OPENAI_API_KEY`, `OPENAI_OCR_MODEL` and `WORKSPACE_ENABLE_OCR=1` on the server, then select OCR on a supported upload. Private credentials never belong in the web build or a Git commit. Document review can proceed with a legible replacement when OCR is unavailable. The large-policy retrieval benchmarks run separately.
 
+## Optional AI second read
+
+Set `WORKSPACE_ENABLE_AI_REVIEW=1`, `OPENAI_API_KEY` and, if needed, `OPENAI_OCR_MODEL` on the server, and restart. Opening the second-read control requires a further confirmation for the specific revision. It sends the four available document roles and scoped encounter metadata to OpenAI in one request with `store=False`. The supported form families are AIA Thailand IPD, CMS-1450, and FEP overseas medical. The combined limit is 40 physical pages and 24 MiB. The response supplies provisional observations and page links. Staff can compare them against the originals; approval, export and settlement continue to use the existing signed workflow. A changed head revision invalidates an in-flight request. Review the organization's applicable hosted-processing arrangements before enabling the feature on non-synthetic records. [Benchmarks and research](payer-review-design.md)
+
 ## Release boundary
 
 Hospital and payer staff currently use their own channels for transmission and supply the original written reply. Provisioning a host, signing the provider's data agreements, validating payer-specific templates, testing backup recovery in the target environment and connecting to the hospital billing and insurer systems require a deployment owner and partner access. Use synthetic records to evaluate this release until those controls are in place.

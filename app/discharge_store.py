@@ -1,5 +1,6 @@
 """Revisioned discharge packets, external payer decisions and separately recorded remittances."""
 
+import json
 from decimal import Decimal, InvalidOperation
 
 import psycopg
@@ -270,7 +271,19 @@ def snapshot(dsn, ident, base, *, approved=False):
         return case, {role: raw for role, _, raw in rows}, {role: name for role, name, _ in rows}
 
 
-def replace(dsn, ident, base, evidence, raw, names, *, attested=False):
+def _review_rows(evidence, category, skip):
+    # A new citation, finding, or checked fact is material. Display ordering and the
+    # redundant summary in "issues" have no bearing on a revision.
+    rows = set()
+    for row in evidence.get(category, []):
+        if row["code"] in skip:
+            continue
+        refs = sorted(json.dumps(ref, sort_keys=True) for ref in row.get("sources", []))
+        rows.add(json.dumps({**row, "sources": refs}, sort_keys=True))
+    return rows
+
+
+def replace(dsn, ident, base, evidence, raw, names, *, attested=False, recheck=False):
     with psycopg.connect(dsn) as db:
         _head(db, ident, base)
         existing = dict(
@@ -280,6 +293,12 @@ def replace(dsn, ident, base, evidence, raw, names, *, attested=False):
             ).fetchall()
         )
         changed = existing != {role: document_digest(data) for role, data in raw.items()}
+        if recheck:
+            active = _detail(db, ident, base)
+            if active["status"] != "needs_review":
+                raise WorkspaceError(409, "Only the current discharge revision held for investigation can be rechecked.")
+            if changed or names != {src["role"]: src["label"] for src in active["sources"]}:
+                raise WorkspaceError(409, "A recheck must keep the original documents and filenames.")
         if attested and changed:
             raise WorkspaceError(409, "A transcription attestation must keep every reviewed original unchanged.")
         if not changed and not attested:
@@ -299,9 +318,14 @@ def replace(dsn, ident, base, evidence, raw, names, *, attested=False):
                 "ocr_review_pages",
             )
             changed = any(before.get(key) != evidence.get(key) for key in comparable)
-            changed |= [f for f in before["findings"] if f["code"] != "verify_ocr"] != [
-                f for f in evidence["findings"] if f["code"] != "verify_ocr"
-            ]
+            had_attestation = bool(before.get("ocr_attestation"))
+            for category, skip in (
+                ("findings", {"verify_ocr"} if had_attestation else set()),
+                ("checks", {"ocr_pages_confirmed"} if had_attestation else set()),
+            ):
+                changed |= _review_rows(before, category, skip) != _review_rows(evidence, category, skip)
+            if recheck:
+                changed |= before["status"] != evidence["status"]
         if changed or attested:
             _write(db, ident, base + 1, evidence, raw, names)
             db.execute("UPDATE zeroupfront_demo.discharge_cases SET head=%s WHERE id=%s", (base + 1, ident))

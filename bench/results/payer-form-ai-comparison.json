@@ -1,0 +1,3733 @@
+{
+  "original": {
+    "single": {
+      "packets": 16,
+      "scored_fields": 63,
+      "states_correct": 63,
+      "states_and_required_pages": 63,
+      "median_seconds": 7.34,
+      "tool_calls": 0,
+      "input_tokens": 153888,
+      "output_tokens": 4930,
+      "observations": [
+        {
+          "case": "th-aligned",
+          "model": "gpt-6.2-astra",
+          "seconds": 13.43,
+          "tool_calls": 0,
+          "input_tokens": 14997,
+          "cached_tokens": 0,
+          "output_tokens": 347,
+          "pdf_digest": "040a82a1997cffb9be3603ab962db673cc1628952e3a95cd3833c6ab45d632be",
+          "inspections": [],
+          "scores": {
+            "admission": {
+              "state": "match",
+              "expected": "match",
+              "correct": true,
+              "page_check": true,
+              "observation": "The Part B admission number is AN-QA042, matching the encounter reference AN-QA042.",
+              "pages": [
+                "records:3",
+                "summary:1"
+              ]
+            },
+            "expense": {
+              "state": "match",
+              "expected": "match",
+              "correct": true,
+              "page_check": true,
+              "observation": "Part A lists THB 87,500.00, matching the final bill total of THB 87,500.00.",
+              "pages": [
+                "bill:1",
+                "records:2"
+              ]
+            },
+            "consent": {
+              "state": "present",
+              "expected": "present",
+              "correct": true,
+              "page_check": true,
+              "observation": "The Part A patient consent signature line visibly contains \u201cTEST PATIENT MARK\u201d.",
+              "pages": [
+                "records:2"
+              ]
+            },
+            "certification": {
+              "state": "present",
+              "expected": "present",
+              "correct": true,
+              "page_check": true,
+              "observation": "The Part B physician certification signature line visibly contains \u201cTEST CLINICIAN MARK\u201d.",
+              "pages": [
+                "records:3"
+              ]
+            },
+            "letter": {
+              "state": "present",
+              "expected": "present",
+              "correct": true,
+              "page_check": true,
+              "observation": "A separate AIA Thailand payer preauthorization letter, QA-AUTH-017, identifies encounter AN-QA042.",
+              "pages": [
+                "letter:1"
+              ]
+            }
+          }
+        },
+        {
+          "case": "en-aligned",
+          "model": "gpt-6.2-astra",
+          "seconds": 8.59,
+          "tool_calls": 0,
+          "input_tokens": 10539,
+          "cached_tokens": 0,
+          "output_tokens": 365,
+          "pdf_digest": "155540e0d34a614c39a40910c4bc44aa4f16e3b673c7ba83704a73f87f152b86",
+          "inspections": [],
+          "scores": {
+            "admission": {
+              "state": "match",
+              "expected": "match",
+              "correct": true,
+              "page_check": true,
+              "observation": "The Part B admission number is AN-QA042, matching the encounter reference AN-QA042.",
+              "pages": [
+                "records:2",
+                "summary:1"
+              ]
+            },
+            "expense": {
+              "state": "match",
+              "expected": "match",
+              "correct": true,
+              "page_check": true,
+              "observation": "Part A claims THB 87,500.00, equal to the final hospital bill total of THB 87,500.00.",
+              "pages": [
+                "bill:1",
+                "records:1"
+              ]
+            },
+            "consent": {
+              "state": "present",
+              "expected": "present",
+              "correct": true,
+              "page_check": true,
+              "observation": "\u201cTEST PATIENT MARK\u201d is visible on the insured\u2019s signature line in the Part A consent area.",
+              "pages": [
+                "records:1"
+              ]
+            },
+            "certification": {
+              "state": "present",
+              "expected": "present",
+              "correct": true,
+              "page_check": true,
+              "observation": "\u201cTEST CLINICIAN MARK\u201d is visible on the physician\u2019s signature line in the separate Part B certification area.",
+              "pages": [
+                "records:2"
+              ]
+            },
+            "letter": {
+              "state": "present",
+              "expected": "present",
+              "correct": true,
+              "page_check": true,
+              "observation": "A separate AIA Thailand (synthetic test) payer preauthorization letter, QA-AUTH-017, identifies encounter AN-QA042.",
+              "pages": [
+                "letter:1"
+              ]
+            }
+          }
+        },
+        {
+          "case": "th-wrong-admission",
+          "model": "gpt-6.2-astra",
+          "seconds": 9.43,
+          "tool_calls": 0,
+          "input_tokens": 14997,
+          "cached_tokens": 14861,
+          "output_tokens": 367,
+          "pdf_digest": "e45a1552f8d6c95adc73528061a54a2fa111fa73a8bed3507466cecb95a3d21b",
+          "inspections": [],
+          "scores": {
+            "admission": {
+              "state": "conflict",
+              "expected": "conflict",
+              "correct": true,
+              "page_check": true,
+              "observation": "Part B lists AN-QA999 in the admission number field; the discharge summary identifies the encounter as AN-QA042.",
+              "pages": [
+                "records:3",
+                "summary:1"
+              ]
+            },
+            "expense": {
+              "state": "match",
+              "expected": "match",
+              "correct": true,
+              "page_check": true,
+              "observation": "Part A lists THB 87,500.00, equal to the independent final bill total of THB 87,500.00.",
+              "pages": [
+                "bill:1",
+                "records:2"
+              ]
+            },
+            "consent": {
+              "state": "present",
+              "expected": "present",
+              "correct": true,
+              "page_check": true,
+              "observation": "The Part A patient consent signature line contains the visible entry \u201cTEST PATIENT MARK\u201d.",
+              "pages": [
+                "records:2"
+              ]
+            },
+            "certification": {
+              "state": "present",
+              "expected": "present",
+              "correct": true,
+              "page_check": true,
+              "observation": "The physician signature line in the separate Part B certification area contains the visible entry \u201cTEST CLINICIAN MARK\u201d.",
+              "pages": [
+                "records:3"
+              ]
+            },
+            "letter": {
+              "state": "present",
+              "expected": "present",
+              "correct": true,
+              "page_check": true,
+              "observation": "A separate AIA Thailand (synthetic test) preauthorization letter, QA-AUTH-017, identifies encounter AN-QA042.",
+              "pages": [
+                "letter:1"
+              ]
+            }
+          }
+        },
+        {
+          "case": "th-amount-mismatch",
+          "model": "gpt-6.2-astra",
+          "seconds": 7.95,
+          "tool_calls": 0,
+          "input_tokens": 14997,
+          "cached_tokens": 0,
+          "output_tokens": 349,
+          "pdf_digest": "28cde2bd11c6ba5096c866bb1a56119566e3f8bbdf0796b8793b6a7b036457a9",
+          "inspections": [],
+          "scores": {
+            "admission": {
+              "state": "match",
+              "expected": "match",
+              "correct": true,
+              "page_check": true,
+              "observation": "The Part B admission number and the encounter reference are both AN-QA042.",
+              "pages": [
+                "records:3",
+                "summary:1"
+              ]
+            },
+            "expense": {
+              "state": "conflict",
+              "expected": "conflict",
+              "correct": true,
+              "page_check": true,
+              "observation": "Part A lists THB 92,750.00, which exceeds the final bill total of THB 87,500.00 by THB 5,250.00.",
+              "pages": [
+                "bill:1",
+                "records:2"
+              ]
+            },
+            "consent": {
+              "state": "present",
+              "expected": "present",
+              "correct": true,
+              "page_check": true,
+              "observation": "The Part A patient consent signature line shows \u201cTEST PATIENT MARK.\u201d",
+              "pages": [
+                "records:2"
+              ]
+            },
+            "certification": {
+              "state": "present",
+              "expected": "present",
+              "correct": true,
+              "page_check": true,
+              "observation": "The Part B physician certification signature line shows \u201cTEST CLINICIAN MARK.\u201d",
+              "pages": [
+                "records:3"
+              ]
+            },
+            "letter": {
+              "state": "present",
+              "expected": "present",
+              "correct": true,
+              "page_check": true,
+              "observation": "A separate payer preauthorization letter, QA-AUTH-017, identifies encounter AN-QA042.",
+              "pages": [
+                "letter:1"
+              ]
+            }
+          }
+        },
+        {
+          "case": "en-unsigned-patient",
+          "model": "gpt-6.2-astra",
+          "seconds": 8.31,
+          "tool_calls": 0,
+          "input_tokens": 10522,
+          "cached_tokens": 0,
+          "output_tokens": 342,
+          "pdf_digest": "1806139d2f4500f12114de998be04d261b2d23c916c480a2f5d732aa744820db",
+          "inspections": [],
+          "scores": {
+            "admission": {
+              "state": "match",
+              "expected": "match",
+              "correct": true,
+              "page_check": true,
+              "observation": "Part B lists AN-QA042 in the AN field, matching the encounter reference AN-QA042.",
+              "pages": [
+                "records:2"
+              ]
+            },
+            "expense": {
+              "state": "match",
+              "expected": "match",
+              "correct": true,
+              "page_check": true,
+              "observation": "Part A claims THB 87,500.00, matching the final hospital bill total of THB 87,500.00.",
+              "pages": [
+                "bill:1",
+                "records:1"
+              ]
+            },
+            "consent": {
+              "state": "absent",
+              "expected": "absent",
+              "correct": true,
+              "page_check": true,
+              "observation": "No mark is visible on the Insured signature line in the Part A Letter of Consent.",
+              "pages": [
+                "records:1"
+              ]
+            },
+            "certification": {
+              "state": "present",
+              "expected": "present",
+              "correct": true,
+              "page_check": true,
+              "observation": "The Part B physician certification signature line contains the visible entry \u201cTEST CLINICIAN MARK.\u201d",
+              "pages": [
+                "records:2"
+              ]
+            },
+            "letter": {
+              "state": "present",
+              "expected": "present",
+              "correct": true,
+              "page_check": true,
+              "observation": "A separate AIA Thailand payer preauthorization letter, QA-AUTH-017, identifies encounter AN-QA042.",
+              "pages": [
+                "letter:1"
+              ]
+            }
+          }
+        },
+        {
+          "case": "th-unsigned-physician",
+          "model": "gpt-6.2-astra",
+          "seconds": 7.39,
+          "tool_calls": 0,
+          "input_tokens": 14990,
+          "cached_tokens": 0,
+          "output_tokens": 365,
+          "pdf_digest": "2e0b8b424e7914f1f66f0c37b6286dcc3a837db5a54680945ba77ce24bcd31ad",
+          "inspections": [],
+          "scores": {
+            "admission": {
+              "state": "match",
+              "expected": "match",
+              "correct": true,
+              "page_check": true,
+              "observation": "Part B lists AN-QA042 in the AN field, matching the encounter reference AN-QA042 on the discharge summary.",
+              "pages": [
+                "records:3",
+                "summary:1"
+              ]
+            },
+            "expense": {
+              "state": "match",
+              "expected": "match",
+              "correct": true,
+              "page_check": true,
+              "observation": "Part A lists THB 87,500.00, equal to the final hospital bill total of THB 87,500.00.",
+              "pages": [
+                "bill:1",
+                "records:2"
+              ]
+            },
+            "consent": {
+              "state": "present",
+              "expected": "present",
+              "correct": true,
+              "page_check": true,
+              "observation": "The Part A patient consent signature line contains the visible entry \u201cTEST PATIENT MARK.\u201d",
+              "pages": [
+                "records:2"
+              ]
+            },
+            "certification": {
+              "state": "absent",
+              "expected": "absent",
+              "correct": true,
+              "page_check": true,
+              "observation": "The Part B physician\u2019s signature line is blank. The adjacent specialty, license and date fields contain entries.",
+              "pages": [
+                "records:3"
+              ]
+            },
+            "letter": {
+              "state": "present",
+              "expected": "present",
+              "correct": true,
+              "page_check": true,
+              "observation": "A separate payer preauthorization letter, QA-AUTH-017, identifies encounter AN-QA042 and names wrist fracture fixation as the procedure.",
+              "pages": [
+                "letter:1"
+              ]
+            }
+          }
+        },
+        {
+          "case": "en-missing-letter",
+          "model": "gpt-6.2-astra",
+          "seconds": 7.15,
+          "tool_calls": 0,
+          "input_tokens": 10291,
+          "cached_tokens": 0,
+          "output_tokens": 390,
+          "pdf_digest": "1a2a4e69662aedd0230be7c9dcb421856c28fddcd3a3b6c933a092b3a8833d22",
+          "inspections": [],
+          "scores": {
+            "admission": {
+              "state": "match",
+              "expected": "match",
+              "correct": true,
+              "page_check": true,
+              "observation": "The Part B AN field reads AN-QA042, matching the encounter reference AN-QA042.",
+              "pages": [
+                "records:2",
+                "summary:1"
+              ]
+            },
+            "expense": {
+              "state": "match",
+              "expected": "match",
+              "correct": true,
+              "page_check": true,
+              "observation": "Part A claims THB 87,500.00, and the independent final bill states a total of THB 87,500.00.",
+              "pages": [
+                "bill:1",
+                "records:1"
+              ]
+            },
+            "consent": {
+              "state": "present",
+              "expected": "present",
+              "correct": true,
+              "page_check": true,
+              "observation": "The Part A consent line labeled \u201cInsured\u201d shows \u201cTEST PATIENT MARK.\u201d",
+              "pages": [
+                "records:1"
+              ]
+            },
+            "certification": {
+              "state": "present",
+              "expected": "present",
+              "correct": true,
+              "page_check": true,
+              "observation": "The Part B certification line labeled \u201cPhysician\u2019s signature\u201d shows \u201cTEST CLINICIAN MARK.\u201d",
+              "pages": [
+                "records:2"
+              ]
+            },
+            "letter": {
+              "state": "absent",
+              "expected": "absent",
+              "correct": true,
+              "page_check": true,
+              "observation": "No separate payer letter for AN-QA042 was supplied. The AIA document is a claim form, and the hospital record notes a letter receipt date of 2026-11-02 without supplying the letter itself.",
+              "pages": [
+                "records:1",
+                "records:3"
+              ]
+            }
+          }
+        },
+        {
+          "case": "cms_aligned",
+          "model": "gpt-6.2-astra",
+          "seconds": 7.13,
+          "tool_calls": 0,
+          "input_tokens": 7132,
+          "cached_tokens": 0,
+          "output_tokens": 319,
+          "pdf_digest": "ce9bd423eb34e7773893e4b89a211e48f188ef7679bdb67ce0123fbb4fc58442",
+          "inspections": [],
+          "scores": {
+            "member": {
+              "state": "match",
+              "expected": "match",
+              "correct": true,
+              "page_check": true,
+              "observation": "FL60 lists TEST-MBI-0042, the same member ID as the encounter metadata.",
+              "pages": [
+                "bill:1"
+              ]
+            },
+            "disposition": {
+              "state": "match",
+              "expected": "match",
+              "correct": true,
+              "page_check": true,
+              "observation": "FL17 code 01 means home. The discharge summary documents discharge home on November 3, and the reconciliation confirms no interfacility transfer.",
+              "pages": [
+                "bill:1",
+                "summary:1",
+                "summary:2"
+              ]
+            },
+            "replacement": {
+              "state": "original",
+              "expected": "original",
+              "correct": true,
+              "page_check": true,
+              "observation": "FL4 shows type of bill 0111. The final digit is 1, not replacement frequency 7, so no original DCN is required in FL64.",
+              "pages": [
+                "bill:1"
+              ]
+            },
+            "expense": {
+              "state": "match",
+              "expected": "match",
+              "correct": true,
+              "page_check": true,
+              "observation": "FL47 totals $11,285.00, equal to the sum of the five charges on the final itemized invoice.",
+              "pages": [
+                "bill:1",
+                "bill:3"
+              ]
+            }
+          }
+        },
+        {
+          "case": "cms_wrong_member",
+          "model": "gpt-6.2-astra",
+          "seconds": 6.25,
+          "tool_calls": 0,
+          "input_tokens": 7132,
+          "cached_tokens": 0,
+          "output_tokens": 323,
+          "pdf_digest": "4e3ab3826fb84d033f83e8ec0ec2b9c54a537d762f4679b60a5784b8c154fc4a",
+          "inspections": [],
+          "scores": {
+            "member": {
+              "state": "conflict",
+              "expected": "conflict",
+              "correct": true,
+              "page_check": true,
+              "observation": "FL60 lists TEST-MBI-0099; the encounter metadata lists TEST-MBI-0042.",
+              "pages": [
+                "bill:1"
+              ]
+            },
+            "disposition": {
+              "state": "match",
+              "expected": "match",
+              "correct": true,
+              "page_check": true,
+              "observation": "FL17 code 01 means home. The discharge summary records discharge home on November 3, and the reconciliation confirms no interfacility transfer.",
+              "pages": [
+                "bill:1",
+                "summary:1",
+                "summary:2"
+              ]
+            },
+            "replacement": {
+              "state": "original",
+              "expected": "original",
+              "correct": true,
+              "page_check": true,
+              "observation": "FL4 shows type of bill 0111, with frequency 1 rather than 7. FL64 is blank; an original DCN is not required for this bill.",
+              "pages": [
+                "bill:1"
+              ]
+            },
+            "expense": {
+              "state": "match",
+              "expected": "match",
+              "correct": true,
+              "page_check": true,
+              "observation": "FL47 totals $11,285.00, equal to the sum of the five charges on the final itemized invoice.",
+              "pages": [
+                "bill:1",
+                "bill:3"
+              ]
+            }
+          }
+        },
+        {
+          "case": "cms_disposition",
+          "model": "gpt-6.2-astra",
+          "seconds": 6.15,
+          "tool_calls": 0,
+          "input_tokens": 7132,
+          "cached_tokens": 0,
+          "output_tokens": 308,
+          "pdf_digest": "becbece928b3d58d882c1dc39e980ce5d724362528debb91f73912182f58cc8b",
+          "inspections": [],
+          "scores": {
+            "member": {
+              "state": "match",
+              "expected": "match",
+              "correct": true,
+              "page_check": true,
+              "observation": "FL60 lists TEST-MBI-0042, matching the encounter member ID.",
+              "pages": [
+                "bill:1"
+              ]
+            },
+            "disposition": {
+              "state": "conflict",
+              "expected": "conflict",
+              "correct": true,
+              "page_check": true,
+              "observation": "FL17 shows 02 (transfer), but the discharge summary and reconciliation document discharge home (01) with no interfacility transfer.",
+              "pages": [
+                "bill:1",
+                "summary:1",
+                "summary:2"
+              ]
+            },
+            "replacement": {
+              "state": "original",
+              "expected": "original",
+              "correct": true,
+              "page_check": true,
+              "observation": "FL4 shows type of bill 0111, with frequency 1 (original), not 7 (replacement). FL64 is blank.",
+              "pages": [
+                "bill:1"
+              ]
+            },
+            "expense": {
+              "state": "match",
+              "expected": "match",
+              "correct": true,
+              "page_check": true,
+              "observation": "FL47 totals $11,285.00, equal to the sum of the five charges on the itemized invoice.",
+              "pages": [
+                "bill:1",
+                "bill:3"
+              ]
+            }
+          }
+        },
+        {
+          "case": "cms_replacement",
+          "model": "gpt-6.2-astra",
+          "seconds": 7.3,
+          "tool_calls": 0,
+          "input_tokens": 7132,
+          "cached_tokens": 0,
+          "output_tokens": 314,
+          "pdf_digest": "dd2383d073814b1363289d465f4f979e34dab7954159f0707609ddddb3ea9e60",
+          "inspections": [],
+          "scores": {
+            "member": {
+              "state": "match",
+              "expected": "match",
+              "correct": true,
+              "page_check": true,
+              "observation": "FL60 lists TEST-MBI-0042, the same member ID as the encounter metadata.",
+              "pages": [
+                "bill:1"
+              ]
+            },
+            "disposition": {
+              "state": "match",
+              "expected": "match",
+              "correct": true,
+              "page_check": true,
+              "observation": "FL17 code 01 means home. The discharge summary records discharge home, and the reconciliation confirms no interfacility transfer.",
+              "pages": [
+                "bill:1",
+                "summary:1",
+                "summary:2"
+              ]
+            },
+            "replacement": {
+              "state": "absent",
+              "expected": "absent",
+              "correct": true,
+              "page_check": true,
+              "observation": "FL4 shows type of bill 0117 (replacement frequency 7), but FL64 is blank; no original document control number is listed.",
+              "pages": [
+                "bill:1"
+              ]
+            },
+            "expense": {
+              "state": "match",
+              "expected": "match",
+              "correct": true,
+              "page_check": true,
+              "observation": "FL47 totals $11,285.00. The five charges on the itemized invoice also sum to $11,285.00.",
+              "pages": [
+                "bill:1",
+                "bill:3"
+              ]
+            }
+          }
+        },
+        {
+          "case": "cms_total",
+          "model": "gpt-6.2-astra",
+          "seconds": 8.47,
+          "tool_calls": 0,
+          "input_tokens": 7132,
+          "cached_tokens": 6996,
+          "output_tokens": 331,
+          "pdf_digest": "bef06e40a11d53d8ad78ba6436ae912bc35777bec07b48c1a54417c8f8b5aea9",
+          "inspections": [],
+          "scores": {
+            "member": {
+              "state": "match",
+              "expected": "match",
+              "correct": true,
+              "page_check": true,
+              "observation": "FL60 lists TEST-MBI-0042, the same member ID as the encounter metadata.",
+              "pages": [
+                "bill:1"
+              ]
+            },
+            "disposition": {
+              "state": "match",
+              "expected": "match",
+              "correct": true,
+              "page_check": true,
+              "observation": "FL17 shows 01 (home). The discharge summary records discharge home on November 3, and the reconciliation confirms no interfacility transfer.",
+              "pages": [
+                "bill:1",
+                "summary:1",
+                "summary:2"
+              ]
+            },
+            "replacement": {
+              "state": "original",
+              "expected": "original",
+              "correct": true,
+              "page_check": true,
+              "observation": "FL4 shows type of bill 0111, with frequency 1 (original), not 7 (replacement). No original DCN is required in FL64.",
+              "pages": [
+                "bill:1"
+              ]
+            },
+            "expense": {
+              "state": "conflict",
+              "expected": "conflict",
+              "correct": true,
+              "page_check": true,
+              "observation": "FL47 shows $11,785.00. The invoice line items sum to its stated total of $11,285.00, so FL47 is $500.00 higher.",
+              "pages": [
+                "bill:1",
+                "bill:3"
+              ]
+            }
+          }
+        },
+        {
+          "case": "fep_assigned",
+          "model": "gpt-6.2-astra",
+          "seconds": 7.86,
+          "tool_calls": 0,
+          "input_tokens": 6735,
+          "cached_tokens": 0,
+          "output_tokens": 207,
+          "pdf_digest": "6cd5e57aa91d3b4c774cc7a8c30c94ef5ea2cde7cecc1d4ad1db309af0fe0d70",
+          "inspections": [],
+          "scores": {
+            "payee": {
+              "state": "hospital",
+              "expected": "hospital",
+              "correct": true,
+              "page_check": true,
+              "observation": "\u00a75D names Lantern Quay Hospital and shows a synthetic test attestation in the assignment signature field dated 11/04/2026. No currency or payment method is marked in \u00a75A\u2013B, and \u00a75C is blank.",
+              "pages": [
+                "records:1"
+              ]
+            },
+            "expense": {
+              "state": "match",
+              "expected": "match",
+              "correct": true,
+              "page_check": true,
+              "observation": "For TH-IP-077, \u00a74 lists THB 158,050.00 for one itemized bill. The invoice totals THB 158,050.00 after the THB 700.00 returned-supplies credit.",
+              "pages": [
+                "bill:1",
+                "records:1"
+              ]
+            }
+          }
+        },
+        {
+          "case": "fep_member",
+          "model": "gpt-6.2-astra",
+          "seconds": 5.65,
+          "tool_calls": 0,
+          "input_tokens": 6698,
+          "cached_tokens": 0,
+          "output_tokens": 211,
+          "pdf_digest": "bfc6cbda2769d03734f951fa8019bcd62c080ac95defbf1d41cad2ed4f5589a4",
+          "inspections": [],
+          "scores": {
+            "payee": {
+              "state": "member",
+              "expected": "member",
+              "correct": true,
+              "page_check": true,
+              "observation": "The member selected \u201cCurrency on Bills\u201d in \u00a75A and \u201cCheck\u201d in \u00a75B. The electronic transfer fields in \u00a75C are blank, and \u00a75D has neither a provider name nor an assignment mark.",
+              "pages": [
+                "records:1"
+              ]
+            },
+            "expense": {
+              "state": "match",
+              "expected": "match",
+              "correct": true,
+              "page_check": true,
+              "observation": "For TH-IP-077, \u00a74 lists THB 158,050.00, matching the itemized invoice total of THB 158,050.00 after the THB 700.00 returned-supplies credit.",
+              "pages": [
+                "bill:1",
+                "records:1"
+              ]
+            }
+          }
+        },
+        {
+          "case": "fep_unsigned",
+          "model": "gpt-6.2-astra",
+          "seconds": 5.1,
+          "tool_calls": 0,
+          "input_tokens": 6727,
+          "cached_tokens": 6591,
+          "output_tokens": 186,
+          "pdf_digest": "67b20a2ef08f27b4be28676194bf3ea212c2dcc00a48e44077e9fadae709269e",
+          "inspections": [],
+          "scores": {
+            "payee": {
+              "state": "unsigned",
+              "expected": "unsigned",
+              "correct": true,
+              "page_check": true,
+              "observation": "\u00a75D names Lantern Quay Hospital, but the assignment signature field is blank. No currency or payment method is marked in \u00a75A\u2013B, and \u00a75C has no bank details.",
+              "pages": [
+                "records:1"
+              ]
+            },
+            "expense": {
+              "state": "match",
+              "expected": "match",
+              "correct": true,
+              "page_check": true,
+              "observation": "The \u00a74 submitted total and the itemized invoice total are both THB 158,050.00, net of the THB 700.00 returned-supplies credit.",
+              "pages": [
+                "bill:1",
+                "records:1"
+              ]
+            }
+          }
+        },
+        {
+          "case": "fep_total",
+          "model": "gpt-6.2-astra",
+          "seconds": 5.84,
+          "tool_calls": 0,
+          "input_tokens": 6735,
+          "cached_tokens": 0,
+          "output_tokens": 206,
+          "pdf_digest": "5c62c821847ed2bf21deaf2dd8c404d334ae10e13486e4120b54601357ba8d34",
+          "inspections": [],
+          "scores": {
+            "payee": {
+              "state": "hospital",
+              "expected": "hospital",
+              "correct": true,
+              "page_check": true,
+              "observation": "\u00a75D names Lantern Quay Hospital and shows a synthetic test attestation in the assignment signature field, dated 11/04/2026. No member reimbursement option is marked in \u00a75A\u2013B, and \u00a75C is blank.",
+              "pages": [
+                "records:1"
+              ]
+            },
+            "expense": {
+              "state": "conflict",
+              "expected": "conflict",
+              "correct": true,
+              "page_check": true,
+              "observation": "For TH-IP-077, the \u00a74 submitted total of THB 160,000.00 exceeds the final itemized invoice total of THB 158,050.00 by THB 1,950.00.",
+              "pages": [
+                "bill:1",
+                "records:1"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    "agent": {
+      "packets": 16,
+      "scored_fields": 63,
+      "states_correct": 63,
+      "states_and_required_pages": 63,
+      "median_seconds": 12.04,
+      "tool_calls": 16,
+      "input_tokens": 338888,
+      "output_tokens": 5387,
+      "observations": [
+        {
+          "case": "th-aligned",
+          "model": "gpt-6.2-astra",
+          "seconds": 17.59,
+          "tool_calls": 1,
+          "input_tokens": 31970,
+          "cached_tokens": 15027,
+          "output_tokens": 391,
+          "pdf_digest": "040a82a1997cffb9be3603ab962db673cc1628952e3a95cd3833c6ab45d632be",
+          "inspections": [
+            {
+              "role": "records",
+              "page": 3,
+              "region": "bottom"
+            }
+          ],
+          "scores": {
+            "admission": {
+              "state": "match",
+              "expected": "match",
+              "correct": true,
+              "page_check": true,
+              "observation": "The Part B admission number is AN-QA042, the same as the encounter reference in the discharge summary.",
+              "pages": [
+                "records:3",
+                "summary:1"
+              ]
+            },
+            "expense": {
+              "state": "match",
+              "expected": "match",
+              "correct": true,
+              "page_check": true,
+              "observation": "Part A lists THB 87,500.00, equal to the final hospital bill total of THB 87,500.00.",
+              "pages": [
+                "bill:1",
+                "records:2"
+              ]
+            },
+            "consent": {
+              "state": "present",
+              "expected": "present",
+              "correct": true,
+              "page_check": true,
+              "observation": "\u201cTEST PATIENT MARK\u201d is visible on the patient signature line in the Part A consent section.",
+              "pages": [
+                "records:2"
+              ]
+            },
+            "certification": {
+              "state": "present",
+              "expected": "present",
+              "correct": true,
+              "page_check": true,
+              "observation": "\u201cTEST CLINICIAN MARK\u201d is visible on the physician\u2019s signature line in the separate Part B certification section.",
+              "pages": [
+                "records:3"
+              ]
+            },
+            "letter": {
+              "state": "present",
+              "expected": "present",
+              "correct": true,
+              "page_check": true,
+              "observation": "A separate AIA Thailand (synthetic test) preauthorization letter, QA-AUTH-017, identifies encounter AN-QA042.",
+              "pages": [
+                "letter:1"
+              ]
+            }
+          }
+        },
+        {
+          "case": "en-aligned",
+          "model": "gpt-6.2-astra",
+          "seconds": 17.8,
+          "tool_calls": 1,
+          "input_tokens": 23054,
+          "cached_tokens": 10569,
+          "output_tokens": 385,
+          "pdf_digest": "155540e0d34a614c39a40910c4bc44aa4f16e3b673c7ba83704a73f87f152b86",
+          "inspections": [
+            {
+              "role": "records",
+              "page": 2,
+              "region": "bottom"
+            }
+          ],
+          "scores": {
+            "admission": {
+              "state": "match",
+              "expected": "match",
+              "correct": true,
+              "page_check": true,
+              "observation": "The Part B admission number is AN-QA042, matching the encounter reference.",
+              "pages": [
+                "records:2",
+                "summary:1"
+              ]
+            },
+            "expense": {
+              "state": "match",
+              "expected": "match",
+              "correct": true,
+              "page_check": true,
+              "observation": "Part A claims THB 87,500.00, equal to the final hospital bill total of THB 87,500.00.",
+              "pages": [
+                "bill:1",
+                "records:1"
+              ]
+            },
+            "consent": {
+              "state": "present",
+              "expected": "present",
+              "correct": true,
+              "page_check": true,
+              "observation": "\u201cTEST PATIENT MARK\u201d is visible on the insured\u2019s signature line in the Part A consent section.",
+              "pages": [
+                "records:1"
+              ]
+            },
+            "certification": {
+              "state": "present",
+              "expected": "present",
+              "correct": true,
+              "page_check": true,
+              "observation": "\u201cTEST CLINICIAN MARK\u201d is visible on the physician\u2019s signature line in the Part B certification section.",
+              "pages": [
+                "records:2"
+              ]
+            },
+            "letter": {
+              "state": "present",
+              "expected": "present",
+              "correct": true,
+              "page_check": true,
+              "observation": "A separate AIA Thailand (synthetic test) preauthorization letter, QA-AUTH-017, identifies encounter AN-QA042.",
+              "pages": [
+                "letter:1"
+              ]
+            }
+          }
+        },
+        {
+          "case": "th-wrong-admission",
+          "model": "gpt-6.2-astra",
+          "seconds": 17.04,
+          "tool_calls": 1,
+          "input_tokens": 31970,
+          "cached_tokens": 29931,
+          "output_tokens": 383,
+          "pdf_digest": "e45a1552f8d6c95adc73528061a54a2fa111fa73a8bed3507466cecb95a3d21b",
+          "inspections": [
+            {
+              "role": "records",
+              "page": 3,
+              "region": "top"
+            }
+          ],
+          "scores": {
+            "admission": {
+              "state": "conflict",
+              "expected": "conflict",
+              "correct": true,
+              "page_check": true,
+              "observation": "Part B lists AN-QA999 in the AN field; the encounter reference is AN-QA042.",
+              "pages": [
+                "records:3",
+                "summary:1"
+              ]
+            },
+            "expense": {
+              "state": "match",
+              "expected": "match",
+              "correct": true,
+              "page_check": true,
+              "observation": "Part A claims THB 87,500.00, equal to the final bill total of THB 87,500.00.",
+              "pages": [
+                "bill:1",
+                "records:2"
+              ]
+            },
+            "consent": {
+              "state": "present",
+              "expected": "present",
+              "correct": true,
+              "page_check": true,
+              "observation": "\u201cTEST PATIENT MARK\u201d is visible on the Part A patient consent signature line.",
+              "pages": [
+                "records:2"
+              ]
+            },
+            "certification": {
+              "state": "present",
+              "expected": "present",
+              "correct": true,
+              "page_check": true,
+              "observation": "\u201cTEST CLINICIAN MARK\u201d is visible on the physician\u2019s signature line in the Part B certification area.",
+              "pages": [
+                "records:3"
+              ]
+            },
+            "letter": {
+              "state": "present",
+              "expected": "present",
+              "correct": true,
+              "page_check": true,
+              "observation": "A separate payer preauthorization letter, QA-AUTH-017, identifies encounter AN-QA042 and wrist fracture fixation.",
+              "pages": [
+                "letter:1"
+              ]
+            }
+          }
+        },
+        {
+          "case": "th-amount-mismatch",
+          "model": "gpt-6.2-astra",
+          "seconds": 12.01,
+          "tool_calls": 1,
+          "input_tokens": 31970,
+          "cached_tokens": 15027,
+          "output_tokens": 393,
+          "pdf_digest": "28cde2bd11c6ba5096c866bb1a56119566e3f8bbdf0796b8793b6a7b036457a9",
+          "inspections": [
+            {
+              "role": "records",
+              "page": 3,
+              "region": "bottom"
+            }
+          ],
+          "scores": {
+            "admission": {
+              "state": "match",
+              "expected": "match",
+              "correct": true,
+              "page_check": true,
+              "observation": "The Part B admission number is AN-QA042, the same as the encounter reference.",
+              "pages": [
+                "records:3",
+                "summary:1"
+              ]
+            },
+            "expense": {
+              "state": "conflict",
+              "expected": "conflict",
+              "correct": true,
+              "page_check": true,
+              "observation": "Part A lists THB 92,750.00, which is THB 5,250.00 more than the final bill total of THB 87,500.00.",
+              "pages": [
+                "bill:1",
+                "records:2"
+              ]
+            },
+            "consent": {
+              "state": "present",
+              "expected": "present",
+              "correct": true,
+              "page_check": true,
+              "observation": "\u201cTEST PATIENT MARK\u201d is visible on the Part A patient consent signature line.",
+              "pages": [
+                "records:2"
+              ]
+            },
+            "certification": {
+              "state": "present",
+              "expected": "present",
+              "correct": true,
+              "page_check": true,
+              "observation": "\u201cTEST CLINICIAN MARK\u201d is visible on the physician\u2019s signature line in the separate Part B certification area.",
+              "pages": [
+                "records:3"
+              ]
+            },
+            "letter": {
+              "state": "present",
+              "expected": "present",
+              "correct": true,
+              "page_check": true,
+              "observation": "A separate payer preauthorization letter, QA-AUTH-017, identifies encounter AN-QA042 and the wrist fracture fixation procedure.",
+              "pages": [
+                "letter:1"
+              ]
+            }
+          }
+        },
+        {
+          "case": "en-unsigned-patient",
+          "model": "gpt-6.2-astra",
+          "seconds": 13.99,
+          "tool_calls": 1,
+          "input_tokens": 23020,
+          "cached_tokens": 10552,
+          "output_tokens": 374,
+          "pdf_digest": "1806139d2f4500f12114de998be04d261b2d23c916c480a2f5d732aa744820db",
+          "inspections": [
+            {
+              "role": "records",
+              "page": 1,
+              "region": "bottom"
+            }
+          ],
+          "scores": {
+            "admission": {
+              "state": "match",
+              "expected": "match",
+              "correct": true,
+              "page_check": true,
+              "observation": "The Part B admission number is AN-QA042, matching the encounter reference.",
+              "pages": [
+                "records:2",
+                "summary:1"
+              ]
+            },
+            "expense": {
+              "state": "match",
+              "expected": "match",
+              "correct": true,
+              "page_check": true,
+              "observation": "Part A claims THB 87,500.00, equal to the final hospital bill total of THB 87,500.00.",
+              "pages": [
+                "bill:1",
+                "records:1"
+              ]
+            },
+            "consent": {
+              "state": "absent",
+              "expected": "absent",
+              "correct": true,
+              "page_check": true,
+              "observation": "The \u201cInsured\u201d signature line in the Part A Letter of Consent has no visible mark.",
+              "pages": [
+                "records:1"
+              ]
+            },
+            "certification": {
+              "state": "present",
+              "expected": "present",
+              "correct": true,
+              "page_check": true,
+              "observation": "The Part B physician\u2019s signature line contains the visible entry \u201cTEST CLINICIAN MARK.\u201d",
+              "pages": [
+                "records:2"
+              ]
+            },
+            "letter": {
+              "state": "present",
+              "expected": "present",
+              "correct": true,
+              "page_check": true,
+              "observation": "AIA Thailand\u2019s separate preauthorization letter QA-AUTH-017 identifies encounter AN-QA042.",
+              "pages": [
+                "letter:1"
+              ]
+            }
+          }
+        },
+        {
+          "case": "th-unsigned-physician",
+          "model": "gpt-6.2-astra",
+          "seconds": 13.69,
+          "tool_calls": 1,
+          "input_tokens": 31956,
+          "cached_tokens": 15020,
+          "output_tokens": 377,
+          "pdf_digest": "2e0b8b424e7914f1f66f0c37b6286dcc3a837db5a54680945ba77ce24bcd31ad",
+          "inspections": [
+            {
+              "role": "records",
+              "page": 3,
+              "region": "bottom"
+            }
+          ],
+          "scores": {
+            "admission": {
+              "state": "match",
+              "expected": "match",
+              "correct": true,
+              "page_check": true,
+              "observation": "The Part B admission number is AN-QA042, identical to the encounter reference on the discharge summary.",
+              "pages": [
+                "records:3",
+                "summary:1"
+              ]
+            },
+            "expense": {
+              "state": "match",
+              "expected": "match",
+              "correct": true,
+              "page_check": true,
+              "observation": "Part A lists THB 87,500.00, the same as the final hospital bill total.",
+              "pages": [
+                "bill:1",
+                "records:2"
+              ]
+            },
+            "consent": {
+              "state": "present",
+              "expected": "present",
+              "correct": true,
+              "page_check": true,
+              "observation": "\u201cTEST PATIENT MARK\u201d is visible on the Part A patient consent signature line.",
+              "pages": [
+                "records:2"
+              ]
+            },
+            "certification": {
+              "state": "absent",
+              "expected": "absent",
+              "correct": true,
+              "page_check": true,
+              "observation": "The Part B physician certification signature line is blank, although the specialty, license and date fields are filled.",
+              "pages": [
+                "records:3"
+              ]
+            },
+            "letter": {
+              "state": "present",
+              "expected": "present",
+              "correct": true,
+              "page_check": true,
+              "observation": "A separate AIA Thailand (synthetic test) preauthorization letter, QA-AUTH-017, identifies encounter AN-QA042.",
+              "pages": [
+                "letter:1"
+              ]
+            }
+          }
+        },
+        {
+          "case": "en-missing-letter",
+          "model": "gpt-6.2-astra",
+          "seconds": 13.19,
+          "tool_calls": 1,
+          "input_tokens": 22558,
+          "cached_tokens": 10321,
+          "output_tokens": 408,
+          "pdf_digest": "1a2a4e69662aedd0230be7c9dcb421856c28fddcd3a3b6c933a092b3a8833d22",
+          "inspections": [
+            {
+              "role": "records",
+              "page": 2,
+              "region": "bottom"
+            }
+          ],
+          "scores": {
+            "admission": {
+              "state": "match",
+              "expected": "match",
+              "correct": true,
+              "page_check": true,
+              "observation": "The Part B admission number is AN-QA042, matching the encounter reference.",
+              "pages": [
+                "records:2",
+                "summary:1"
+              ]
+            },
+            "expense": {
+              "state": "match",
+              "expected": "match",
+              "correct": true,
+              "page_check": true,
+              "observation": "Part A claims THB 87,500.00, equal to the final bill total of THB 87,500.00.",
+              "pages": [
+                "bill:1",
+                "records:1"
+              ]
+            },
+            "consent": {
+              "state": "present",
+              "expected": "present",
+              "correct": true,
+              "page_check": true,
+              "observation": "\u201cTEST PATIENT MARK\u201d is visible on the insured\u2019s signature line in the Part A consent section.",
+              "pages": [
+                "records:1"
+              ]
+            },
+            "certification": {
+              "state": "present",
+              "expected": "present",
+              "correct": true,
+              "page_check": true,
+              "observation": "\u201cTEST CLINICIAN MARK\u201d is visible on the physician\u2019s signature line in the Part B certification section.",
+              "pages": [
+                "records:2"
+              ]
+            },
+            "letter": {
+              "state": "absent",
+              "expected": "absent",
+              "correct": true,
+              "page_check": true,
+              "observation": "The hospital log notes receipt of a letter on 2026-11-02, but no separate encounter-specific payer letter is supplied. The AIA claim form is not a payer letter.",
+              "pages": [
+                "records:1",
+                "records:3"
+              ]
+            }
+          }
+        },
+        {
+          "case": "cms_aligned",
+          "model": "gpt-6.2-astra",
+          "seconds": 10.92,
+          "tool_calls": 1,
+          "input_tokens": 16184,
+          "cached_tokens": 7162,
+          "output_tokens": 343,
+          "pdf_digest": "ce9bd423eb34e7773893e4b89a211e48f188ef7679bdb67ce0123fbb4fc58442",
+          "inspections": [
+            {
+              "role": "bill",
+              "page": 1,
+              "region": "bottom"
+            }
+          ],
+          "scores": {
+            "member": {
+              "state": "match",
+              "expected": "match",
+              "correct": true,
+              "page_check": true,
+              "observation": "FL60 lists TEST-MBI-0042, exactly matching the encounter member ID.",
+              "pages": [
+                "bill:1"
+              ]
+            },
+            "disposition": {
+              "state": "match",
+              "expected": "match",
+              "correct": true,
+              "page_check": true,
+              "observation": "FL17 shows 01 (home). The discharge summary documents discharge home, and the reconciliation confirms no interfacility transfer.",
+              "pages": [
+                "bill:1",
+                "summary:1",
+                "summary:2"
+              ]
+            },
+            "replacement": {
+              "state": "original",
+              "expected": "original",
+              "correct": true,
+              "page_check": true,
+              "observation": "FL4 shows type of bill 0111. Its frequency digit is 1, not 7, so no original DCN is required in the blank FL64.",
+              "pages": [
+                "bill:1"
+              ]
+            },
+            "expense": {
+              "state": "match",
+              "expected": "match",
+              "correct": true,
+              "page_check": true,
+              "observation": "FL47 totals $11,285.00. The five charges on the final itemized invoice also sum to $11,285.00.",
+              "pages": [
+                "bill:1",
+                "bill:3"
+              ]
+            }
+          }
+        },
+        {
+          "case": "cms_wrong_member",
+          "model": "gpt-6.2-astra",
+          "seconds": 10.9,
+          "tool_calls": 1,
+          "input_tokens": 16184,
+          "cached_tokens": 7162,
+          "output_tokens": 354,
+          "pdf_digest": "4e3ab3826fb84d033f83e8ec0ec2b9c54a537d762f4679b60a5784b8c154fc4a",
+          "inspections": [
+            {
+              "role": "bill",
+              "page": 1,
+              "region": "bottom"
+            }
+          ],
+          "scores": {
+            "member": {
+              "state": "conflict",
+              "expected": "conflict",
+              "correct": true,
+              "page_check": true,
+              "observation": "FL60 lists TEST-MBI-0099; the encounter metadata lists TEST-MBI-0042.",
+              "pages": [
+                "bill:1"
+              ]
+            },
+            "disposition": {
+              "state": "match",
+              "expected": "match",
+              "correct": true,
+              "page_check": true,
+              "observation": "FL17 code 01 means home. The discharge summary records discharge home on November 3, and the reconciliation confirms no interfacility transfer.",
+              "pages": [
+                "bill:1",
+                "summary:1",
+                "summary:2"
+              ]
+            },
+            "replacement": {
+              "state": "original",
+              "expected": "original",
+              "correct": true,
+              "page_check": true,
+              "observation": "FL4 shows type of bill 0111. The frequency digit is 1, not 7, so no original DCN is required in the blank FL64.",
+              "pages": [
+                "bill:1"
+              ]
+            },
+            "expense": {
+              "state": "match",
+              "expected": "match",
+              "correct": true,
+              "page_check": true,
+              "observation": "FL47 shows $11,285.00 in total charges. The five charges on the itemized invoice also sum to $11,285.00.",
+              "pages": [
+                "bill:1",
+                "bill:3"
+              ]
+            }
+          }
+        },
+        {
+          "case": "cms_disposition",
+          "model": "gpt-6.2-astra",
+          "seconds": 11.2,
+          "tool_calls": 1,
+          "input_tokens": 16184,
+          "cached_tokens": 7162,
+          "output_tokens": 345,
+          "pdf_digest": "becbece928b3d58d882c1dc39e980ce5d724362528debb91f73912182f58cc8b",
+          "inspections": [
+            {
+              "role": "bill",
+              "page": 1,
+              "region": "bottom"
+            }
+          ],
+          "scores": {
+            "member": {
+              "state": "match",
+              "expected": "match",
+              "correct": true,
+              "page_check": true,
+              "observation": "FL60 lists TEST-MBI-0042, the same member ID as the encounter metadata.",
+              "pages": [
+                "bill:1"
+              ]
+            },
+            "disposition": {
+              "state": "conflict",
+              "expected": "conflict",
+              "correct": true,
+              "page_check": true,
+              "observation": "FL17 shows 02 (transfer), but the discharge summary documents discharge home (01) and confirms there was no interfacility transfer.",
+              "pages": [
+                "bill:1",
+                "summary:1",
+                "summary:2"
+              ]
+            },
+            "replacement": {
+              "state": "original",
+              "expected": "original",
+              "correct": true,
+              "page_check": true,
+              "observation": "FL4 shows type of bill 0111, with frequency 1 rather than 7. FL64 is blank; no original DCN is required for this check.",
+              "pages": [
+                "bill:1"
+              ]
+            },
+            "expense": {
+              "state": "match",
+              "expected": "match",
+              "correct": true,
+              "page_check": true,
+              "observation": "FL47 shows $11,285.00, equal to the sum of the five charges on the final itemized invoice.",
+              "pages": [
+                "bill:1",
+                "bill:3"
+              ]
+            }
+          }
+        },
+        {
+          "case": "cms_replacement",
+          "model": "gpt-6.2-astra",
+          "seconds": 10.48,
+          "tool_calls": 1,
+          "input_tokens": 16184,
+          "cached_tokens": 7162,
+          "output_tokens": 345,
+          "pdf_digest": "dd2383d073814b1363289d465f4f979e34dab7954159f0707609ddddb3ea9e60",
+          "inspections": [
+            {
+              "role": "bill",
+              "page": 1,
+              "region": "bottom"
+            }
+          ],
+          "scores": {
+            "member": {
+              "state": "match",
+              "expected": "match",
+              "correct": true,
+              "page_check": true,
+              "observation": "FL60 lists TEST-MBI-0042, the same member ID as the encounter metadata.",
+              "pages": [
+                "bill:1"
+              ]
+            },
+            "disposition": {
+              "state": "match",
+              "expected": "match",
+              "correct": true,
+              "page_check": true,
+              "observation": "FL17 shows 01 (home). The discharge summary records discharge home on November 3, and the reconciliation confirms no interfacility transfer.",
+              "pages": [
+                "bill:1",
+                "summary:1",
+                "summary:2"
+              ]
+            },
+            "replacement": {
+              "state": "absent",
+              "expected": "absent",
+              "correct": true,
+              "page_check": true,
+              "observation": "FL4 shows type of bill 0117 (frequency 7, replacement), but FL64 is blank: no original document control number is listed.",
+              "pages": [
+                "bill:1"
+              ]
+            },
+            "expense": {
+              "state": "match",
+              "expected": "match",
+              "correct": true,
+              "page_check": true,
+              "observation": "FL47 shows $11,285.00 in total charges, equal to the sum of the five charges on the final itemized invoice.",
+              "pages": [
+                "bill:1",
+                "bill:3"
+              ]
+            }
+          }
+        },
+        {
+          "case": "cms_total",
+          "model": "gpt-6.2-astra",
+          "seconds": 12.06,
+          "tool_calls": 1,
+          "input_tokens": 16184,
+          "cached_tokens": 14201,
+          "output_tokens": 353,
+          "pdf_digest": "bef06e40a11d53d8ad78ba6436ae912bc35777bec07b48c1a54417c8f8b5aea9",
+          "inspections": [
+            {
+              "role": "bill",
+              "page": 1,
+              "region": "bottom"
+            }
+          ],
+          "scores": {
+            "member": {
+              "state": "match",
+              "expected": "match",
+              "correct": true,
+              "page_check": true,
+              "observation": "FL60 lists TEST-MBI-0042, the same member ID as the encounter metadata.",
+              "pages": [
+                "bill:1"
+              ]
+            },
+            "disposition": {
+              "state": "match",
+              "expected": "match",
+              "correct": true,
+              "page_check": true,
+              "observation": "FL17 shows 01 (home). The discharge summary records discharge home on 3 November, and the reconciliation confirms no interfacility transfer.",
+              "pages": [
+                "bill:1",
+                "summary:1",
+                "summary:2"
+              ]
+            },
+            "replacement": {
+              "state": "original",
+              "expected": "original",
+              "correct": true,
+              "page_check": true,
+              "observation": "FL4 shows type of bill 0111, with frequency 1 rather than 7. FL64 is blank; an original DCN is not required for this check.",
+              "pages": [
+                "bill:1"
+              ]
+            },
+            "expense": {
+              "state": "conflict",
+              "expected": "conflict",
+              "correct": true,
+              "page_check": true,
+              "observation": "FL47 shows $11,785.00, which is $500.00 higher than the itemized invoice total of $11,285.00.",
+              "pages": [
+                "bill:1",
+                "bill:3"
+              ]
+            }
+          }
+        },
+        {
+          "case": "fep_assigned",
+          "model": "gpt-6.2-astra",
+          "seconds": 10.91,
+          "tool_calls": 1,
+          "input_tokens": 15390,
+          "cached_tokens": 6765,
+          "output_tokens": 233,
+          "pdf_digest": "6cd5e57aa91d3b4c774cc7a8c30c94ef5ea2cde7cecc1d4ad1db309af0fe0d70",
+          "inspections": [
+            {
+              "role": "records",
+              "page": 1,
+              "region": "bottom"
+            }
+          ],
+          "scores": {
+            "payee": {
+              "state": "hospital",
+              "expected": "hospital",
+              "correct": true,
+              "page_check": true,
+              "observation": "\u00a75D names Lantern Quay Hospital and shows \u201cSYNTHETIC TEST ATTESTATION\u201d on the assignment signature line, dated 11/04/2026. No currency or payment method is marked in \u00a75A\u2013B, and \u00a75C is blank.",
+              "pages": [
+                "records:1"
+              ]
+            },
+            "expense": {
+              "state": "match",
+              "expected": "match",
+              "correct": true,
+              "page_check": true,
+              "observation": "\u00a74 lists THB 158,050.00, matching the itemized invoice total of THB 158,050.00 after the THB 700.00 returned-supplies credit.",
+              "pages": [
+                "bill:1",
+                "records:1"
+              ]
+            }
+          }
+        },
+        {
+          "case": "fep_member",
+          "model": "gpt-6.2-astra",
+          "seconds": 13.3,
+          "tool_calls": 1,
+          "input_tokens": 15316,
+          "cached_tokens": 6728,
+          "output_tokens": 231,
+          "pdf_digest": "bfc6cbda2769d03734f951fa8019bcd62c080ac95defbf1d41cad2ed4f5589a4",
+          "inspections": [
+            {
+              "role": "records",
+              "page": 1,
+              "region": "bottom"
+            }
+          ],
+          "scores": {
+            "payee": {
+              "state": "member",
+              "expected": "member",
+              "correct": true,
+              "page_check": true,
+              "observation": "The member selected \u201cCurrency on Bills\u201d in \u00a75A and \u201cCheck\u201d in \u00a75B. The \u00a75C bank fields are blank, and \u00a75D has neither a provider name nor an assignment mark.",
+              "pages": [
+                "records:1"
+              ]
+            },
+            "expense": {
+              "state": "match",
+              "expected": "match",
+              "correct": true,
+              "page_check": true,
+              "observation": "For TH-IP-077, the \u00a74 submitted total and the itemized invoice total are both THB 158,050.00, net of the THB 700.00 returned-supplies credit.",
+              "pages": [
+                "bill:1",
+                "records:1"
+              ]
+            }
+          }
+        },
+        {
+          "case": "fep_unsigned",
+          "model": "gpt-6.2-astra",
+          "seconds": 10.55,
+          "tool_calls": 1,
+          "input_tokens": 15374,
+          "cached_tokens": 13391,
+          "output_tokens": 240,
+          "pdf_digest": "67b20a2ef08f27b4be28676194bf3ea212c2dcc00a48e44077e9fadae709269e",
+          "inspections": [
+            {
+              "role": "records",
+              "page": 1,
+              "region": "bottom"
+            }
+          ],
+          "scores": {
+            "payee": {
+              "state": "unsigned",
+              "expected": "unsigned",
+              "correct": true,
+              "page_check": true,
+              "observation": "\u00a75D names Lantern Quay Hospital and is dated 11/04/2026, but the assignment signature field is blank. The test attestation is in the separate claim signature field. No option is marked in \u00a75A\u2013B, and \u00a75C is blank.",
+              "pages": [
+                "records:1"
+              ]
+            },
+            "expense": {
+              "state": "match",
+              "expected": "match",
+              "correct": true,
+              "page_check": true,
+              "observation": "For TH-IP-077, the \u00a74 total of THB 158,050.00 matches the itemized invoice total of THB 158,050.00 after the THB 700.00 returned-supplies credit.",
+              "pages": [
+                "bill:1",
+                "records:1"
+              ]
+            }
+          }
+        },
+        {
+          "case": "fep_total",
+          "model": "gpt-6.2-astra",
+          "seconds": 10.0,
+          "tool_calls": 1,
+          "input_tokens": 15390,
+          "cached_tokens": 6765,
+          "output_tokens": 232,
+          "pdf_digest": "5c62c821847ed2bf21deaf2dd8c404d334ae10e13486e4120b54601357ba8d34",
+          "inspections": [
+            {
+              "role": "records",
+              "page": 1,
+              "region": "bottom"
+            }
+          ],
+          "scores": {
+            "payee": {
+              "state": "hospital",
+              "expected": "hospital",
+              "correct": true,
+              "page_check": true,
+              "observation": "\u00a75D names Lantern Quay Hospital and shows a synthetic test attestation on the assignment signature line, dated 11/04/2026. No currency or payment method is marked in \u00a75A\u2013B, and \u00a75C is blank.",
+              "pages": [
+                "records:1"
+              ]
+            },
+            "expense": {
+              "state": "conflict",
+              "expected": "conflict",
+              "correct": true,
+              "page_check": true,
+              "observation": "For TH-IP-077, \u00a74 lists THB 160,000.00, which exceeds the final itemized invoice total of THB 158,050.00 by THB 1,950.00.",
+              "pages": [
+                "bill:1",
+                "records:1"
+              ]
+            }
+          }
+        }
+      ]
+    }
+  },
+  "holdout": {
+    "single": {
+      "packets": 14,
+      "scored_fields": 51,
+      "states_correct": 51,
+      "states_and_required_pages": 51,
+      "median_seconds": 7.09,
+      "tool_calls": 0,
+      "input_tokens": 128278,
+      "output_tokens": 4034,
+      "observations": [
+        {
+          "case": "aia-th-cents",
+          "model": "gpt-6.2-astra",
+          "seconds": 7.68,
+          "tool_calls": 0,
+          "input_tokens": 15004,
+          "cached_tokens": 0,
+          "output_tokens": 358,
+          "pdf_digest": "81ba4290af4b77c7c2af11b2e03b273645d38ccd6cdb286f422624932b49bd48",
+          "inspections": [],
+          "scores": {
+            "admission": {
+              "state": "match",
+              "expected": "match",
+              "correct": true,
+              "page_check": true,
+              "observation": "The Part B admission number is AN-HO713, matching the encounter reference.",
+              "pages": [
+                "records:3",
+                "summary:1"
+              ]
+            },
+            "expense": {
+              "state": "conflict",
+              "expected": "conflict",
+              "correct": true,
+              "page_check": true,
+              "observation": "Part A claims THB 87,513.42, which is THB 13.42 more than the final bill total of THB 87,500.00.",
+              "pages": [
+                "bill:1",
+                "records:2"
+              ]
+            },
+            "consent": {
+              "state": "present",
+              "expected": "present",
+              "correct": true,
+              "page_check": true,
+              "observation": "The Part A patient consent line contains the typed mark \u201cN. Sample\u201d.",
+              "pages": [
+                "records:2"
+              ]
+            },
+            "certification": {
+              "state": "present",
+              "expected": "present",
+              "correct": true,
+              "page_check": true,
+              "observation": "The physician signature line in the separate Part B certification area contains the typed mark \u201cDr P. Example\u201d.",
+              "pages": [
+                "records:3"
+              ]
+            },
+            "letter": {
+              "state": "present",
+              "expected": "present",
+              "correct": true,
+              "page_check": true,
+              "observation": "A separate payer preauthorization letter, QA-AUTH-017, identifies encounter AN-HO713 and wrist fracture fixation.",
+              "pages": [
+                "letter:1"
+              ]
+            }
+          }
+        },
+        {
+          "case": "aia-en-id-decoy",
+          "model": "gpt-6.2-astra",
+          "seconds": 6.96,
+          "tool_calls": 0,
+          "input_tokens": 10546,
+          "cached_tokens": 0,
+          "output_tokens": 349,
+          "pdf_digest": "769fb661eb5a69c2f3f8ff5969da7927f93e425555138aa97a312b576bf4b764",
+          "inspections": [],
+          "scores": {
+            "admission": {
+              "state": "conflict",
+              "expected": "conflict",
+              "correct": true,
+              "page_check": true,
+              "observation": "Part B lists AN-HO825; the encounter reference is AN-HO852.",
+              "pages": [
+                "records:2",
+                "summary:1"
+              ]
+            },
+            "expense": {
+              "state": "match",
+              "expected": "match",
+              "correct": true,
+              "page_check": true,
+              "observation": "Part A claims THB 87,500.00, equal to the final bill total of THB 87,500.00.",
+              "pages": [
+                "bill:1",
+                "records:1"
+              ]
+            },
+            "consent": {
+              "state": "present",
+              "expected": "present",
+              "correct": true,
+              "page_check": true,
+              "observation": "The insured\u2019s consent line in Part A contains the typed entry \u201cN. Sample\u201d.",
+              "pages": [
+                "records:1"
+              ]
+            },
+            "certification": {
+              "state": "present",
+              "expected": "present",
+              "correct": true,
+              "page_check": true,
+              "observation": "The physician\u2019s signature line in the Part B certification area contains the typed entry \u201cDr P. Example\u201d.",
+              "pages": [
+                "records:2"
+              ]
+            },
+            "letter": {
+              "state": "present",
+              "expected": "present",
+              "correct": true,
+              "page_check": true,
+              "observation": "A separate payer preauthorization letter, QA-AUTH-017, identifies encounter AN-HO852.",
+              "pages": [
+                "letter:1"
+              ]
+            }
+          }
+        },
+        {
+          "case": "aia-th-aligned",
+          "model": "gpt-6.2-astra",
+          "seconds": 8.39,
+          "tool_calls": 0,
+          "input_tokens": 15004,
+          "cached_tokens": 0,
+          "output_tokens": 354,
+          "pdf_digest": "253e2ce9166a9bc1fa224f876ae225f2c19f7cc82741df12126f028c9edeaa79",
+          "inspections": [],
+          "scores": {
+            "admission": {
+              "state": "match",
+              "expected": "match",
+              "correct": true,
+              "page_check": true,
+              "observation": "The Part B admission number and the discharge summary encounter reference both read AN-7318.",
+              "pages": [
+                "records:3",
+                "summary:1"
+              ]
+            },
+            "expense": {
+              "state": "match",
+              "expected": "match",
+              "correct": true,
+              "page_check": true,
+              "observation": "Part A lists THB 87,500.00, matching the final hospital bill total of THB 87,500.00.",
+              "pages": [
+                "bill:1",
+                "records:2"
+              ]
+            },
+            "consent": {
+              "state": "present",
+              "expected": "present",
+              "correct": true,
+              "page_check": true,
+              "observation": "The Part A patient consent line contains the typed mark \u201cN. Sample\u201d.",
+              "pages": [
+                "records:2"
+              ]
+            },
+            "certification": {
+              "state": "present",
+              "expected": "present",
+              "correct": true,
+              "page_check": true,
+              "observation": "The physician\u2019s signature line in the separate Part B certification area contains the typed mark \u201cDr P. Example\u201d.",
+              "pages": [
+                "records:3"
+              ]
+            },
+            "letter": {
+              "state": "present",
+              "expected": "present",
+              "correct": true,
+              "page_check": true,
+              "observation": "A separate AIA Thailand preauthorization letter, QA-AUTH-017, identifies encounter AN-7318 and wrist fracture fixation.",
+              "pages": [
+                "letter:1"
+              ]
+            }
+          }
+        },
+        {
+          "case": "aia-en-ink",
+          "model": "gpt-6.2-astra",
+          "seconds": 6.85,
+          "tool_calls": 0,
+          "input_tokens": 10540,
+          "cached_tokens": 0,
+          "output_tokens": 335,
+          "pdf_digest": "d50789ebecbae457040b7d6abc8bd780167b725aa3cd1c51f42258fe0dcbe04e",
+          "inspections": [],
+          "scores": {
+            "admission": {
+              "state": "match",
+              "expected": "match",
+              "correct": true,
+              "page_check": true,
+              "observation": "The Part B admission number is AN-HO944, matching the encounter reference.",
+              "pages": [
+                "records:2"
+              ]
+            },
+            "expense": {
+              "state": "match",
+              "expected": "match",
+              "correct": true,
+              "page_check": true,
+              "observation": "Part A claims THB 87,500.00, equal to the final hospital bill total of THB 87,500.00.",
+              "pages": [
+                "bill:1",
+                "records:1"
+              ]
+            },
+            "consent": {
+              "state": "visual_review",
+              "expected": "visual_review",
+              "correct": true,
+              "page_check": true,
+              "observation": "A graphical ink mark is visible on the Part A insured consent line and requires personal verification.",
+              "pages": [
+                "records:1"
+              ]
+            },
+            "certification": {
+              "state": "present",
+              "expected": "present",
+              "correct": true,
+              "page_check": true,
+              "observation": "The Part B physician certification signature line contains the typed entry \u201cDr P. Example\u201d.",
+              "pages": [
+                "records:2"
+              ]
+            },
+            "letter": {
+              "state": "present",
+              "expected": "present",
+              "correct": true,
+              "page_check": true,
+              "observation": "A separate AIA Thailand preauthorization letter, QA-AUTH-017, identifies encounter AN-HO944.",
+              "pages": [
+                "letter:1"
+              ]
+            }
+          }
+        },
+        {
+          "case": "aia-th-clinician",
+          "model": "gpt-6.2-astra",
+          "seconds": 7.49,
+          "tool_calls": 0,
+          "input_tokens": 14999,
+          "cached_tokens": 0,
+          "output_tokens": 341,
+          "pdf_digest": "17a691ae494fb7c813f713c6c72a75f61f7aa104c3d2aa68d94dd5f8f08a644d",
+          "inspections": [],
+          "scores": {
+            "admission": {
+              "state": "match",
+              "expected": "match",
+              "correct": true,
+              "page_check": true,
+              "observation": "The Part B admission number is AN-HO519, matching the encounter reference.",
+              "pages": [
+                "records:3",
+                "summary:1"
+              ]
+            },
+            "expense": {
+              "state": "match",
+              "expected": "match",
+              "correct": true,
+              "page_check": true,
+              "observation": "Part A claims THB 87,500.00, equal to the final itemized bill total of THB 87,500.00.",
+              "pages": [
+                "bill:1",
+                "records:2"
+              ]
+            },
+            "consent": {
+              "state": "present",
+              "expected": "present",
+              "correct": true,
+              "page_check": true,
+              "observation": "The Part A patient consent line contains the typed mark \u201cN. Sample.\u201d",
+              "pages": [
+                "records:2"
+              ]
+            },
+            "certification": {
+              "state": "absent",
+              "expected": "absent",
+              "correct": true,
+              "page_check": true,
+              "observation": "The physician\u2019s signature line in the separate Part B certification area is blank.",
+              "pages": [
+                "records:3"
+              ]
+            },
+            "letter": {
+              "state": "present",
+              "expected": "present",
+              "correct": true,
+              "page_check": true,
+              "observation": "A separate payer preauthorization letter, QA-AUTH-017, identifies encounter AN-HO519.",
+              "pages": [
+                "letter:1"
+              ]
+            }
+          }
+        },
+        {
+          "case": "cms-member",
+          "model": "gpt-6.2-astra",
+          "seconds": 8.43,
+          "tool_calls": 0,
+          "input_tokens": 7161,
+          "cached_tokens": 0,
+          "output_tokens": 299,
+          "pdf_digest": "0b52580e4dd964ad8beca2da6c3f251d8dc2054bca8ef9bba5c4b0267763236c",
+          "inspections": [],
+          "scores": {
+            "member": {
+              "state": "conflict",
+              "expected": "conflict",
+              "correct": true,
+              "page_check": true,
+              "observation": "FL60 lists HM0130891; the encounter metadata lists HM0130871.",
+              "pages": [
+                "bill:1"
+              ]
+            },
+            "disposition": {
+              "state": "match",
+              "expected": "match",
+              "correct": true,
+              "page_check": true,
+              "observation": "FL17 code 01 (home) agrees with the discharge summary and reconciliation, which document discharge home without transfer.",
+              "pages": [
+                "bill:1",
+                "summary:1",
+                "summary:2"
+              ]
+            },
+            "replacement": {
+              "state": "original",
+              "expected": "original",
+              "correct": true,
+              "page_check": true,
+              "observation": "FL4 shows type of bill 0111 (frequency 1), not a frequency-7 replacement. FL64 is blank.",
+              "pages": [
+                "bill:1"
+              ]
+            },
+            "expense": {
+              "state": "match",
+              "expected": "match",
+              "correct": true,
+              "page_check": true,
+              "observation": "FL47 total charges and the final itemized invoice both total $12,345.67.",
+              "pages": [
+                "bill:1",
+                "bill:3"
+              ]
+            }
+          }
+        },
+        {
+          "case": "cms-cents",
+          "model": "gpt-6.2-astra",
+          "seconds": 7.22,
+          "tool_calls": 0,
+          "input_tokens": 7161,
+          "cached_tokens": 0,
+          "output_tokens": 311,
+          "pdf_digest": "6fdb638f602b9aed1755b6a4373f026fcde2e55bad11696101fa0bd48ed514b1",
+          "inspections": [],
+          "scores": {
+            "member": {
+              "state": "match",
+              "expected": "match",
+              "correct": true,
+              "page_check": true,
+              "observation": "FL60 lists HM0250134, matching the encounter member ID.",
+              "pages": [
+                "bill:1"
+              ]
+            },
+            "disposition": {
+              "state": "match",
+              "expected": "match",
+              "correct": true,
+              "page_check": true,
+              "observation": "FL17 code 01 means home. The discharge summary records discharge home, and the reconciliation confirms no interfacility transfer.",
+              "pages": [
+                "bill:1",
+                "summary:1",
+                "summary:2"
+              ]
+            },
+            "replacement": {
+              "state": "original",
+              "expected": "original",
+              "correct": true,
+              "page_check": true,
+              "observation": "FL4 shows type of bill 0111, with frequency 1 rather than replacement frequency 7. FL64 is blank.",
+              "pages": [
+                "bill:1"
+              ]
+            },
+            "expense": {
+              "state": "conflict",
+              "expected": "conflict",
+              "correct": true,
+              "page_check": true,
+              "observation": "The FL47 total is $12,345.78, which is $0.11 higher than the itemized invoice total of $12,345.67.",
+              "pages": [
+                "bill:1",
+                "bill:3"
+              ]
+            }
+          }
+        },
+        {
+          "case": "cms-reference-present",
+          "model": "gpt-6.2-astra",
+          "seconds": 6.73,
+          "tool_calls": 0,
+          "input_tokens": 7168,
+          "cached_tokens": 0,
+          "output_tokens": 302,
+          "pdf_digest": "0d094522bb1de35a57908ea91ae35f667108c58c5e48dacfd6febd52a24b3750",
+          "inspections": [],
+          "scores": {
+            "member": {
+              "state": "match",
+              "expected": "match",
+              "correct": true,
+              "page_check": true,
+              "observation": "FL60 lists HM0421756, matching the encounter member ID.",
+              "pages": [
+                "bill:1"
+              ]
+            },
+            "disposition": {
+              "state": "match",
+              "expected": "match",
+              "correct": true,
+              "page_check": true,
+              "observation": "FL17 shows 01 (home). The discharge summary records discharge home, and the reconciliation confirms no interfacility transfer.",
+              "pages": [
+                "bill:1",
+                "summary:1",
+                "summary:2"
+              ]
+            },
+            "replacement": {
+              "state": "present",
+              "expected": "present",
+              "correct": true,
+              "page_check": true,
+              "observation": "Type of bill 0117 has replacement frequency 7, and FL64 contains DCN 83944167021.",
+              "pages": [
+                "bill:1"
+              ]
+            },
+            "expense": {
+              "state": "match",
+              "expected": "match",
+              "correct": true,
+              "page_check": true,
+              "observation": "FL47 shows $12,345.67 in total charges, matching the itemized invoice total of $12,345.67.",
+              "pages": [
+                "bill:1",
+                "bill:3"
+              ]
+            }
+          }
+        },
+        {
+          "case": "cms-member-missing",
+          "model": "gpt-6.2-astra",
+          "seconds": 6.41,
+          "tool_calls": 0,
+          "input_tokens": 7156,
+          "cached_tokens": 0,
+          "output_tokens": 317,
+          "pdf_digest": "540f0dfe66edf9a042c858e27bcbf22094f69c93cba4926bfaa711b1d1fe5448",
+          "inspections": [],
+          "scores": {
+            "member": {
+              "state": "absent",
+              "expected": "absent",
+              "correct": true,
+              "page_check": true,
+              "observation": "FL60 is blank; it does not list the encounter member ID HM0492731.",
+              "pages": [
+                "bill:1"
+              ]
+            },
+            "disposition": {
+              "state": "match",
+              "expected": "match",
+              "correct": true,
+              "page_check": true,
+              "observation": "FL17 code 01 means home. The discharge summary documents discharge home, and the reconciliation confirms no interfacility transfer.",
+              "pages": [
+                "bill:1",
+                "summary:1",
+                "summary:2"
+              ]
+            },
+            "replacement": {
+              "state": "original",
+              "expected": "original",
+              "correct": true,
+              "page_check": true,
+              "observation": "FL4 shows type of bill 0111. The final digit is 1, not replacement frequency 7, so no original DCN is required in FL64.",
+              "pages": [
+                "bill:1"
+              ]
+            },
+            "expense": {
+              "state": "match",
+              "expected": "match",
+              "correct": true,
+              "page_check": true,
+              "observation": "FL47 total charges are $12,345.67, equal to the itemized invoice total of $12,345.67.",
+              "pages": [
+                "bill:1",
+                "bill:3"
+              ]
+            }
+          }
+        },
+        {
+          "case": "fep-wrong-provider",
+          "model": "gpt-6.2-astra",
+          "seconds": 5.48,
+          "tool_calls": 0,
+          "input_tokens": 6710,
+          "cached_tokens": 0,
+          "output_tokens": 215,
+          "pdf_digest": "a9d9cc0ee40915523362d98779868ddd67bb8518d694c2aad5f4383ac45294af",
+          "inspections": [],
+          "scores": {
+            "payee": {
+              "state": "other_provider",
+              "expected": "other_provider",
+              "correct": true,
+              "page_check": true,
+              "observation": "\u00a75D names Saffron Bay Rehabilitation, not the treating facility, Lantern Quay Hospital. The assignment signature field contains the test entry \u201cR. Sample\u201d; \u00a75A\u2013C show no member reimbursement election.",
+              "pages": [
+                "bill:1",
+                "records:1"
+              ]
+            },
+            "expense": {
+              "state": "match",
+              "expected": "match",
+              "correct": true,
+              "page_check": true,
+              "observation": "\u00a74 lists THB 158,050.00. The itemized invoice totals THB 158,050.00 after the THB 700.00 returned-supplies credit.",
+              "pages": [
+                "bill:1",
+                "records:1"
+              ]
+            }
+          }
+        },
+        {
+          "case": "fep-other-signature",
+          "model": "gpt-6.2-astra",
+          "seconds": 5.77,
+          "tool_calls": 0,
+          "input_tokens": 6720,
+          "cached_tokens": 0,
+          "output_tokens": 232,
+          "pdf_digest": "e64641616e41251a1b428b97239f1760da2e9dfe3b6ddf053140b3d78e1b5f8f",
+          "inspections": [],
+          "scores": {
+            "payee": {
+              "state": "unsigned",
+              "expected": "unsigned",
+              "correct": true,
+              "page_check": true,
+              "observation": "\u00a75D names Lantern Quay Hospital and is dated 11/04/2026, but the assignment signature box is blank. \u00a75A\u2013C show no member payment election. Neither the separate claim signature nor the page 2 training note is a mark in \u00a75D.",
+              "pages": [
+                "records:1",
+                "records:2"
+              ]
+            },
+            "expense": {
+              "state": "match",
+              "expected": "match",
+              "correct": true,
+              "page_check": true,
+              "observation": "\u00a74 lists THB 158,050.00 for one itemized bill. The final invoice totals THB 158,050.00 after the THB 700.00 returned-supplies credit.",
+              "pages": [
+                "bill:1",
+                "records:1"
+              ]
+            }
+          }
+        },
+        {
+          "case": "fep-cents",
+          "model": "gpt-6.2-astra",
+          "seconds": 5.25,
+          "tool_calls": 0,
+          "input_tokens": 6709,
+          "cached_tokens": 0,
+          "output_tokens": 190,
+          "pdf_digest": "874fa042c72bb158957658809732228f7d85206d5f8a639dac06b26e8dcbeb90",
+          "inspections": [],
+          "scores": {
+            "payee": {
+              "state": "hospital",
+              "expected": "hospital",
+              "correct": true,
+              "page_check": true,
+              "observation": "\u00a75D names Lantern Quay Hospital and shows \u201cR. Sample\u201d on the assignment signature line. No member reimbursement option is marked in \u00a75A\u2013B, and the \u00a75C bank fields are blank.",
+              "pages": [
+                "records:1"
+              ]
+            },
+            "expense": {
+              "state": "conflict",
+              "expected": "conflict",
+              "correct": true,
+              "page_check": true,
+              "observation": "\u00a74 claims THB 158,050.07, which exceeds the itemized invoice total of THB 158,050.00 by THB 0.07.",
+              "pages": [
+                "bill:1",
+                "records:1"
+              ]
+            }
+          }
+        },
+        {
+          "case": "fep-member-back-decoy",
+          "model": "gpt-6.2-astra",
+          "seconds": 9.93,
+          "tool_calls": 0,
+          "input_tokens": 6691,
+          "cached_tokens": 0,
+          "output_tokens": 220,
+          "pdf_digest": "50c510fcc19d2bd44f70e8a1df8d68a2fc127a5f236205ae56d380a08f4d77b9",
+          "inspections": [],
+          "scores": {
+            "payee": {
+              "state": "member",
+              "expected": "member",
+              "correct": true,
+              "page_check": true,
+              "observation": "\u00a75A marks \u201cCurrency on Bills\u201d and \u00a75B marks \u201cCheck\u201d for member reimbursement. \u00a75C and \u00a75D are blank. The Lantern Quay Hospital training note on the instructions page is not a provider assignment.",
+              "pages": [
+                "records:1",
+                "records:2"
+              ]
+            },
+            "expense": {
+              "state": "match",
+              "expected": "match",
+              "correct": true,
+              "page_check": true,
+              "observation": "\u00a74 lists THB 158,050.00, matching the itemized invoice total of THB 158,050.00 after the THB 700.00 returned-supplies credit.",
+              "pages": [
+                "bill:1",
+                "records:1"
+              ]
+            }
+          }
+        },
+        {
+          "case": "fep-aligned",
+          "model": "gpt-6.2-astra",
+          "seconds": 7.71,
+          "tool_calls": 0,
+          "input_tokens": 6709,
+          "cached_tokens": 0,
+          "output_tokens": 211,
+          "pdf_digest": "96bd8a069fdd85840a8f1c0682ab73efe4a9cbd52ff05f86b97fe093634b05d3",
+          "inspections": [],
+          "scores": {
+            "payee": {
+              "state": "hospital",
+              "expected": "hospital",
+              "correct": true,
+              "page_check": true,
+              "observation": "\u00a75D names Lantern Quay Hospital as payee and contains the assignment mark \u201cR. Sample,\u201d dated 11/04/2026. No member reimbursement option is marked in \u00a75A\u2013B, and \u00a75C is blank.",
+              "pages": [
+                "records:1"
+              ]
+            },
+            "expense": {
+              "state": "match",
+              "expected": "match",
+              "correct": true,
+              "page_check": true,
+              "observation": "The \u00a74 submitted total of THB 158,050.00 matches the itemized invoice total of THB 158,050.00 after the THB 700.00 returned-supplies credit.",
+              "pages": [
+                "bill:1",
+                "records:1"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    "agent": {
+      "packets": 14,
+      "scored_fields": 51,
+      "states_correct": 51,
+      "states_and_required_pages": 51,
+      "median_seconds": 10.69,
+      "tool_calls": 14,
+      "input_tokens": 284746,
+      "output_tokens": 4467,
+      "observations": [
+        {
+          "case": "aia-th-cents",
+          "model": "gpt-6.2-astra",
+          "seconds": 27.69,
+          "tool_calls": 1,
+          "input_tokens": 33014,
+          "cached_tokens": 15034,
+          "output_tokens": 385,
+          "pdf_digest": "81ba4290af4b77c7c2af11b2e03b273645d38ccd6cdb286f422624932b49bd48",
+          "inspections": [
+            {
+              "role": "records",
+              "page": 2,
+              "region": "full"
+            }
+          ],
+          "scores": {
+            "admission": {
+              "state": "match",
+              "expected": "match",
+              "correct": true,
+              "page_check": true,
+              "observation": "The Part B admission number is AN-HO713, matching the encounter reference.",
+              "pages": [
+                "records:3",
+                "summary:1"
+              ]
+            },
+            "expense": {
+              "state": "conflict",
+              "expected": "conflict",
+              "correct": true,
+              "page_check": true,
+              "observation": "Part A lists THB 87,513.42, which is THB 13.42 more than the final bill total of THB 87,500.00.",
+              "pages": [
+                "bill:1",
+                "records:2"
+              ]
+            },
+            "consent": {
+              "state": "present",
+              "expected": "present",
+              "correct": true,
+              "page_check": true,
+              "observation": "The Part A patient consent line contains the typed mark \u201cN. Sample\u201d.",
+              "pages": [
+                "records:2"
+              ]
+            },
+            "certification": {
+              "state": "present",
+              "expected": "present",
+              "correct": true,
+              "page_check": true,
+              "observation": "The physician\u2019s signature line in the separate Part B certification area contains the typed mark \u201cDr P. Example\u201d.",
+              "pages": [
+                "records:3"
+              ]
+            },
+            "letter": {
+              "state": "present",
+              "expected": "present",
+              "correct": true,
+              "page_check": true,
+              "observation": "AIA Thailand\u2019s separate preauthorization letter QA-AUTH-017 identifies encounter AN-HO713 and wrist fracture fixation.",
+              "pages": [
+                "letter:1"
+              ]
+            }
+          }
+        },
+        {
+          "case": "aia-en-id-decoy",
+          "model": "gpt-6.2-astra",
+          "seconds": 18.96,
+          "tool_calls": 1,
+          "input_tokens": 23068,
+          "cached_tokens": 10576,
+          "output_tokens": 376,
+          "pdf_digest": "769fb661eb5a69c2f3f8ff5969da7927f93e425555138aa97a312b576bf4b764",
+          "inspections": [
+            {
+              "role": "records",
+              "page": 2,
+              "region": "top"
+            }
+          ],
+          "scores": {
+            "admission": {
+              "state": "conflict",
+              "expected": "conflict",
+              "correct": true,
+              "page_check": true,
+              "observation": "Part B lists AN-HO825; the encounter reference is AN-HO852.",
+              "pages": [
+                "records:2",
+                "summary:1"
+              ]
+            },
+            "expense": {
+              "state": "match",
+              "expected": "match",
+              "correct": true,
+              "page_check": true,
+              "observation": "Part A claims THB 87,500.00, equal to the final hospital bill total of THB 87,500.00.",
+              "pages": [
+                "bill:1",
+                "records:1"
+              ]
+            },
+            "consent": {
+              "state": "present",
+              "expected": "present",
+              "correct": true,
+              "page_check": true,
+              "observation": "The insured consent line in Part A contains the typed mark \u201cN. Sample\u201d.",
+              "pages": [
+                "records:1"
+              ]
+            },
+            "certification": {
+              "state": "present",
+              "expected": "present",
+              "correct": true,
+              "page_check": true,
+              "observation": "The physician\u2019s signature line in the separate Part B certification area contains the typed mark \u201cDr P. Example\u201d.",
+              "pages": [
+                "records:2"
+              ]
+            },
+            "letter": {
+              "state": "present",
+              "expected": "present",
+              "correct": true,
+              "page_check": true,
+              "observation": "AIA Thailand\u2019s separate preauthorization letter QA-AUTH-017 identifies encounter AN-HO852.",
+              "pages": [
+                "letter:1"
+              ]
+            }
+          }
+        },
+        {
+          "case": "aia-th-aligned",
+          "model": "gpt-6.2-astra",
+          "seconds": 20.05,
+          "tool_calls": 1,
+          "input_tokens": 31984,
+          "cached_tokens": 15034,
+          "output_tokens": 398,
+          "pdf_digest": "253e2ce9166a9bc1fa224f876ae225f2c19f7cc82741df12126f028c9edeaa79",
+          "inspections": [
+            {
+              "role": "records",
+              "page": 2,
+              "region": "bottom"
+            }
+          ],
+          "scores": {
+            "admission": {
+              "state": "match",
+              "expected": "match",
+              "correct": true,
+              "page_check": true,
+              "observation": "Part B lists AN-7318 in the admission number field, matching encounter AN-7318 on the discharge summary.",
+              "pages": [
+                "records:3",
+                "summary:1"
+              ]
+            },
+            "expense": {
+              "state": "match",
+              "expected": "match",
+              "correct": true,
+              "page_check": true,
+              "observation": "Part A claims THB 87,500.00, equal to the final hospital bill total of THB 87,500.00.",
+              "pages": [
+                "bill:1",
+                "records:2"
+              ]
+            },
+            "consent": {
+              "state": "present",
+              "expected": "present",
+              "correct": true,
+              "page_check": true,
+              "observation": "The Part A patient consent line contains the typed entry \u201cN. Sample,\u201d dated 04 Nov 2026.",
+              "pages": [
+                "records:2"
+              ]
+            },
+            "certification": {
+              "state": "present",
+              "expected": "present",
+              "correct": true,
+              "page_check": true,
+              "observation": "The physician signature line in the separate Part B certification area contains the typed entry \u201cDr P. Example.\u201d",
+              "pages": [
+                "records:3"
+              ]
+            },
+            "letter": {
+              "state": "present",
+              "expected": "present",
+              "correct": true,
+              "page_check": true,
+              "observation": "A separate AIA Thailand (synthetic test) preauthorization letter, QA-AUTH-017, identifies encounter AN-7318 and wrist fracture fixation.",
+              "pages": [
+                "letter:1"
+              ]
+            }
+          }
+        },
+        {
+          "case": "aia-en-ink",
+          "model": "gpt-6.2-astra",
+          "seconds": 10.69,
+          "tool_calls": 1,
+          "input_tokens": 23056,
+          "cached_tokens": 10570,
+          "output_tokens": 379,
+          "pdf_digest": "d50789ebecbae457040b7d6abc8bd780167b725aa3cd1c51f42258fe0dcbe04e",
+          "inspections": [
+            {
+              "role": "records",
+              "page": 1,
+              "region": "bottom"
+            }
+          ],
+          "scores": {
+            "admission": {
+              "state": "match",
+              "expected": "match",
+              "correct": true,
+              "page_check": true,
+              "observation": "The Part B admission number is AN-HO944, matching the encounter reference.",
+              "pages": [
+                "records:2",
+                "summary:1"
+              ]
+            },
+            "expense": {
+              "state": "match",
+              "expected": "match",
+              "correct": true,
+              "page_check": true,
+              "observation": "Part A claims THB 87,500.00, equal to the final hospital bill total of THB 87,500.00.",
+              "pages": [
+                "bill:1",
+                "records:1"
+              ]
+            },
+            "consent": {
+              "state": "visual_review",
+              "expected": "visual_review",
+              "correct": true,
+              "page_check": true,
+              "observation": "A graphical ink mark appears on the Part A consent line labeled \u201cInsured\u201d and requires personal verification.",
+              "pages": [
+                "records:1"
+              ]
+            },
+            "certification": {
+              "state": "present",
+              "expected": "present",
+              "correct": true,
+              "page_check": true,
+              "observation": "The physician\u2019s signature line in the separate Part B certification area contains the typed entry \u201cDr P. Example\u201d.",
+              "pages": [
+                "records:2"
+              ]
+            },
+            "letter": {
+              "state": "present",
+              "expected": "present",
+              "correct": true,
+              "page_check": true,
+              "observation": "A separate payer preauthorization letter, QA-AUTH-017, identifies encounter AN-HO944.",
+              "pages": [
+                "letter:1"
+              ]
+            }
+          }
+        },
+        {
+          "case": "aia-th-clinician",
+          "model": "gpt-6.2-astra",
+          "seconds": 27.61,
+          "tool_calls": 1,
+          "input_tokens": 31974,
+          "cached_tokens": 15029,
+          "output_tokens": 382,
+          "pdf_digest": "17a691ae494fb7c813f713c6c72a75f61f7aa104c3d2aa68d94dd5f8f08a644d",
+          "inspections": [
+            {
+              "role": "records",
+              "page": 3,
+              "region": "bottom"
+            }
+          ],
+          "scores": {
+            "admission": {
+              "state": "match",
+              "expected": "match",
+              "correct": true,
+              "page_check": true,
+              "observation": "The Part B admission number is AN-HO519, identical to the encounter reference.",
+              "pages": [
+                "records:3",
+                "summary:1"
+              ]
+            },
+            "expense": {
+              "state": "match",
+              "expected": "match",
+              "correct": true,
+              "page_check": true,
+              "observation": "Part A lists THB 87,500.00 in claimed expenses, equal to the final bill total of THB 87,500.00.",
+              "pages": [
+                "bill:1",
+                "records:2"
+              ]
+            },
+            "consent": {
+              "state": "present",
+              "expected": "present",
+              "correct": true,
+              "page_check": true,
+              "observation": "The Part A patient consent line contains the typed mark \u201cN. Sample.\u201d",
+              "pages": [
+                "records:2"
+              ]
+            },
+            "certification": {
+              "state": "absent",
+              "expected": "absent",
+              "correct": true,
+              "page_check": true,
+              "observation": "The Part B physician\u2019s signature line is blank, although the specialty, license and date fields are filled.",
+              "pages": [
+                "records:3"
+              ]
+            },
+            "letter": {
+              "state": "present",
+              "expected": "present",
+              "correct": true,
+              "page_check": true,
+              "observation": "A separate payer preauthorization letter, QA-AUTH-017, identifies member T-HOLD530964 and encounter AN-HO519.",
+              "pages": [
+                "letter:1"
+              ]
+            }
+          }
+        },
+        {
+          "case": "cms-member",
+          "model": "gpt-6.2-astra",
+          "seconds": 10.94,
+          "tool_calls": 1,
+          "input_tokens": 16242,
+          "cached_tokens": 7191,
+          "output_tokens": 343,
+          "pdf_digest": "0b52580e4dd964ad8beca2da6c3f251d8dc2054bca8ef9bba5c4b0267763236c",
+          "inspections": [
+            {
+              "role": "bill",
+              "page": 1,
+              "region": "bottom"
+            }
+          ],
+          "scores": {
+            "member": {
+              "state": "conflict",
+              "expected": "conflict",
+              "correct": true,
+              "page_check": true,
+              "observation": "FL60 lists HM0130891; the encounter metadata lists HM0130871.",
+              "pages": [
+                "bill:1"
+              ]
+            },
+            "disposition": {
+              "state": "match",
+              "expected": "match",
+              "correct": true,
+              "page_check": true,
+              "observation": "FL17 shows 01 (home). The discharge summary documents discharge home, and the reconciliation confirms no interfacility transfer.",
+              "pages": [
+                "bill:1",
+                "summary:1",
+                "summary:2"
+              ]
+            },
+            "replacement": {
+              "state": "original",
+              "expected": "original",
+              "correct": true,
+              "page_check": true,
+              "observation": "FL4 shows type of bill 0111, with frequency 1 rather than 7. FL64 is blank; an original DCN is not required for this check.",
+              "pages": [
+                "bill:1"
+              ]
+            },
+            "expense": {
+              "state": "match",
+              "expected": "match",
+              "correct": true,
+              "page_check": true,
+              "observation": "FL47 total charges are $12,345.67, equal to the itemized invoice total of $12,345.67.",
+              "pages": [
+                "bill:1",
+                "bill:3"
+              ]
+            }
+          }
+        },
+        {
+          "case": "cms-cents",
+          "model": "gpt-6.2-astra",
+          "seconds": 9.76,
+          "tool_calls": 1,
+          "input_tokens": 16242,
+          "cached_tokens": 7191,
+          "output_tokens": 338,
+          "pdf_digest": "6fdb638f602b9aed1755b6a4373f026fcde2e55bad11696101fa0bd48ed514b1",
+          "inspections": [
+            {
+              "role": "bill",
+              "page": 1,
+              "region": "bottom"
+            }
+          ],
+          "scores": {
+            "member": {
+              "state": "match",
+              "expected": "match",
+              "correct": true,
+              "page_check": true,
+              "observation": "FL60 lists HM0250134, identical to the encounter member ID.",
+              "pages": [
+                "bill:1"
+              ]
+            },
+            "disposition": {
+              "state": "match",
+              "expected": "match",
+              "correct": true,
+              "page_check": true,
+              "observation": "FL17 is 01 (home). The discharge summary records discharge home, and the reconciliation confirms no interfacility transfer.",
+              "pages": [
+                "bill:1",
+                "summary:1",
+                "summary:2"
+              ]
+            },
+            "replacement": {
+              "state": "original",
+              "expected": "original",
+              "correct": true,
+              "page_check": true,
+              "observation": "FL4 shows type of bill 0111, with frequency 1 rather than replacement frequency 7. FL64 is blank.",
+              "pages": [
+                "bill:1"
+              ]
+            },
+            "expense": {
+              "state": "conflict",
+              "expected": "conflict",
+              "correct": true,
+              "page_check": true,
+              "observation": "The FL47 total is $12,345.78, which is $0.11 higher than the itemized invoice total of $12,345.67.",
+              "pages": [
+                "bill:1",
+                "bill:3"
+              ]
+            }
+          }
+        },
+        {
+          "case": "cms-reference-present",
+          "model": "gpt-6.2-astra",
+          "seconds": 10.4,
+          "tool_calls": 1,
+          "input_tokens": 16256,
+          "cached_tokens": 7198,
+          "output_tokens": 340,
+          "pdf_digest": "0d094522bb1de35a57908ea91ae35f667108c58c5e48dacfd6febd52a24b3750",
+          "inspections": [
+            {
+              "role": "bill",
+              "page": 1,
+              "region": "bottom"
+            }
+          ],
+          "scores": {
+            "member": {
+              "state": "match",
+              "expected": "match",
+              "correct": true,
+              "page_check": true,
+              "observation": "FL60 lists HM0421756, the same member ID as the encounter metadata.",
+              "pages": [
+                "bill:1"
+              ]
+            },
+            "disposition": {
+              "state": "match",
+              "expected": "match",
+              "correct": true,
+              "page_check": true,
+              "observation": "FL17 shows 01 (home). The discharge summary records discharge home on November 3, and the reconciliation confirms no interfacility transfer.",
+              "pages": [
+                "bill:1",
+                "summary:1",
+                "summary:2"
+              ]
+            },
+            "replacement": {
+              "state": "present",
+              "expected": "present",
+              "correct": true,
+              "page_check": true,
+              "observation": "FL4 shows type of bill 0117 (replacement frequency 7), and FL64 contains original DCN 83944167021.",
+              "pages": [
+                "bill:1"
+              ]
+            },
+            "expense": {
+              "state": "match",
+              "expected": "match",
+              "correct": true,
+              "page_check": true,
+              "observation": "FL47 shows total charges of $12,345.67, equal to the sum of the five charges on the final itemized invoice.",
+              "pages": [
+                "bill:1",
+                "bill:3"
+              ]
+            }
+          }
+        },
+        {
+          "case": "cms-member-missing",
+          "model": "gpt-6.2-astra",
+          "seconds": 10.19,
+          "tool_calls": 1,
+          "input_tokens": 16232,
+          "cached_tokens": 7186,
+          "output_tokens": 345,
+          "pdf_digest": "540f0dfe66edf9a042c858e27bcbf22094f69c93cba4926bfaa711b1d1fe5448",
+          "inspections": [
+            {
+              "role": "bill",
+              "page": 1,
+              "region": "bottom"
+            }
+          ],
+          "scores": {
+            "member": {
+              "state": "absent",
+              "expected": "absent",
+              "correct": true,
+              "page_check": true,
+              "observation": "FL60 is blank; the encounter member ID HM0492731 is not entered in that box.",
+              "pages": [
+                "bill:1"
+              ]
+            },
+            "disposition": {
+              "state": "match",
+              "expected": "match",
+              "correct": true,
+              "page_check": true,
+              "observation": "FL17 shows 01 (home). The discharge summary records discharge home on November 3, and the reconciliation confirms no interfacility transfer.",
+              "pages": [
+                "bill:1",
+                "summary:1",
+                "summary:2"
+              ]
+            },
+            "replacement": {
+              "state": "original",
+              "expected": "original",
+              "correct": true,
+              "page_check": true,
+              "observation": "FL4 shows type of bill 0111. The frequency digit is 1, not 7, so no original DCN is required in FL64.",
+              "pages": [
+                "bill:1"
+              ]
+            },
+            "expense": {
+              "state": "match",
+              "expected": "match",
+              "correct": true,
+              "page_check": true,
+              "observation": "FL47 totals $12,345.67, equal to the itemized invoice total of $12,345.67.",
+              "pages": [
+                "bill:1",
+                "bill:3"
+              ]
+            }
+          }
+        },
+        {
+          "case": "fep-wrong-provider",
+          "model": "gpt-6.2-astra",
+          "seconds": 10.37,
+          "tool_calls": 1,
+          "input_tokens": 15340,
+          "cached_tokens": 6740,
+          "output_tokens": 253,
+          "pdf_digest": "a9d9cc0ee40915523362d98779868ddd67bb8518d694c2aad5f4383ac45294af",
+          "inspections": [
+            {
+              "role": "records",
+              "page": 1,
+              "region": "bottom"
+            }
+          ],
+          "scores": {
+            "payee": {
+              "state": "other_provider",
+              "expected": "other_provider",
+              "correct": true,
+              "page_check": true,
+              "observation": "\u00a75D names Saffron Bay Rehabilitation, not the treating facility, Lantern Quay Hospital. The assignment signature field contains the visible entry \u201cR. Sample,\u201d dated 11/04/2026. No member reimbursement option is marked in \u00a7\u00a75A\u2013B, and \u00a75C is blank.",
+              "pages": [
+                "bill:1",
+                "records:1"
+              ]
+            },
+            "expense": {
+              "state": "match",
+              "expected": "match",
+              "correct": true,
+              "page_check": true,
+              "observation": "The \u00a74 submitted total of THB 158,050.00 equals the itemized invoice total of THB 158,050.00 after the THB 700.00 returned-supplies credit.",
+              "pages": [
+                "bill:1",
+                "records:1"
+              ]
+            }
+          }
+        },
+        {
+          "case": "fep-other-signature",
+          "model": "gpt-6.2-astra",
+          "seconds": 10.69,
+          "tool_calls": 1,
+          "input_tokens": 15360,
+          "cached_tokens": 6750,
+          "output_tokens": 230,
+          "pdf_digest": "e64641616e41251a1b428b97239f1760da2e9dfe3b6ddf053140b3d78e1b5f8f",
+          "inspections": [
+            {
+              "role": "records",
+              "page": 1,
+              "region": "bottom"
+            }
+          ],
+          "scores": {
+            "payee": {
+              "state": "unsigned",
+              "expected": "unsigned",
+              "correct": true,
+              "page_check": true,
+              "observation": "\u00a75D names Lantern Quay Hospital and is dated 11/04/2026, but its assignment signature field is blank. \u00a7\u00a75A\u2013C show no member reimbursement election. The separate claim signature and the page 2 training note are outside \u00a75D.",
+              "pages": [
+                "records:1",
+                "records:2"
+              ]
+            },
+            "expense": {
+              "state": "match",
+              "expected": "match",
+              "correct": true,
+              "page_check": true,
+              "observation": "\u00a74 claims THB 158,050.00 for one bill. The itemized invoice totals THB 158,050.00 after the THB 700.00 returned-supplies credit.",
+              "pages": [
+                "bill:1",
+                "records:1"
+              ]
+            }
+          }
+        },
+        {
+          "case": "fep-cents",
+          "model": "gpt-6.2-astra",
+          "seconds": 14.84,
+          "tool_calls": 1,
+          "input_tokens": 15338,
+          "cached_tokens": 6739,
+          "output_tokens": 222,
+          "pdf_digest": "874fa042c72bb158957658809732228f7d85206d5f8a639dac06b26e8dcbeb90",
+          "inspections": [
+            {
+              "role": "records",
+              "page": 1,
+              "region": "bottom"
+            }
+          ],
+          "scores": {
+            "payee": {
+              "state": "hospital",
+              "expected": "hospital",
+              "correct": true,
+              "page_check": true,
+              "observation": "\u00a75D names Lantern Quay Hospital and shows \u201cR. Sample\u201d on the assignment signature line, dated 11/04/2026. No member reimbursement option is marked in \u00a75A\u2013B, and \u00a75C is blank.",
+              "pages": [
+                "records:1"
+              ]
+            },
+            "expense": {
+              "state": "conflict",
+              "expected": "conflict",
+              "correct": true,
+              "page_check": true,
+              "observation": "\u00a74 lists THB 158,050.07, which exceeds the itemized invoice total of THB 158,050.00 by THB 0.07.",
+              "pages": [
+                "bill:1",
+                "records:1"
+              ]
+            }
+          }
+        },
+        {
+          "case": "fep-member-back-decoy",
+          "model": "gpt-6.2-astra",
+          "seconds": 10.34,
+          "tool_calls": 1,
+          "input_tokens": 15302,
+          "cached_tokens": 6721,
+          "output_tokens": 258,
+          "pdf_digest": "50c510fcc19d2bd44f70e8a1df8d68a2fc127a5f236205ae56d380a08f4d77b9",
+          "inspections": [
+            {
+              "role": "records",
+              "page": 1,
+              "region": "bottom"
+            }
+          ],
+          "scores": {
+            "payee": {
+              "state": "member",
+              "expected": "member",
+              "correct": true,
+              "page_check": true,
+              "observation": "\u00a75A marks \u201cCurrency on Bills\u201d and \u00a75B marks \u201cCheck\u201d for member reimbursement. \u00a75C is blank, and \u00a75D has neither a provider name nor an assignment mark. The training note naming Lantern Quay Hospital on page 2 is outside the assignment box.",
+              "pages": [
+                "records:1",
+                "records:2"
+              ]
+            },
+            "expense": {
+              "state": "match",
+              "expected": "match",
+              "correct": true,
+              "page_check": true,
+              "observation": "\u00a74 lists THB 158,050.00 for one bill. The itemized invoice totals THB 158,050.00 after the THB 700.00 returned-supplies credit.",
+              "pages": [
+                "bill:1",
+                "records:1"
+              ]
+            }
+          }
+        },
+        {
+          "case": "fep-aligned",
+          "model": "gpt-6.2-astra",
+          "seconds": 10.28,
+          "tool_calls": 1,
+          "input_tokens": 15338,
+          "cached_tokens": 6739,
+          "output_tokens": 218,
+          "pdf_digest": "96bd8a069fdd85840a8f1c0682ab73efe4a9cbd52ff05f86b97fe093634b05d3",
+          "inspections": [
+            {
+              "role": "records",
+              "page": 1,
+              "region": "bottom"
+            }
+          ],
+          "scores": {
+            "payee": {
+              "state": "hospital",
+              "expected": "hospital",
+              "correct": true,
+              "page_check": true,
+              "observation": "\u00a75D names Lantern Quay Hospital and shows \u201cR. Sample\u201d in the assignment signature field, dated 11/04/2026. No member reimbursement option is marked in \u00a75A\u2013B, and \u00a75C is blank.",
+              "pages": [
+                "records:1"
+              ]
+            },
+            "expense": {
+              "state": "match",
+              "expected": "match",
+              "correct": true,
+              "page_check": true,
+              "observation": "\u00a74 lists THB 158,050.00, equal to the itemized invoice total after the THB 700.00 returned-supplies credit.",
+              "pages": [
+                "bill:1",
+                "records:1"
+              ]
+            }
+          }
+        }
+      ]
+    }
+  },
+  "stress": {
+    "single": {
+      "packets": 5,
+      "scored_fields": 6,
+      "states_correct": 6,
+      "states_and_required_pages": 6,
+      "median_seconds": 7.54,
+      "tool_calls": 0,
+      "input_tokens": 52504,
+      "output_tokens": 1427,
+      "observations": [
+        {
+          "case": "missing-independent-bill",
+          "model": "gpt-6.2-astra",
+          "seconds": 4.82,
+          "tool_calls": 0,
+          "input_tokens": 6424,
+          "cached_tokens": 0,
+          "output_tokens": 173,
+          "pdf_digest": "69c9a03c27c44826b3ee797a3489b3ac26ce3c5861f48e9b9766d8a0d4181ec1",
+          "inspections": [],
+          "scores": {
+            "expense": {
+              "state": "unknown",
+              "expected": "unknown",
+              "correct": true,
+              "page_check": true,
+              "observation": "\u00a74 lists THB 158,050.00 and one itemized bill, but no independent itemized invoice was supplied for comparison.",
+              "pages": [
+                "records:1"
+              ]
+            }
+          }
+        },
+        {
+          "case": "missing-invoice-annex",
+          "model": "gpt-6.2-astra",
+          "seconds": 7.13,
+          "tool_calls": 0,
+          "input_tokens": 6898,
+          "cached_tokens": 0,
+          "output_tokens": 309,
+          "pdf_digest": "e1f923c9fcb92a4e32f0c3858ad5c8672384b482d331dad06f466e85a8a77549",
+          "inspections": [],
+          "scores": {
+            "expense": {
+              "state": "unknown",
+              "expected": "unknown",
+              "correct": true,
+              "page_check": true,
+              "observation": "FL47 totals $11,285.00. The independent register lists services but no dollar amounts, so the billed total cannot be verified.",
+              "pages": [
+                "bill:1",
+                "records:1"
+              ]
+            }
+          }
+        },
+        {
+          "case": "contradictory-payees",
+          "model": "gpt-6.2-astra",
+          "seconds": 7.84,
+          "tool_calls": 0,
+          "input_tokens": 11821,
+          "cached_tokens": 0,
+          "output_tokens": 251,
+          "pdf_digest": "a767bd15ae50fdefaeb4bf08824f09e630efafba221ff226993b4dbf98656274",
+          "inspections": [],
+          "scores": {
+            "payee": {
+              "state": "unknown",
+              "expected": "unknown",
+              "correct": true,
+              "page_check": true,
+              "observation": "Page 1 names Lantern Quay Hospital in \u00a75D and shows a dated test mark on the assignment line. Page 3 instead selects \u201cCurrency on Bills\u201d and \u201cCheck\u201d in \u00a75A\u2013B for member reimbursement and leaves \u00a75D blank. Both forms are dated 11/04/2026; neither identifies which election controls.",
+              "pages": [
+                "records:1",
+                "records:3"
+              ]
+            }
+          }
+        },
+        {
+          "case": "missing-physician-page",
+          "model": "gpt-6.2-astra",
+          "seconds": 10.09,
+          "tool_calls": 0,
+          "input_tokens": 11040,
+          "cached_tokens": 0,
+          "output_tokens": 338,
+          "pdf_digest": "fe3886d2f21fe9f6c1f054b57dd3a2508ff0da9d78f8ff26227b0610019f19a5",
+          "inspections": [],
+          "scores": {
+            "admission": {
+              "state": "unknown",
+              "expected": "unknown",
+              "correct": true,
+              "page_check": true,
+              "observation": "The encounter reference is AN-QA042. No Part B admission-number field is supplied for comparison.",
+              "pages": [
+                "records:2",
+                "records:3"
+              ]
+            },
+            "certification": {
+              "state": "unknown",
+              "expected": "unknown",
+              "correct": true,
+              "page_check": true,
+              "observation": "The visible \u201cFor Physician\u201d section is on Part A. No separate Part B certification area is supplied to inspect for a mark.",
+              "pages": [
+                "records:2"
+              ]
+            }
+          }
+        },
+        {
+          "case": "image-only-claimed-expense",
+          "model": "gpt-6.2-astra",
+          "seconds": 7.54,
+          "tool_calls": 0,
+          "input_tokens": 16321,
+          "cached_tokens": 0,
+          "output_tokens": 356,
+          "pdf_digest": "69ccd1fe2e2cffa5c28e8fe71a001b5fb1c2a31e3b8de1c1f7de504948f90b3c",
+          "inspections": [],
+          "scores": {
+            "expense": {
+              "state": "conflict",
+              "expected": "conflict",
+              "correct": true,
+              "page_check": true,
+              "observation": "Part A claims THB 92,750.00, which exceeds the final bill total of THB 87,500.00 by THB 5,250.00.",
+              "pages": [
+                "bill:1",
+                "records:2"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    "agent": {
+      "packets": 5,
+      "scored_fields": 6,
+      "states_correct": 6,
+      "states_and_required_pages": 6,
+      "median_seconds": 12.86,
+      "tool_calls": 5,
+      "input_tokens": 116758,
+      "output_tokens": 1585,
+      "observations": [
+        {
+          "case": "missing-independent-bill",
+          "model": "gpt-6.2-astra",
+          "seconds": 12.86,
+          "tool_calls": 1,
+          "input_tokens": 14768,
+          "cached_tokens": 6454,
+          "output_tokens": 202,
+          "pdf_digest": "69c9a03c27c44826b3ee797a3489b3ac26ce3c5861f48e9b9766d8a0d4181ec1",
+          "inspections": [
+            {
+              "role": "records",
+              "page": 1,
+              "region": "bottom"
+            }
+          ],
+          "scores": {
+            "expense": {
+              "state": "unknown",
+              "expected": "unknown",
+              "correct": true,
+              "page_check": true,
+              "observation": "\u00a74 lists THB 158,050.00 and one itemized bill, but no independent itemized invoice was supplied to verify the total.",
+              "pages": [
+                "records:1"
+              ]
+            }
+          }
+        },
+        {
+          "case": "missing-invoice-annex",
+          "model": "gpt-6.2-astra",
+          "seconds": 13.51,
+          "tool_calls": 1,
+          "input_tokens": 16724,
+          "cached_tokens": 6928,
+          "output_tokens": 349,
+          "pdf_digest": "e1f923c9fcb92a4e32f0c3858ad5c8672384b482d331dad06f466e85a8a77549",
+          "inspections": [
+            {
+              "role": "records",
+              "page": 1,
+              "region": "full"
+            }
+          ],
+          "scores": {
+            "expense": {
+              "state": "unknown",
+              "expected": "unknown",
+              "correct": true,
+              "page_check": true,
+              "observation": "FL47 totals $11,285.00. The independent register lists services but no dollar amounts, so the billed total cannot be verified against it.",
+              "pages": [
+                "bill:1",
+                "records:1"
+              ]
+            }
+          }
+        },
+        {
+          "case": "contradictory-payees",
+          "model": "gpt-6.2-astra",
+          "seconds": 12.55,
+          "tool_calls": 1,
+          "input_tokens": 25562,
+          "cached_tokens": 11851,
+          "output_tokens": 246,
+          "pdf_digest": "a767bd15ae50fdefaeb4bf08824f09e630efafba221ff226993b4dbf98656274",
+          "inspections": [
+            {
+              "role": "records",
+              "page": 3,
+              "region": "bottom"
+            }
+          ],
+          "scores": {
+            "payee": {
+              "state": "unknown",
+              "expected": "unknown",
+              "correct": true,
+              "page_check": true,
+              "observation": "Page 1 names Lantern Quay Hospital in \u00a75D and has a dated test mark on the assignment line. Page 3 instead selects \u201cCurrency on Bills\u201d and \u201cCheck\u201d in \u00a75A\u2013B for member reimbursement and leaves \u00a75D blank. Both forms are dated 11/04/2026; neither identifies which election controls.",
+              "pages": [
+                "records:1",
+                "records:3"
+              ]
+            }
+          }
+        },
+        {
+          "case": "missing-physician-page",
+          "model": "gpt-6.2-astra",
+          "seconds": 11.17,
+          "tool_calls": 1,
+          "input_tokens": 25086,
+          "cached_tokens": 11070,
+          "output_tokens": 392,
+          "pdf_digest": "fe3886d2f21fe9f6c1f054b57dd3a2508ff0da9d78f8ff26227b0610019f19a5",
+          "inspections": [
+            {
+              "role": "records",
+              "page": 3,
+              "region": "full"
+            }
+          ],
+          "scores": {
+            "admission": {
+              "state": "unknown",
+              "expected": "unknown",
+              "correct": true,
+              "page_check": true,
+              "observation": "The hospital record lists encounter AN-QA042, but Part B was not supplied. Its admission number cannot be compared.",
+              "pages": [
+                "records:3"
+              ]
+            },
+            "certification": {
+              "state": "unknown",
+              "expected": "unknown",
+              "correct": true,
+              "page_check": true,
+              "observation": "\u201cQA CLINICIAN\u201d appears in the physician section on Part A. The separate Part B certification area was not supplied, so its mark cannot be assessed.",
+              "pages": [
+                "records:2"
+              ]
+            }
+          }
+        },
+        {
+          "case": "image-only-claimed-expense",
+          "model": "gpt-6.2-astra",
+          "seconds": 17.39,
+          "tool_calls": 1,
+          "input_tokens": 34618,
+          "cached_tokens": 16351,
+          "output_tokens": 396,
+          "pdf_digest": "69ccd1fe2e2cffa5c28e8fe71a001b5fb1c2a31e3b8de1c1f7de504948f90b3c",
+          "inspections": [
+            {
+              "role": "records",
+              "page": 2,
+              "region": "top"
+            }
+          ],
+          "scores": {
+            "expense": {
+              "state": "conflict",
+              "expected": "conflict",
+              "correct": true,
+              "page_check": true,
+              "observation": "Part A claims THB 92,750.00, which exceeds the final bill total of THB 87,500.00 by THB 5,250.00.",
+              "pages": [
+                "bill:1",
+                "records:2"
+              ]
+            }
+          }
+        }
+      ]
+    }
+  }
+}

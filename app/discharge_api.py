@@ -11,6 +11,7 @@ from openai import APIError, OpenAI
 from pydantic import BaseModel, ConfigDict, Field
 
 from app import discharge_store as store
+from app import payer_ai_reader as ai_reader
 from app.case_workflow import validate_attachment
 from app.workspace_http_common import _actor, _pdf, _read_upload, _revision, accept_files, ocr_service_error
 
@@ -53,6 +54,7 @@ class Summary(BaseModel):
 
 
 class Detail(Summary):
+    ai_review_enabled: bool = Field(default_factory=ai_reader.enabled)
     facility: str | None = None
     as_of: str | None = None
     prior_case_id: str | None
@@ -61,6 +63,7 @@ class Detail(Summary):
     source_reported_patient_share_minor: int | None = None
     payable_minor: int | None = None
     findings: list[dict]
+    checks: list[dict] = Field(default_factory=list)
     sources: list[dict]
     history: list[dict]
     reviewer: str | None
@@ -200,6 +203,24 @@ def sample_bill(request: Request, ident: str):
     return _pdf(raw, f"{ident}-corrected-bill.pdf")
 
 
+def _screen_metadata(case):
+    return {
+        k: case[k]
+        for k in (
+            "id",
+            "member",
+            "encounter",
+            "procedure",
+            "admission_date",
+            "discharge_date",
+            "insurer",
+            "facility",
+            "as_of",
+        )
+        if case.get(k) is not None
+    }
+
+
 @router.post("/{ident}/documents", response_model=Detail, dependencies=[Depends(accept_files("bill", "summary", "letter", "records", "file"))])
 def documents(
     request: Request,
@@ -234,27 +255,55 @@ def documents(
         new_raw, new_names = _files(uploads)
     raw.update(new_raw)
     names.update(new_names)
-    meta = {
-        k: case[k]
-        for k in (
-            "id",
-            "member",
-            "encounter",
-            "procedure",
-            "admission_date",
-            "discharge_date",
-            "insurer",
-            "facility",
-            "as_of",
-        )
-        if case.get(k) is not None
-    }
+    meta = _screen_metadata(case)
     if as_of:
         meta["as_of"] = as_of.isoformat()
     elif os.getenv("WORKSPACE_AUTH_MODE", "staff") != "local":
         meta["as_of"] = date.today().isoformat()
     result = _evaluate(meta, raw, names, ocr, case.get("ocr_pages"))
     return store.replace(dsn, ident, base, result, raw, names)
+
+
+async def _no_recheck_inputs(request: Request):
+    async for chunk in request.stream():
+        if chunk:
+            raise HTTPException(422, "Rechecking uses the saved originals. Use document correction to upload a file.")
+
+
+@router.post("/{ident}/recheck", response_model=Detail, dependencies=[Depends(_no_recheck_inputs)])
+def recheck(request: Request, ident: str, if_match: Match = None):
+    dsn, base = request.app.state.dsn, _revision(if_match)
+    case, raw, names = store.snapshot(dsn, ident, base)
+    if case["status"] != "needs_review":
+        raise HTTPException(409, "Only the current discharge revision held for investigation can be rechecked.")
+    result = _evaluate(_screen_metadata(case), raw, names, False, case.get("ocr_pages"))
+    if case.get("sample_bill_available"):
+        result["sample_bill_available"] = True
+    return store.replace(dsn, ident, base, result, raw, names, recheck=True)
+
+
+@router.post("/{ident}/second-read", response_model=ai_reader.SecondReadResponse)
+def second_read(request: Request, response: Response, ident: str, options: ai_reader.SecondReadRequest, if_match: Match = None):
+    base = _revision(if_match)
+    if not options.confirmed:
+        raise HTTPException(422, "Confirm sending this revision’s original PDFs for a provisional AI second read.")
+    if not ai_reader.enabled():
+        raise HTTPException(503, "AI second read is disabled or unavailable on this installation.")
+    dsn = request.app.state.dsn
+    case, raw, _ = store.snapshot(dsn, ident, base)
+    try:
+        advisory = ai_reader.second_read(case, raw, options.family)
+    except ai_reader.UnsupportedPacket as exc:
+        raise HTTPException(422, str(exc)) from exc
+    except ai_reader.InvalidReview as exc:
+        raise HTTPException(502, str(exc)) from exc
+    except APIError as exc:
+        status = ocr_service_error(exc).status_code
+        raise HTTPException(status, "The AI second read could not be completed by the configured provider.") from exc
+    if store.detail(dsn, ident)["revision"] != base:
+        raise HTTPException(412, "The discharge packet changed during the AI read. Open the current revision.")
+    response.headers["Cache-Control"] = "private, no-store"
+    return advisory
 
 
 class OcrVerification(BaseModel):
