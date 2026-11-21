@@ -25,7 +25,7 @@ import {
   Upload,
 } from "lucide-react";
 import type { CaseDetail, CaseSummary, PacketStatus } from "./api";
-import { api, blocked, casePath, displayDate, hospitalPrefix, money, statuses } from "./api";
+import { api, blocked, caseHref, casePath, displayDate, hospitalPrefix, money, statuses } from "./api";
 import { ApproveDraft, ReplaceEstimate } from "./ReviewForms";
 import { SourceView } from "./SourceView";
 import { AttachmentList } from "./Attachments";
@@ -33,6 +33,7 @@ import { NewCase } from "./CaseIntake";
 import { CaseWorkflow, payerStatus } from "./CaseWorkflow";
 import { EvidenceReview } from "./EvidenceReview";
 import { AuthGate, useStaffSession } from "./Auth";
+import { FinanceLedger } from "./FinanceLedger";
 import { OperationalHolds } from "./OperationalHolds";
 import "./style.css";
 import "./caseflow.css";
@@ -48,8 +49,6 @@ type Route = {
   discharge?: boolean;
   prior?: string;
 };
-const caseHref = (id: string, rev?: number) =>
-  "#/cases/" + encodeURIComponent(id) + (rev ? "?revision=" + rev : "");
 function readRoute(): Route {
   const pathAndSearch =
     location.hash.slice(1) || (location.pathname.slice(hospitalPrefix.length) || "/") + location.search;
@@ -904,14 +903,14 @@ function App() {
     return () => window.removeEventListener("hashchange", change);
   }, []);
   useEffect(() => {
-    document.title = route.discharge
+    document.title = session.role === "finance" ? "Finance reconciliation · ZeroUpfront" : route.discharge
       ? "Discharge claims · ZeroUpfront"
       : route.id
         ? "Case " + route.id + " · ZeroUpfront"
         : route.create
           ? "Create a case · ZeroUpfront"
           : "Case worklist · ZeroUpfront";
-  }, [route.id, route.create, route.discharge]);
+  }, [route.id, route.create, route.discharge, session.role]);
   return (
     <>
       <a
@@ -927,13 +926,15 @@ function App() {
       <div className="app-layout">
         <header className="hospital-masthead">
           <div className="mast-inner">
-            <a href="#/discharge" className="mast-brand" aria-label="ZeroUpfront home">
+            <a href={session.role === "finance" ? "#/finance" : "#/discharge"} className="mast-brand" aria-label="ZeroUpfront home">
               <span className="mast-symbol"><Layers size={20} aria-hidden="true" /></span>
               ZeroUpfront
             </a>
             <nav className="mast-nav" aria-label="Hospital workflows">
+              {session.role === "finance" ? <a href="#/finance" aria-current="page">Reconciliation</a> : <>
               <a aria-current={route.discharge ? "page" : undefined} href="#/discharge">Discharge claims</a>
               <a aria-current={!route.discharge ? "page" : undefined} href="#/cases">Pre-arrival cases</a>
+              </>}
             </nav>
             <button className="mast-context" popoverTarget="workspace-context" title={session.hospital_name || "Hospital workspace"}>
               <Hospital size={15} /><span>{session.hospital_name || "Hospital"}</span><ChevronDown size={13} />
@@ -941,10 +942,10 @@ function App() {
             <div id="workspace-context" className="workspace-context" popover="auto">
               <strong>{session.hospital_name || "Hospital workspace"}</strong>
               <span>{session.mode === "local" ? "Local rehearsal" : session.actor}</span>
-              <nav aria-label="Workspace shortcuts" onClick={() => document.getElementById("workspace-context")?.hidePopover()}>
+              {session.role !== "finance" && <nav aria-label="Workspace shortcuts" onClick={() => document.getElementById("workspace-context")?.hidePopover()}>
                 <a href="#/discharge">Discharge worklist <ChevronRight size={15} /></a>
                 <a href="#/cases">Pre-arrival worklist <ChevronRight size={15} /></a>
-              </nav>
+              </nav>}
               {session.mode === "staff" && <div className="account-actions">
                 {hospitalPrefix && <button disabled={session.busy} onClick={() => void session.signOut(true)}>
                   <ArrowLeftRight size={15} />Switch hospital
@@ -959,6 +960,7 @@ function App() {
         </header>
         <div className="app-content">
           <main id="main-content" tabIndex={-1}>
+        {session.role === "finance" ? <FinanceLedger /> : <>
         {(route.id || route.create) && (
           <nav className="breadcrumbs" aria-label="Breadcrumb">
             <a href={route.discharge ? "#/discharge" : "#/cases"}>
@@ -1003,6 +1005,7 @@ function App() {
         ) : (
           <Worklist epoch={epoch} retry={retry} />
         )}
+        </>}
           </main>
         </div>
       </div>

@@ -33,6 +33,17 @@ The hospital app uses the team’s forest-green workspace design. On desktop the
 
 For supported scans, OpenAI transcribes the page so staff can compare the text with the original. An optional multimodal second read inspects Thai and US payer forms and returns observations with page citations. Python checks identifiers and amounts with explicit rules. The FastAPI service stores revisions in PostgreSQL, and the React workspace uses PDF.js to show the original page. Staff sign off on a specific revision. The second read cannot approve a claim or assign a payable amount. [Model evaluation and design](docs/payer-review-design.md)
 
+### Who makes each decision?
+
+| Step | What the app does | Who acts |
+| --- | --- | --- |
+| Prepare the claim | Extracts supported fields, checks totals and flags missing or conflicting evidence. | A hospital coordinator verifies the source pages, corrects the packet and approves a specific revision. |
+| Obtain coverage | Keeps the submitted packet and the written payer response together. | The insurer decides what it covers. A coordinator records the decision and follows up on a query or appeal. |
+| Explain the bill | Calculates the documented amounts and prepares a Thai/English patient statement for review. | A coordinator checks the figures and contact details before marking the statement reviewed. |
+| Fund and reconcile Pattaya | Displays two time-limited simulated bank offers, totals the recorded beneficiary credits and calculates the balance. | A user acting as treasury confirms one booking. Hospital staff record each of the two receipts. The authenticated finance role can inspect its assigned cases. |
+
+The Pattaya exercise starts with a preloaded staff approval and insurer guarantee. The three settlement confirmations can be performed by one demo operator. Real partner-bank execution and staff handling time remain unmeasured. [Discharge and settlement pilot measures](docs/coordinator-pilot.md#discharge-and-settlement)
+
 ## What we verified
 
 The supported-format rehearsal runs from correction through review, export and simulated settlement. Separately, we filled published AIA Thailand, US CMS-1450 and Blue Cross Blue Shield Federal Employee Program forms with synthetic cases to test where screening should stop. On the **first blinded holdout**, the field readers identified **10 of 11** expected outcomes on the correct page. They missed a different named payee. After fixing that and a cents citation, a **fresh panel passed 8 of 8** payee and amount checks on its first run. All eight unverified claims stayed on hold. Actual payer acceptance and staff time savings remain unmeasured. [Blinded results](docs/payer-holdout.md) · [Fresh confirmation](docs/payer-confirmation.md)

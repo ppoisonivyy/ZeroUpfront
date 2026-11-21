@@ -18,7 +18,7 @@ from app.discharge_api import router as discharge_router
 from app.workspace_http_common import INTAKE_BYTES, MultipartBodyLimit, _actor, _pdf, _read_upload, _revision, ocr_service_error
 from app.case_workflow import validate_attachment
 from app.staff_access import install_access, initialize_access, mode
-from app.hospital_platform import HospitalContext, bind_database, build_platform
+from app.hospital_platform import disclosure_client, HospitalContext, bind_database, build_platform, require_hosted_ocr
 from app.workspace_documents import CASE_INSURERS, evaluate_estimate, packet_bytes, seed_cases
 
 FIXTURES = Path(__file__).resolve().parents[1] / "fixtures"
@@ -108,14 +108,13 @@ def _sample(case_id, detail):
     raise HTTPException(404, "No bundled correction is available for this case.")
 
 
-def _evaluate(case_id, data, filename):
+def _evaluate(case_id, data, filename, ocr):
     # A private upload can never reach the cloud. The OCR path accepts only the exact committed demo scan.
     is_demo_scan = case_id == "Z002" and data == (FIXTURES / "cases/Z002/scanned-estimate.pdf").read_bytes()
     try:
-        if is_demo_scan and os.getenv("WORKSPACE_ENABLE_OCR") == "1":
-            if not os.getenv("OPENAI_API_KEY"):
-                raise HTTPException(503, "The demo OCR service needs a configured OpenAI API key.")
-            with OpenAI(timeout=90, max_retries=1) as client:
+        if is_demo_scan and ocr:
+            require_hosted_ocr()
+            with disclosure_client(OpenAI, "hosted_ocr", timeout=90, max_retries=1) as client:
                 return evaluate_estimate(case_id, data, filename, ocr_client=client)
         return evaluate_estimate(case_id, data, filename)
     except ValueError as exc:
@@ -177,9 +176,8 @@ def _intake(metadata, documents, names, ocr, saved_ocr=None):
     from app.intake_documents import evaluate_intake
     try:
         if ocr:
-            if os.getenv("WORKSPACE_ENABLE_OCR") != "1" or not os.getenv("OPENAI_API_KEY"):
-                raise HTTPException(503, "Cloud OCR is unavailable on this installation.")
-            with OpenAI(timeout=90, max_retries=1) as client:
+            require_hosted_ocr()
+            with disclosure_client(OpenAI, "hosted_ocr", timeout=90, max_retries=1) as client:
                 return evaluate_intake(metadata, documents, names, ocr_client=client, _saved_ocr=saved_ocr)
         return evaluate_intake(metadata, documents, names, _saved_ocr=saved_ocr)
     except ValueError as exc:
@@ -267,7 +265,7 @@ def replace_estimate(request: Request, case_id: str, file: Annotated[UploadFile 
         metadata = {key: current[key] for key in ("id","member","insurer","policy_edition","procedure","admission_date")}
         result = _intake(metadata, documents, names, ocr, current.get("ocr_pages"))
         return store.replace_estimate(dsn, case_id, base, result, documents)
-    evidence = _evaluate(case_id, data, filename)
+    evidence = _evaluate(case_id, data, filename, ocr)
     # Parsing and optional cloud OCR finish before the transaction. Recheck the base under a case lock.
     return store.replace_estimate(dsn, case_id, base, evidence, _documents(case_id, data))
 

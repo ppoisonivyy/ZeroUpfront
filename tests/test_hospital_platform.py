@@ -14,6 +14,7 @@ from app import discharge_store
 from app.discharge_claim import evaluate_discharge, load_discharge_fixture
 from app.hospital_platform import build_platform, configured_hospitals
 from app.staff_access import provision
+from app.finance_access import assign_case
 from app.workspace_api import create_workspace
 from bench.case_revision import temporary_database
 
@@ -113,6 +114,26 @@ class HospitalPlatformTests(unittest.TestCase):
         self.assertEqual(self.client.post("/h/north/api/access/logout").status_code, 200)
         self.assertEqual(self.client.get("/h/north" + case_path).status_code, 401)
         self.assertEqual(self.client.get("/h/south" + case_path).status_code, 200)
+
+    def test_finance_assignments_and_sessions_are_local_to_each_hospital(self):
+        username = "payment-review"
+        for slug, dsn in self.databases.items():
+            provision(dsn, username, "Finance staff", "Temporary finance passphrase " + slug, role="finance")
+        assign_case(self.databases["north"], username, "shared-case-id")
+        path = "/api/finance/reconciliation"
+        north = self.client.post("/h/north/api/access/login", json={
+            "username": username, "password": "Temporary finance passphrase north"})
+        self.assertEqual(north.status_code, 200, north.text)
+        self.assertEqual(self.client.get("/h/south" + path).status_code, 401)
+        south = self.client.post("/h/south/api/access/login", json={
+            "username": username, "password": "Temporary finance passphrase south"})
+        self.assertEqual(south.status_code, 200, south.text)
+        self.assertEqual(self.client.get("/h/south" + path).json()["items"], [])
+        self.assertEqual([row["case_id"] for row in self.client.get("/h/north" + path).json()["items"]],
+                         ["shared-case-id"])
+        for slug in self.databases:
+            denied = self.client.get(f"/h/{slug}/api/discharge/shared-case-id/revisions/1/sources/bill")
+            self.assertEqual(denied.status_code, 403)
 
     def test_reassigned_database_secret_fails_on_startup(self):
         with patch.dict(os.environ, NORTH_DATABASE_URL=self.databases["south"],

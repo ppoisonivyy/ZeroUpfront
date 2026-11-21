@@ -12,6 +12,7 @@ from pydantic import BaseModel, ConfigDict, Field, ValidationError
 from pypdf import PdfReader
 from pypdf.errors import PdfReadError
 
+from .hospital_platform import disclosure_client
 from .document_text import contains_identifier, contains_quote
 
 ROLES = ("bill", "summary", "records", "letter")
@@ -433,7 +434,7 @@ def second_read(case, originals, family):
     meta = {key: case[key] for key in ENCOUNTER_FIELDS if case.get(key) is not None}
     history = request_input(meta, originals, counts, STAFF_RUBRICS[family])
     model = os.getenv("OPENAI_OCR_MODEL") or "gpt-6.2-astra"
-    with OpenAI(timeout=180, max_retries=0) as client:
+    with disclosure_client(OpenAI, "payer_second_read", timeout=180, max_retries=0) as client:
         try:
             answer = client.responses.parse(
                 model=model,
