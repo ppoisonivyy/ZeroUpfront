@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import {
   ArrowRight, BadgeCheck, CircleAlert, ClipboardList, FileSearch, Filter,
-  Inbox, Layers, ListFilter, Play, Plus, ReceiptText, Search, Send, X,
+  Inbox, Landmark, Layers, ListFilter, Play, Plus, ReceiptText, Search, Send, X,
 } from "lucide-react";
 import { useStaffSession } from "./Auth";
 import { api, displayDate } from "./api";
@@ -30,7 +30,7 @@ export function DischargeList({ prior }: { prior?: string }) {
   const { mode } = useStaffSession();
   const [example, setExample] = useState("duplicate_line");
   const [pending, setPending] = useState("");
-  const [error, setError] = useState("");
+  const [error, setError] = useState<{ scenario: string; message: string } | null>(null);
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState({ queue: "all" as DischargeQueue, search: "", page: 1 });
   const [retry, setRetry] = useState(0);
@@ -71,12 +71,12 @@ export function DischargeList({ prior }: { prior?: string }) {
   const setQueue = (next: DischargeQueue) => setFilter(prev => ({ ...prev, queue: next, page: 1 }));
   async function start(scenario: string) {
     if (pending) return;
-    setPending(scenario); setError("");
+    setPending(scenario); setError(null);
     try {
       const claim: DischargeClaim = await (await api("/api/discharge/examples/" + scenario, { method: "POST" })).json();
       location.hash = claimHref(claim.id);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not create the practice claim.");
+      setError({ scenario, message: err instanceof Error ? err.message : "Could not create the practice claim." });
     } finally { setPending(""); }
   }
   const newClaim = "#/discharge/new" + (prior ? "?case=" + encodeURIComponent(prior) : "");
@@ -92,6 +92,14 @@ export function DischargeList({ prior }: { prior?: string }) {
         <span className="queue-label">{label}</span><strong>{result.data?.counts[id] ?? "…"}</strong>
       </button>)}
     </div>
+    {mode === "local" && <section className="practice-panel pattaya-launch" aria-label="Pattaya settlement example">
+      <div className="practice-lead"><span className="practice-symbol"><Landmark size={25} /></span><div>
+        <p className="section-label">Practice case · Foreign exchange</p><h2>Pattaya hospital settlement</h2>
+        <p>Fund a THB 239,000 insurer guarantee and reconcile the hospital’s bank credit.</p></div></div>
+      <button type="button" className="practice-start" disabled={!!pending} onClick={() => void start("pattaya_fx")}>
+        <Play size={14} />{pending === "pattaya_fx" ? "Opening…" : "Open Pattaya case"}</button>
+      {error?.scenario === "pattaya_fx" && <p className="error-message" role="alert">{error.message}</p>}
+    </section>}
     <section className="work-inbox" aria-label="Discharge claim worklist">
       <div className="inbox-bar"><div className="inbox-name">
         <span className="inbox-icon"><ListFilter size={19} /></span>
@@ -138,7 +146,7 @@ export function DischargeList({ prior }: { prior?: string }) {
           {Object.entries(examples).map(([k, label]) => <option key={k} value={k}>{label}</option>)}
         </select></label><button className="secondary" disabled={!!pending} onClick={() => void start(example)}>Open example</button>
       </div></details>
-      {error && <p className="error-message" role="alert">{error}</p>}
+      {error && error.scenario !== "pattaya_fx" && <p className="error-message" role="alert">{error.message}</p>}
     </section>}
   </>;
 }

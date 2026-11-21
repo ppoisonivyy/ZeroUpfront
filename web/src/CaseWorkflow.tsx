@@ -37,6 +37,7 @@ const eventNames: Record<string, string> = {
   hold: "Operational hold raised",
   resolve_hold: "Operational hold resolved",
   payment: "Payment recorded",
+  fx_booking: "Simulated bank FX booked",
 };
 const payerStatuses: Record<string, string> = {
   not_sent: "Awaiting submission",
@@ -51,6 +52,8 @@ const payerStatuses: Record<string, string> = {
 export const payerStatus = (s: string) =>
   payerStatuses[s] || s.replaceAll("_", " ");
 const eventLabels: Record<string, string> = {
+  funding_cost: "Insurer funding cost",
+  rate_thb_per_usd: "Exchange rate (THB per USD)",
   reference: "Reference",
   channel: "Submission channel",
   terms: "Letter terms",
