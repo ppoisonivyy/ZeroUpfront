@@ -103,6 +103,31 @@ class PattayaAgentTests(unittest.TestCase):
                 self.assertIsNone(report["booked_quote"])
                 self.assertEqual(report["outstanding_minor"], 30000)
 
+    def test_instruction_is_bound_to_one_claim_and_the_balance_at_issuance(self):
+        case = claim("forward", agents.SHORT_CREDIT_MINOR)
+        valid = pattaya_case.bank_message(case["id"], "topup_instruction").remittance_terms()
+        instruction = {"kind": "topup_remittance", "data": valid, "filename": "instruction.pdf"}
+        for changed in ({"instructed_minor": 30000.0}, {"instructed_minor": True}, {"bank_reference": "SIM-SEND-02-OTHER"},
+                        {"reference": "SIM-OTHER-RECORD_REMITTANCE"}, {"currency": "USD"}, {"value_date": "2026-12-09"},
+                        {"instructed_minor": 12345}, {"insurer_reference": "  "}):
+            with self.subTest(changed=changed):
+                case["events"].append(dict(instruction, data={**valid, **changed}))
+                self.assertEqual(agents.review(case)["next_action"], "review")
+                case["events"].pop()
+        for label, events in {
+            "duplicate": [*case["events"], instruction, instruction],
+            "before first credit": [instruction, *case["events"]],
+            "after booking but before credit": [*case["events"][:-1], instruction, case["events"][-1]],
+            "no archived source": [*case["events"], dict(instruction, filename=None)],
+            "empty payload": [*case["events"], dict(instruction, data={})],
+        }.items():
+            with self.subTest(label=label):
+                result = agents.review({**case, "events": events})
+                self.assertEqual((result["remittance_status"], result["next_action"]), ("conflict", "review"))
+        self.assertEqual(agents.review(case)["remittance_status"], "absent")
+        case["events"].append(instruction)
+        self.assertEqual(agents.review(case)["next_action"], "confirm_topup")
+
     def test_unconfirmed_fee_terms_preserve_numeric_balance_and_withhold_liability(self):
         for terms in (None, "Fee allocation will be agreed separately.", pattaya_case.TERMS + " Subject to amendment."):
             with self.subTest(terms=terms):

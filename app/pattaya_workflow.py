@@ -59,8 +59,12 @@ def apply(dsn, ident, revision, action, version, *, quote_id=None, bank_document
                 raise WorkspaceError(422, "Supply an insurer reference only when recording its remittance.")
         if action == "record_remittance" and bank_document != "topup_instruction":
             raise WorkspaceError(422, "Select the insurer remittance instruction.")
-        previous = next((event for event in case["events"] if event["data"].get("reference") == reference), None)
+        previous = next((event for event in case["events"]
+                         if isinstance(event["data"], dict) and event["data"].get("reference") == reference), None)
         if previous:
+            if action == "record_remittance" and (previous["kind"] != "topup_remittance"
+                    or pattaya_agents.review(case)["remittance_status"] != "verified"):
+                raise WorkspaceError(409, "The recorded remittance needs finance review.")
             if previous["kind"] == "topup_remittance" and previous["data"].get("insurer_reference") != insurer_reference:
                 raise WorkspaceError(409, "A different remittance reference was already recorded. Reload its instruction.")
             if previous["kind"] == "fx_booking" and previous["data"].get("quote_id") != quote_id:
@@ -86,8 +90,7 @@ def apply(dsn, ident, revision, action, version, *, quote_id=None, bank_document
                     or advice.beneficiary != case["facility"] or not advice.bank_reference.strip()
                     or advice.currency != "THB" or advice.gross_minor != review["outstanding_minor"] or advice.net_minor is not None):
                 raise WorkspaceError(422, "The remittance instruction does not match this outstanding balance.")
-            data = dict(reference=reference, bank_reference=advice.bank_reference, value_date=advice.value_date,
-                        currency=advice.currency, instructed_minor=advice.gross_minor, insurer_reference=insurer_reference)
+            data = dict(advice.remittance_terms(), insurer_reference=insurer_reference)
             store.append_event(db, case, "topup_remittance", data, actor or "Practice insurer treasury", username,
                                advice.document(), "pattaya-topup-instruction.pdf")
             return store._detail(db, ident, revision)

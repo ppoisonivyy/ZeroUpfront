@@ -164,7 +164,8 @@ def _detail(db, ident, rev=None):
         )
         for i, k, a, u, stamp, d, f in db.execute(
             """
-        SELECT id,kind,actor,username,created_at,data,filename FROM zeroupfront_demo.discharge_events
+        SELECT id,kind,actor,username,created_at,data,CASE WHEN document IS NOT NULL THEN filename END
+        FROM zeroupfront_demo.discharge_events
         WHERE case_id=%s AND revision=%s ORDER BY version
     """,
             (ident, rev),
@@ -272,7 +273,7 @@ def _pattaya_worklist_balances(db, items):
         return
     events = {ident: [] for ident in cases}
     for row in db.execute("""
-        SELECT e.case_id, e.kind, e.data
+        SELECT e.case_id, e.kind, e.data, CASE WHEN e.document IS NOT NULL THEN e.filename END AS filename
         FROM zeroupfront_demo.discharge_events e
         JOIN zeroupfront_demo.discharge_cases c ON c.id=e.case_id AND c.head=e.revision
         WHERE e.case_id=ANY(%s) AND e.kind IN ('reply', 'payment', 'fx_booking', 'topup_remittance')

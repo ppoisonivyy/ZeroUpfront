@@ -8,6 +8,8 @@ from dataclasses import replace
 from io import BytesIO
 from unittest.mock import patch
 
+import psycopg
+from psycopg.types.json import Jsonb
 from fastapi.testclient import TestClient
 from pypdf import PdfReader
 
@@ -181,6 +183,31 @@ class PattayaWorkflowTests(unittest.TestCase):
             desk = self.review(path)
             self.assertEqual(row["next_action"], expected)
             self.assertEqual((row["next_action"], row["outstanding_minor"]), (desk["next_action"], desk["outstanding_minor"]))
+
+    def test_conflicting_saved_instruction_blocks_credit_and_idempotent_replay(self):
+        path, case = self.new()
+        self.assertEqual(self.action(path, "book_spot", 2).status_code, 200)
+        self.assertEqual(self.action(path, "record_short_credit", 3).status_code, 200)
+        with ThreadPoolExecutor(2) as pool:
+            retries = list(pool.map(lambda _: self.action(path, "record_remittance", 4), range(2)))
+        for result in retries:
+            self.assertEqual(result.status_code, 200, result.text)
+            self.assertEqual(result.json()["workflow_version"], 5)
+        instruction = retries[0].json()["events"][-1]
+        # Exercise restored records through the same database reads as the live case and queue.
+        with psycopg.connect(os.environ["DATABASE_URL"]) as db:
+            db.execute("UPDATE zeroupfront_demo.discharge_events SET data=%s WHERE id=%s",
+                       (Jsonb({**instruction["data"], "currency": "USD", "instructed_minor": 17}), instruction["id"]))
+        report = self.review(path)
+        self.assertEqual((report["remittance_status"], report["next_action"]), ("conflict", "review"))
+        row = self.client.post("/api/discharge/worklist/search", json={"search": case["id"]}).json()["items"][0]
+        self.assertEqual(row["pattaya_settlement"]["next_action"], "review")
+        self.assertEqual(self.action(path, "record_remittance", 4).status_code, 409)
+        self.assertEqual(self.action(path, "record_topup", 5).status_code, 409)
+        saved = self.client.get(path).json()
+        self.assertEqual(saved["workflow_version"], 5)
+        self.assertEqual(saved["paid_by_currency"], {"THB": pattaya_agents.SHORT_CREDIT_MINOR})
+        self.assertIsNone(saved["patient_statement_facts"]["insurer_outstanding_minor"])
 
     def test_preview_and_archive_receiving_bank_evidence(self):
         path, _ = self.new()

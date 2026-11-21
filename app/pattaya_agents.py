@@ -10,7 +10,7 @@ from time import time
 
 from openai import OpenAI, OpenAIError
 
-from app.pattaya_case import TERMS
+from app.pattaya_case import TERMS, bank_message
 
 
 GUARANTEE_MINOR = 23_900_000
@@ -113,6 +113,39 @@ def _latest_event(case, kind, label):
     if instant.tzinfo is None:
         return result
     return result + " · recorded " + instant.astimezone(UTC).strftime("%d %b %Y, %H:%M UTC")
+
+
+def _remittance_status(case):
+    """Verify one case-bound instruction against the balance when it was recorded."""
+    instruction = None
+    booking_seen = False
+    credit_count = 0
+    first_credit = {}
+    for event in case["events"]:
+        if event["kind"] == "fx_booking":
+            booking_seen = True
+        elif event["kind"] == "payment":
+            credit_count += 1
+            if credit_count == 1:
+                first_credit = event["data"]
+        elif event["kind"] == "topup_remittance":
+            # Use receipt history at issuance. A later top-up does not change that balance.
+            if (instruction is not None or not booking_seen or credit_count != 1
+                    or first_credit.get("currency") != "THB" or first_credit.get("amount_minor") != SHORT_CREDIT_MINOR
+                    or not event.get("filename") or not isinstance(event["data"], dict)):
+                return "conflict"
+            instruction = event["data"]
+    if instruction is None:
+        return "absent"
+    expected = bank_message(case["id"], "topup_instruction").remittance_terms()
+    if (type(instruction.get("instructed_minor")) is not int
+            or instruction["instructed_minor"] != GUARANTEE_MINOR - first_credit["amount_minor"]
+            or any(instruction.get(key) != value for key, value in expected.items())):
+        return "conflict"
+    reference = instruction.get("insurer_reference")
+    if reference is not None and (not isinstance(reference, str) or not 1 <= len(reference.strip()) <= 100):
+        return "conflict"
+    return "verified"
 
 
 def _settlement_step(verified, booked, paid, remittance):
@@ -222,8 +255,9 @@ def review(case, *, use_model=False):
     valid_currency = set(amounts) <= {"THB"}
     due = GUARANTEE_MINOR if guaranteed else 0
     outstanding = max(0, due - paid)
-    remittance = next((event["data"] for event in case["events"] if event["kind"] == "topup_remittance"), None)
-    action = _settlement_step(fees_verified and valid_booking and valid_currency, booked, paid, remittance)
+    remittance = _remittance_status(case)
+    verified = fees_verified and valid_booking and valid_currency and remittance != "conflict"
+    action = _settlement_step(verified, booked, paid, remittance == "verified")
     owner = "insurer" if fees_verified and valid_currency and outstanding else None
 
     trace = [
@@ -240,7 +274,8 @@ def review(case, *, use_model=False):
                        else f"Simulated bank prices for {TRADE_DATE}")),
         dict(agent="Hospital receipts", status=action,
              summary=(f"Hospital credits total {_thb(paid)}. " + (
-                 "Finance review is required before another settlement step." if action == "review"
+                 "The saved remittance instruction needs finance review." if remittance == "conflict"
+                 else "Finance review is required before another settlement step." if action == "review"
                  else f"{_thb(outstanding)} remains due from the insurer." if outstanding
                  else "The THB guarantee is settled in full.")),
              evidence=f"Hospital credit ledger · {_latest_event(case, 'payment', 'Bank credit')}"),
@@ -251,11 +286,11 @@ def review(case, *, use_model=False):
             "read_guarantee": dict(verified=fees_verified, amount_minor=due, currency="THB", patient_fx_minor=patient_fx_minor),
             "compare_funding": dict(quotes=prices, booking=booked, booked_quote=booking, valid_booking=valid_booking),
             "reconcile_credits": dict(paid_minor=paid, outstanding_minor=outstanding, currency="THB",
-                                     valid_currency=valid_currency, shortfall_owner=owner, remittance_recorded=bool(remittance),
+                                     valid_currency=valid_currency, shortfall_owner=owner, remittance_status=remittance,
                                      expected_first_credit_minor=SHORT_CREDIT_MINOR),
         }
         model_review = _model_assessment(facts, action)
     return dict(revision=case["revision"], workflow_version=case["workflow_version"], hospital_due_date=HOSPITAL_DUE_DATE,
                 guaranteed_minor=due, paid_minor=paid, outstanding_minor=outstanding, patient_fx_minor=patient_fx_minor,
                 shortfall_owner=owner, booking=booked, booked_quote=booking, quotes=prices, short_credit_minor=SHORT_CREDIT_MINOR,
-                next_action=action, trace=trace, model_enabled=model_enabled(), model_review=model_review)
+                next_action=action, remittance_status=remittance, trace=trace, model_enabled=model_enabled(), model_review=model_review)

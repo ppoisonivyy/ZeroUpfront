@@ -70,6 +70,11 @@ class BankMessage:
     fee_minor: int | None
     net_minor: int | None
 
+    def remittance_terms(self):
+        """The immutable terms shared by the saved instruction and its replay check."""
+        return dict(reference=f"SIM-{self.case_id}-RECORD_REMITTANCE", bank_reference=self.bank_reference,
+                    value_date=self.value_date, currency=self.currency, instructed_minor=self.gross_minor)
+
     def document(self):
         def money(minor):
             return f"{self.currency} {Decimal(minor) / 100:,.2f}"

@@ -11,6 +11,7 @@ type FundingTerms = { instrument: Instrument; rate_thb_per_usd: string; usd_mino
 type Review = {
   revision: number;
   workflow_version: number;
+  remittance_status: "absent" | "verified" | "conflict";
   hospital_due_date: string;
   guaranteed_minor: number;
   paid_minor: number;
@@ -87,7 +88,7 @@ export function PattayaSettlement({ claim, onUpdated, reload, openSource }: {
   const bookedQuote = current?.booked_quote;
   const booking = claim.events.find(event => event.kind === "fx_booking");
   const selectedQuote = current?.quotes.find(quote => quote.quote_id === selectedQuoteId);
-  const remittance = claim.events.find(event => event.kind === "topup_remittance");
+  const remittances = claim.events.filter(event => event.kind === "topup_remittance");
   const expiry = current?.next_action === "book" ? current.quotes[0]?.expires_at : undefined;
   const expired = !!expiry && (expiry === expiredSheet || Date.parse(expiry) <= Date.now());
   const receipts = claim.events.filter(event => event.kind === "payment");
@@ -220,11 +221,13 @@ export function PattayaSettlement({ claim, onUpdated, reload, openSource }: {
             <GuaranteeFees claim={claim} openLetter={openSource} />
           </div>
         </div>
-        {remittance && <div className="pattaya-receipts"><h3>Insurer remittance instruction</h3>
-          <p>{String(remittance.data.bank_reference)} · {displayDate(String(remittance.data.value_date))} · {minorMoney(Number(remittance.data.instructed_minor), "THB")}</p>
-          {typeof remittance.data.insurer_reference === "string" && <p>Insurer reference · {remittance.data.insurer_reference}</p>}
+        {remittances.map(remittance => <div key={remittance.id} className="pattaya-receipts"><h3>Insurer remittance instruction</h3>
+          {current.remittance_status === "verified" ? <>
+            <p>{String(remittance.data.bank_reference)} · {displayDate(String(remittance.data.value_date))} · {minorMoney(Number(remittance.data.instructed_minor), "THB")}</p>
+            {typeof remittance.data.insurer_reference === "string" && <p>Insurer reference · {remittance.data.insurer_reference}</p>}
+          </> : <p>Finance review required. Check the original instruction against the claim and its outstanding balance.</p>}
           {remittance.source_url && <button className="text-action" onClick={e => openSource({ role: "bank_instruction", label: "Insurer remittance instruction", url: remittance.source_url!, page: 1, quote: "" }, e.currentTarget)}>View recorded instruction</button>}
-        </div>}
+        </div>)}
         {receipts.length > 0 && <div className="pattaya-receipts"><h3>Hospital credit receipts</h3>
           <ul>{receipts.map(receipt => <li key={receipt.id}>
             <div><strong>{minorMoney(typeof receipt.data.amount_minor === "number" ? receipt.data.amount_minor : null, "THB")}</strong>
