@@ -2,7 +2,7 @@
 
 A hospital coordinator is preparing the final claim for a fictional wrist-fracture admission. The payer letter sets a THB 90,000 ceiling. The hospital's bill states THB 87,500, and one pharmacy charge appears twice. Can you find the original entry, correct the packet, and see exactly what the hospital would send?
 
-Start the local coordinator workspace, then open **Discharge claims**. The digital practice case includes all four source PDFs and runs without an API key. [Setup and local workspace link](../README.md#coordinator-workspace) · [Watch the recorded walkthrough](figures/discharge-walkthrough.gif)
+Start the local coordinator workspace, then open **Discharge claims**. The digital practice case includes all four source PDFs and runs without an API key. [Setup and local workspace link](../README.md#run-the-demo) · [Watch the recorded walkthrough](figures/discharge-walkthrough.gif)
 
 ## Try it as the hospital coordinator
 
@@ -15,20 +15,12 @@ Start the local coordinator workspace, then open **Discharge claims**. The digit
 
 ## Optional ending with a simulated payer decision
 
-Use the same practice claim. These actions record what the hospital would receive through its usual payer channel. For the demo, prepare a one-page PDF named `demo-reply.pdf` with the following fictional correspondence.
-
-> **Fictional payer reply for rehearsal**
->
-> Alder Transit Cover · Reference REPLY-2
->
-> Member EXAMPLE-2402 · Encounter EXAMPLE-VISIT-42
->
-> We partially confirm THB 80,000 for this discharge claim.
+Use the same practice claim. Save the one-page fictional reply to your computer for step 2. It identifies member `EXAMPLE-2402`, encounter `EXAMPLE-VISIT-42`, and payer reference `REPLY-2`. [Download the fictional payer reply (PDF)](figures/demo-payer-reply.pdf?raw=1)
 
 1. Choose **Back to claim**, then **Record claim submission**. Enter `Payer portal rehearsal` as the channel and `PORTAL-DC-42` as the reference. Enter the recorder's name and choose **Save record**. The insurer disposition changes to **Sent to insurer**.
-2. Choose **Record payer reply**, enter `REPLY-2`, and select **Partially confirmed**. Copy the terms from the fictional reply, attach its PDF, confirm the encounter, and enter `80000` and `THB`. Enter the recorder's name and save. The decision amount appears alongside **No payment recorded**.
+2. Choose **Record payer reply**, enter `REPLY-2`, and select **Partially confirmed**. For the written terms, enter “We partially confirm THB 80,000 for this discharge claim.” Attach the downloaded PDF, confirm the encounter, and enter `80000` and `THB`. Enter the recorder's name and save. The decision amount appears alongside **No payment recorded**.
 3. Choose **Record payment received**. Record `50000` in `THB`, reference `REMIT-1`, with a recorder name and a note such as “Simulated remittance.” Settlement shows **Partially paid**. Repeat with `30000` and `REMIT-2`. The two receipts total the payer's THB 80,000 decision, and settlement changes to **Paid**.
 
 ## Other ways to explore
 
-The primary walkthrough uses a supported synthetic layout. The official Thai and US form rehearsals show how the workspace handles unfamiliar layouts, missing evidence and claims that still need manual review. The policy research tools separately exercise Thai and US pre-arrival packets, scans, retrieval, and page citations. [Thai form results](thai-payer-forms.md) · [US form results](us-payer-forms.md) · [Policy and fixture CLI commands](../README.md#research-tools)
+The primary walkthrough uses a supported synthetic layout. The official Thai and US form rehearsals show how the workspace handles unfamiliar layouts, missing evidence and claims that still need manual review. The policy research tools separately exercise Thai and US pre-arrival packets, scans, retrieval, and page citations. [Thai form results](thai-payer-forms.md) · [US form results](us-payer-forms.md) · [Policy and fixture CLI commands](../CONTRIBUTING.md#optional-openai-workflows)
