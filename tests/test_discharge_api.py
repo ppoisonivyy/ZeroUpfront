@@ -126,6 +126,54 @@ class DischargeApiTests(unittest.TestCase):
             [self.client.get(s["url"]).content for s in current["sources"]],
         )
 
+    def test_recheck_reuses_cached_transcripts_and_requires_current_held_revision(self):
+        path, case, _, _, _ = self.scanned()
+        originals = {s["role"]: self.client.get(s["url"]).content for s in case["sources"]}
+        prior_pages = self.client.get(path + "/revisions/1/ocr-review").json()["pages"]
+        self.assertEqual(self.client.post(path + "/recheck").status_code, 428)
+        with (
+            patch("app.discharge_api.OpenAI", side_effect=AssertionError("new OCR client")),
+            patch("app.intake_documents.ocr_page", side_effect=AssertionError("new transcription")),
+        ):
+            replay = self.client.post(path + "/recheck", headers=match(1))
+        self.assertEqual(replay.status_code, 200, replay.text)
+        self.assertEqual(replay.json(), case)
+        self.assertEqual(self.client.get(path + "/revisions/1/ocr-review").json()["pages"], prior_pages)
+        self.assertEqual(originals, {s["role"]: self.client.get(s["url"]).content for s in replay.json()["sources"]})
+        self.assertEqual(self.client.post(path + "/recheck", headers=match(1),
+                                         files={"bill": ("extra.pdf", originals["bill"])}).status_code, 422)
+        ready, _ = self.new("aligned")
+        self.assertEqual(self.client.post(ready + "/recheck", headers=match(1)).status_code, 409)
+        self.assertEqual(self.approve(ready, 1).status_code, 200)
+        self.assertEqual(self.client.post(ready + "/recheck", headers=match(1)).status_code, 409)
+        self.assertEqual(self.client.get(ready).json()["revision"], 1)
+
+    def test_recheck_of_legacy_facts_publishes_one_revision_and_keeps_the_prior_report(self):
+        from app.discharge_api import _evaluate
+
+        def legacy_reader(*args, **kwargs):
+            evidence = _evaluate(*args, **kwargs)
+            evidence["checks"] = []
+            return evidence
+
+        # This stored reader version had the same findings but did not publish checked facts.
+        with patch("app.discharge_api._evaluate", side_effect=legacy_reader):
+            path, prior = self.new("member_mismatch")
+        self.assertEqual(prior["checks"], [])
+        with ThreadPoolExecutor(max_workers=2) as pool:
+            replies = list(pool.map(lambda _: self.client.post(path + "/recheck", headers=match(1)), range(2)))
+        self.assertEqual(sorted(r.status_code for r in replies), [200, 412])
+        current = next(r.json() for r in replies if r.is_success)
+        self.assertEqual(current["revision"], 2)
+        self.assertIn("total_reconciled", {c["code"] for c in current["checks"]})
+        self.assertEqual(current["findings"], prior["findings"])
+        self.assertEqual(self.client.get(path + "?revision=1").json()["checks"], [])
+        self.assertEqual(self.client.post(path + "/recheck", headers=match(1)).status_code, 412)
+        self.assertEqual(self.client.post(path + "/recheck", headers=match(2)).json()["revision"], 2)
+        for old, new in zip(prior["sources"], current["sources"], strict=True):
+            self.assertEqual(old["sha256"], new["sha256"])
+            self.assertEqual(self.client.get(old["url"]).content, self.client.get(new["url"]).content)
+
     def test_new_claim_missing_sources_can_be_corrected_as_one_revision(self):
         meta, raw, names = load_discharge_fixture()
         data = {k: v for k, v in meta.items() if k != "id"} | {"confirmed": "true"}

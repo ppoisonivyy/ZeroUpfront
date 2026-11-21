@@ -16,6 +16,7 @@ export type ClaimFinding = {
   sources: { role: string; page: number; quote: string; method?: string }[];
 };
 export type DischargeClaim = {
+  ai_review_enabled?: boolean;
   id: string;
   revision: number;
   status: string;
@@ -50,6 +51,7 @@ export type DischargeClaim = {
   payable_minor: number | null;
   sources: Source[];
   findings: ClaimFinding[];
+  checks?: Omit<ClaimFinding, "severity" | "owner">[];
   history: { revision: number; status: string }[];
   reviewer: string | null;
   insurer_status: string;

@@ -4,6 +4,13 @@ import { dischargeRoles } from "./dischargeApi";
 import type { Source } from "./api";
 
 const labels: Record<string, string> = {
+  aia_admission_mismatch: "AIA admission number differs", aia_amount_mismatch: "AIA expense differs from bill",
+  aia_missing_consent: "Check the patient consent mark", aia_missing_certification: "Check the physician certification",
+  aia_signature_review: "Verify the original signature areas", cms_member_mismatch: "CMS member ID differs",
+  cms_disposition_mismatch: "Discharge destinations differ", cms_original_claim_reference: "Original claim reference needed",
+  cms_total_mismatch: "CMS charges differ from the account", fep_total_mismatch: "FEP expense differs from the invoice",
+  fep_assignment_signature: "Provider assignment needs a signature", fep_assignment_provider: "Assignment names another facility",
+  fep_payee_review: "Check the payment election", cms_member_review: "Check the member ID on the form",
   duplicate_line: "Repeated invoice item", missing_records: "Missing supporting records",
   orphan_credit: "Credit without a matching charge", over_cap: "Charges exceed the written cap",
   total_mismatch: "Invoice total differs from its lines", share_mismatch: "Patient share differs",

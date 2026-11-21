@@ -10,12 +10,13 @@ import {
 } from "lucide-react";
 import { ClaimFindings } from "./ClaimFindings";
 import { ClaimPill, DischargeList } from "./DischargeQueue";
-import { api, displayDate, type Source } from "./api";
+import { api, displayDate, RequestError, type Source } from "./api";
 import { AttachmentList } from "./Attachments";
 import { SourceView } from "./SourceView";
 import { RecordedEvent } from "./CaseWorkflow";
 import { ClaimMutation, ClaimUpload } from "./DischargeForms";
 import DischargeOcr from "./DischargeOcr";
+import { PayerSecondRead } from "./PayerSecondRead";
 import {
   claimPath,
   claimHref,
@@ -39,15 +40,19 @@ function ClaimDetail({
   claim,
   pinned,
   reload,
+  onRechecked,
 }: {
   claim: DischargeClaim;
   pinned: boolean;
   reload: () => void;
+  onRechecked: (next: DischargeClaim) => void;
 }) {
   const [panel, setPanel] = useState<Panel>("overview"),
     [selection, setSelection] = useState<Source | null>(null),
     [error, setError] = useState(""),
     [working, setWorking] = useState(false);
+  const [recheckMessage, setRecheckMessage] = useState("");
+  const [recheckError, setRecheckError] = useState<Error | null>(null);
   const downloadUrl = useRef("");
   useEffect(
     () => () => {
@@ -63,7 +68,34 @@ function ClaimDetail({
     overview();
     reload();
   };
-  const findings = [...claim.findings].sort((a, b) => Number(b.severity === "blocker") - Number(a.severity === "blocker"));
+  async function recheck() {
+    if (working) return;
+    setWorking(true);
+    setRecheckMessage("");
+    setRecheckError(null);
+    try {
+      const response = await api(claimPath(claim.id) + "/recheck", {
+        method: "POST",
+        headers: { "If-Match": `"${claim.revision}"` },
+      });
+      const next: DischargeClaim = await response.json();
+      setSelection(null);
+      onRechecked(next);
+      setRecheckMessage(next.revision === claim.revision
+        ? `Rechecked the originals. Findings and checks are unchanged in R${next.revision}.`
+        : `Rechecked the originals. Updated findings and checks are saved in R${next.revision}.`);
+    } catch (e) {
+      setRecheckError(e instanceof Error ? e : new Error("The originals could not be rechecked."));
+    } finally {
+      setWorking(false);
+    }
+  }
+  function priority(finding: (typeof claim.findings)[number]) {
+    const formSpecific = /^(aia|cms|fep)_/.test(finding.code);
+    return (formSpecific ? 2 : 0) + Number(finding.severity === "blocker");
+  }
+  const findings = [...claim.findings].sort((a, b) => priority(b) - priority(a));
+  const formChecks = (claim.checks || []).filter(check => /^(aia|cms|fep)_/.test(check.code));
   const firstCitation = findings.flatMap(f => f.sources).find(cite =>
     claim.sources.some(item => item.role === cite.role));
   const citedFile = firstCitation && claim.sources.find(item => item.role === firstCitation.role);
@@ -292,6 +324,19 @@ function ClaimDetail({
             ) : (
               <ClaimFindings findings={findings} sources={claim.sources} pick={pick} />
             )}
+            {formChecks.length > 0 && <section className="payer-fields" aria-label="Fields read from the payer form">
+              <h3>Fields read from the payer form</h3>
+              {formChecks.map(check => <div key={check.code}>
+                <p>{check.message}</p>
+                <div className="evidence-cites">{check.sources.map((cite, i) => {
+                  const file = claim.sources.find(source => source.role === cite.role);
+                  if (!file) return null;
+                  return <button key={i} type="button" onClick={() => pick({...file, page: cite.page, quote: cite.quote})}>
+                    {dischargeRoles[cite.role as keyof typeof dischargeRoles]} · p. {cite.page}
+                  </button>;
+                })}</div>
+              </div>)}
+            </section>}
             <div className="actions">
               {canVerifyOcr && (
                 <button className="primary" onClick={() => setPanel("ocr")}>
@@ -321,12 +366,26 @@ function ClaimDetail({
                   Correct packet documents
                 </button>
               )}
+              {!pinned && claim.status === "needs_review" && (
+                <button className="secondary" disabled={working} onClick={recheck}>
+                  {working ? "Rechecking originals…" : "Recheck original documents"}
+                </button>
+              )}
               {!pinned && claim.sample_bill_available && (
                 <button className="primary" onClick={() => setPanel("sample")}>
                   Try corrected bill
                 </button>
               )}
             </div>
+            {recheckMessage && <p role="status" className="notice">{recheckMessage}</p>}
+            {recheckError && <p role="alert" className="notice">
+              {recheckError.message}{" "}
+              {recheckError instanceof RequestError && recheckError.status === 412 && (
+                <button className="text-action" onClick={reload}>Reload current revision</button>
+              )}
+            </p>}
+            {claim.ai_review_enabled && !pinned && claim.status === "needs_review" &&
+              <PayerSecondRead key={claim.id + claim.revision} claim={claim} pick={pick} />}
             <div className="subhead documents-head">
               <h3>Source documents</h3>
               <span>{claim.sources.length} sources</span>
@@ -573,6 +632,7 @@ export function Discharge({
     <ClaimDetail
       key={key}
       claim={loaded.data}
+      onRechecked={(next) => setLoaded((current) => current.key === key ? { key, data: next } : current)}
       reload={reload}
       pinned={!!revision}
     />

@@ -220,3 +220,14 @@
 @media (pointer: coarse) {
   .queue-switch, .practice-start, .evidence-cites button, .workflow-links a { min-height: 44px; }
 }
+
+.payer-fields { margin-top: 18px; border-top: 1px solid var(--line, #d8e1e6); padding-top: 14px; }
+.payer-fields h3 { margin: 0; font-size: 1rem; }
+.payer-fields p { margin: 12px 0 5px; }
+
+.ai-review { margin: 16px 0; border-top: 1px solid #d8e1e6; }
+.ai-review > summary { display: flex; align-items: center; gap: 8px; padding: 14px 0; cursor: pointer; font-weight: 600; }
+.ai-review fieldset { display: grid; gap: 12px; }
+.ai-review :is(h4, p) { margin: 6px 0; }
+.ai-review h4 { margin-top: 15px; }
+.ai-review button { justify-self: start; }
