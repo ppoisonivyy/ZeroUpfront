@@ -70,6 +70,7 @@ When a payer asks a question or declines a claim, the coordinator can record the
 | Test | Result |
 | --- | --- |
 | Synthetic AIA Thailand, US CMS-1450 and BCBS FEP claims on known form layouts | The current regression located **11/11** target issues on the correct page, with **6/6** exact changed-value citations, **0/45** false alerts on aligned fields and **14/14** unverified cases held. A fresh panel passed **8/8** payee and amount checks. [Holdout](docs/payer-holdout.md) · [Fresh panel](docs/payer-confirmation.md) |
+| Two synthetic, image-only physician reports | In a live OpenAI check, the visual helper suggested page **2 of 2** for the example with a pen mark (7.3 s) and returned **uncertain** for the otherwise identical blank report (6.1 s). Staff confirmed the page in a separate browser test. These two examples demonstrate the workflow. |
 | 10,000 synthetic inpatient encounters | All **760** timed HTTP requests passed. The restore recovered **11,040** revisions and **47,048** original PDF blobs. Median worklist render time was **0.82 seconds** on the test machine. [Database benchmark](docs/discharge-scale-benchmark.md) · [Browser measurements](docs/ux-redesign.md) |
 
 Actual payer acceptance and hospital staff time savings have yet to be measured. [Scaling benchmarks](docs/scaling.md) · [Deployment](docs/deployment.md) · [Security and encryption](docs/security-and-encryption.md) · [Privacy by jurisdiction](docs/privacy-by-jurisdiction.md)

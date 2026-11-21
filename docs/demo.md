@@ -4,6 +4,12 @@
 
 In the two-hospital demo, sign in to Canal Bridge as a hospital coordinator, open **Pre-arrival cases**, and select **Amelia Morgan · ZU-0248**. Choose **View cited clause** to see why Meridian Assist needs a signed report. Attach the signed sample, review form MA-IP-01, mark it reviewed and submit it. In the workspace menu choose **Switch to insurer desk** and sign in as the insurer reviewer. Open the received revision. The hospital can now find the same request under **Waiting for insurer**. The payment decision is pending. [Illustrated handoff](../README.md#coordinator-workspace) · [Run the 30-second recording](../demo/README.md)
 
+### Try the original physician report
+
+Start on a fresh pre-arrival case at Canal Bridge. To try the file picker, save the [two-page scanned report](../fixtures/physician-reports/canal-bridge-marked.pdf) and upload it from Amelia's case. Read the patient and encounter information on the original and inspect the pen mark on physical page 2. Confirm the encounter details and visible mark, record the review, and only then review the insurer form. Receipt, staff attestation and submission each have a distinct state. A later user can retrieve the exact bytes submitted.
+
+For comparison, try the [otherwise identical blank report](../fixtures/physician-reports/canal-bridge-blank.pdf) in a disposable case. Leave the confirmation unchecked and request a completed report. Staff can complete this check without a provider call. When an approved hospital enables the optional visual helper, a coordinator can explicitly send the report to OpenAI for suggested pages. Its answer cannot clear a hold. [Hospital opt-in and limits](hospital-workspaces.md#hospital-approval-for-external-document-processing)
+
 ## Discharge claim
 
 ### Live file upload
