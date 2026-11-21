@@ -85,6 +85,11 @@ class HospitalPlatformTests(unittest.TestCase):
             self.assertEqual((session["mode"], session["actor"], session["hospital_name"]),
                              ("staff", None, REGISTRY[slug]["hospital_name"]))
             self.assertEqual(self.client.get(f"/h/{slug}/api/discharge").status_code, 401)
+            invalid = self.client.post(f"/h/{slug}/api/access/login", json={"password": ["test only"]})
+            self.assertEqual(invalid.json(), {"detail": "Enter a valid username and password."})
+            self.assertEqual(invalid.status_code, 422)
+            for route in ("/docs", "/redoc"):
+                self.assertEqual(self.client.get(f"/h/{slug}" + route).status_code, 404)
 
     def test_two_sessions_cannot_swap_originals_or_sign_out_the_other_hospital(self):
         self.assertNotEqual(self.bills["north"], self.bills["south"])

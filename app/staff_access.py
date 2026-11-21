@@ -10,6 +10,8 @@ from argon2 import PasswordHasher
 from argon2.exceptions import VerificationError
 from argon2.profiles import RFC_9106_LOW_MEMORY
 from fastapi import HTTPException, Request, Response
+from fastapi.exception_handlers import request_validation_exception_handler
+from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 import psycopg
@@ -143,6 +145,12 @@ class Login(BaseModel):
 
 
 def install_access(app):
+    @app.exception_handler(RequestValidationError)
+    async def validation_error(request, exc):
+        if get_route_path(request.scope) == "/api/access/login":
+            return JSONResponse({"detail": "Enter a valid username and password."}, status_code=422)
+        return await request_validation_exception_handler(request, exc)
+
     def session_data(request, actor, username):
         data = {"mode": mode(), "actor": actor, "username": username}
         if request.app.state.hospital_name:

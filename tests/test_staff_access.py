@@ -30,6 +30,21 @@ class StaffAccessTest(unittest.TestCase):
     def setUp(self):
         self.browser.cookies.clear()
 
+    def test_login_validation_returns_only_generic_feedback(self):
+        password = secrets.token_urlsafe(32)
+        for fields in ({"password": password}, {"username": "desk", "password": [password]}):
+            reply = self.browser.post("/api/access/login", json=fields)
+            self.assertEqual(reply.status_code, 422)
+            self.assertEqual(reply.json(), {"detail": "Enter a valid username and password."})
+            self.assertNotIn(password, reply.text)
+
+    def test_openapi_schema_is_available_without_external_documentation_scripts(self):
+        schema = self.browser.get("/openapi.json")
+        self.assertEqual(schema.status_code, 200)
+        self.assertIn("/api/access/login", schema.json()["paths"])
+        for route in ("/docs", "/docs/oauth2-redirect", "/redoc"):
+            self.assertEqual(self.browser.get(route).status_code, 404)
+
     def test_identical_passwords_have_independent_argon2id_salts_and_verifiers(self):
         password = secrets.token_urlsafe(32)
         names = ["salt-staff-a", "salt-staff-b"]

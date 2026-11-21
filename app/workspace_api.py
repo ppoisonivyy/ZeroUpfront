@@ -395,7 +395,8 @@ def event_source(request: Request, case_id: str, revision: int, event_id: int):
     return _pdf(raw, f"{case_id}-r{revision}-event-{event_id}.pdf")
 
 def create_workspace(hospital=None):
-    workspace = FastAPI(title="ZeroUpfront coordinator API", version="1.1", lifespan=lifespan)
+    workspace = FastAPI(title="ZeroUpfront coordinator API", version="1.1", lifespan=lifespan,
+                        docs_url=None, redoc_url=None)
     workspace.state.hospital = hospital
     workspace.add_exception_handler(store.WorkspaceError, workspace_error)
     workspace.add_middleware(MultipartBodyLimit)
