@@ -9,11 +9,8 @@ TERMS = ("The insurer guarantees net THB 239,000 to the hospital. The hospital p
          "The insurer bears exchange-rate changes and bank fees and must fund any payment shortfall.")
 
 
-def exhibits():
-    facility = "Pattaya Practice Hospital"
+def exhibits(*, facility="Pattaya Practice Hospital", member="DEMO-PATTAYA-239", encounter="DEMO-LENS-239"):
     insurer = "Meridian Travel Cover (fictional)"
-    member = "DEMO-PATTAYA-239"
-    encounter = "DEMO-LENS-239"
     admission, discharge = "2026-11-18", "2026-11-19"
     dates = [f"Admission date: {admission}", f"Discharge date: {discharge}"]
     case = dict(member=member, encounter=encounter, facility=facility, insurer=insurer, procedure=PROCEDURE,
@@ -43,10 +40,10 @@ def exhibits():
     return case, raw, names
 
 
-def final_decision():
+def final_decision(*, facility="Pattaya Practice Hospital", encounter="DEMO-LENS-239"):
     return pdf(["FICTIONAL INSURER GUARANTEE | Pattaya practice case", "Final decision dated 19 November 2026",
-                "Meridian Travel Cover (fictional)", "Hospital: Pattaya Practice Hospital",
-                "Encounter: DEMO-LENS-239", "Covered procedure: " + PROCEDURE,
+                "Meridian Travel Cover (fictional)", f"Hospital: {facility}",
+                f"Encounter: {encounter}", "Covered procedure: " + PROCEDURE,
                 "Guaranteed net hospital payment: THB 239,000.00", "Agreed patient share: THB 0.00",
                 "Hospital payment due: 30 November 2026",
                 "The insurer funds exchange-rate changes and bank fees.",
