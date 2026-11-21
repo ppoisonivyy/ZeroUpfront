@@ -17,6 +17,8 @@ The workspace lets hospital staff reconcile an inpatient discharge claim against
 | Thai and US payer-form checks | Built edition-specific comparisons for IDs, totals and payment recipients on AIA, CMS and FEP forms. Created synthetic cases with frozen expected results, including manual review for ambiguous fields. | [AIA reader](../app/payer_aia.py) · [US reader](../app/payer_us.py) · [First-run results and misses](payer-holdout.md) |
 | Optional OpenAI second read | Added a staff-triggered multimodal read with citations. A Codex-assisted fix recovered the supporting invoice page when the model found conflicting member IDs but cited only the form. | [Reader](../app/payer_ai_reader.py) · [Fix](https://github.com/aowngong/ZeroUpfront/commit/b4d21f1334f96a03d87c93addf2d5188b2caca9b) · [Evidence replay](../bench/payer_citation_replay.py) |
 
+The standalone hospital and insurer design prototype demonstrates pre-arrival review and the guarantee handoff with synthetic cases. It embeds the project’s Z002 documents, Solar icons and the Archivo, DM Sans and IBM Plex Mono fonts. Both HTML pages include the asset notices. [Prototype and review guide](workspace-review/README.md)
+
 ## What we used
 
 - **Software and services.** React, TypeScript, Vite, Mozilla PDF.js, Lucide, FastAPI, PostgreSQL, pypdf and ReportLab provide application and PDF infrastructure. OpenAI Responses provides optional transcription and second reads. The separate policy experiments used OpenAI embeddings and hosted retrieval. Codex also assisted development and presentation work. [Component, asset and license register](../THIRD_PARTY.md)

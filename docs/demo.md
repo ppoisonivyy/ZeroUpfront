@@ -26,3 +26,5 @@ Use the same practice claim. Save the one-page fictional reply to your computer 
 ## Other ways to explore
 
 The primary walkthrough uses a supported synthetic layout. The official Thai and US form rehearsals show how the workspace handles unfamiliar layouts, missing evidence and claims that still need manual review. The policy research tools separately exercise Thai and US pre-arrival packets, scans, retrieval, and page citations. [Thai form results](thai-payer-forms.md) · [US form results](us-payer-forms.md) · [Policy and fixture CLI commands](../CONTRIBUTING.md#optional-openai-workflows)
+
+For a separate design walkthrough of pre-arrival coverage and the admission guarantee, try the [hospital and insurer prototype](workspace-review/README.md).
