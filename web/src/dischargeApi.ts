@@ -26,8 +26,13 @@ export type DischargeClaim = {
   facility?: string;
   sample_bill_available?: boolean;
   settlement_status: string;
-  paid_by_currency: Record<string,number>;
-  payer_decision: {outcome:string;amount_minor?:number;currency?:string}|null;
+  case_paid_by_currency?: Record<string, number>;
+  paid_by_currency: Record<string, number>;
+  payer_decision: {
+    outcome: string;
+    amount_minor?: number;
+    currency?: string;
+  } | null;
   admission_date: string;
   discharge_date: string;
   prior_case_id?: string | null;

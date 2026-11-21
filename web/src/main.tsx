@@ -49,7 +49,7 @@ function readRoute(): Route {
   const pathAndSearch =
     location.hash.slice(1) || location.pathname + location.search;
   const [path, search] = pathAndSearch.split("?");
-  if(path==="/")return {id:"",discharge:true};
+  if (path === "/") return { id: "", discharge: true };
   const params = new URLSearchParams(search);
   const revision = Number(params.get("revision"));
   const rev =
@@ -921,7 +921,7 @@ function App() {
       </a>
       <header className="app-header">
         <div className="header-inner">
-          <a href="#/cases" className="brand">
+          <a href="#/discharge" className="brand">
             <span className="logomark" aria-hidden="true">
               Z
             </span>
@@ -938,37 +938,39 @@ function App() {
       <main id="main-content" tabIndex={-1}>
         <nav className="workspace-nav" aria-label="Hospital workflows">
           <a
-            aria-current={!route.discharge ? "page" : undefined}
-            href="#/cases"
-          >
-            Pre-arrival cases
-          </a>
-          <a
             aria-current={route.discharge ? "page" : undefined}
             href="#/discharge"
           >
             Discharge claims
           </a>
-        </nav>
-        <nav className="breadcrumbs" aria-label="Breadcrumb">
-          <a href={route.discharge ? "#/discharge" : "#/cases"}>
-            <FolderOpen size={15} />
-            {route.discharge ? "Discharge worklist" : "Case worklist"}
+          <a
+            aria-current={!route.discharge ? "page" : undefined}
+            href="#/cases"
+          >
+            Pre-arrival cases
           </a>
-          {(route.id || route.create) && (
-            <>
-              <ChevronRight size={14} />
-              <span aria-current="page">
-                {route.create
-                  ? "Create a case"
-                  : route.discharge && route.id === "new"
-                    ? "Open a claim"
-                    : route.id}
-                {route.rev ? " · R" + route.rev : ""}
-              </span>
-            </>
-          )}
         </nav>
+        {(route.id || route.create) && (
+          <nav className="breadcrumbs" aria-label="Breadcrumb">
+            <a href={route.discharge ? "#/discharge" : "#/cases"}>
+              <FolderOpen size={15} />
+              {route.discharge ? "Discharge worklist" : "Case worklist"}
+            </a>
+            {(route.id || route.create) && (
+              <>
+                <ChevronRight size={14} />
+                <span aria-current="page">
+                  {route.create
+                    ? "Create a case"
+                    : route.discharge && route.id === "new"
+                      ? "Open a claim"
+                      : route.id}
+                  {route.rev ? " · R" + route.rev : ""}
+                </span>
+              </>
+            )}
+          </nav>
+        )}
         {route.discharge ? (
           <Suspense
             fallback={<p className="loading">Opening discharge workspace…</p>}

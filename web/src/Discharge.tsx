@@ -28,7 +28,13 @@ import {
 } from "./dischargeApi";
 
 type Panel =
-  "overview" | "correct" | "sample" | "approve" | "history" | "export" | ClaimAction;
+  | "overview"
+  | "correct"
+  | "sample"
+  | "approve"
+  | "history"
+  | "export"
+  | ClaimAction;
 const examples: Record<string, string> = {
   aligned: "Aligned discharge packet",
   duplicate_line: "Duplicate bill line",
@@ -67,24 +73,22 @@ function DischargeList({
     [error, setError] = useState("");
   const [search, setSearch] = useState("");
   async function openExample(scenario: string) {
-                setBusy(true);
-                setError("");
-                try {
-                  const c: DischargeClaim = await (
-                    await api("/api/discharge/examples/" + scenario, {
-                      method: "POST",
-                    })
-                  ).json();
-                  location.hash = claimHref(c.id);
-                } catch (e) {
-                  setError(
-                    e instanceof Error
-                      ? e.message
-                      : "Example could not be created.",
-                  );
-                } finally {
-                  setBusy(false);
-                }
+    setBusy(true);
+    setError("");
+    try {
+      const c: DischargeClaim = await (
+        await api("/api/discharge/examples/" + scenario, {
+          method: "POST",
+        })
+      ).json();
+      location.hash = claimHref(c.id);
+    } catch (e) {
+      setError(
+        e instanceof Error ? e.message : "Example could not be created.",
+      );
+    } finally {
+      setBusy(false);
+    }
   }
   const cases = rows.filter((c) =>
     [c.id, c.encounter, c.member, c.procedure, c.insurer].some((field) =>
@@ -102,20 +106,33 @@ function DischargeList({
             written terms.
           </p>
         </div>
-        <div className="page-actions">        <a
-          className="primary"
-          href={
-            "#/discharge/new" +
-            (prior ? "?case=" + encodeURIComponent(prior) : "")
-          }
-        >
-          <Plus size={16} />
-          Open a discharge claim
-        </a>{mode==="local"&&<button type="button" className="secondary" disabled={busy} onClick={()=>void openExample("duplicate_line")}>Try duplicate bill example</button>}</div>
+        <div className="page-actions">
+          {" "}
+          <a
+            className="primary"
+            href={
+              "#/discharge/new" +
+              (prior ? "?case=" + encodeURIComponent(prior) : "")
+            }
+          >
+            <Plus size={16} />
+            Open a discharge claim
+          </a>
+          {mode === "local" && (
+            <button
+              type="button"
+              className="secondary"
+              disabled={busy}
+              onClick={() => void openExample("duplicate_line")}
+            >
+              Try duplicate bill example
+            </button>
+          )}
+        </div>
       </div>
       {mode === "local" && (
         <details className="examples">
-          <summary>Try a discharge case</summary>
+          <summary>More discharge examples</summary>
           <p>
             Start a fresh local example with the original bill, clinical record
             and payer evidence.
@@ -142,17 +159,22 @@ function DischargeList({
               {busy ? "Creating…" : "Open example"}
             </button>
           </div>
-          
         </details>
       )}
-      {error&&<p className="error-message" role="alert">{error}</p>}
+      {error && (
+        <p className="error-message" role="alert">
+          {error}
+        </p>
+      )}
       <section className="panel">
         <div className="panel-heading">
           <h2>
             <ReceiptText size={17} />
             Discharged encounters
           </h2>
-          <span className="small">{cases.length} claims</span>
+          <span className="small">
+            {cases.length} {cases.length === 1 ? "claim" : "claims"}
+          </span>
         </div>
         {!!rows.length && (
           <div className="worklist-filters">
@@ -182,7 +204,8 @@ function DischargeList({
             <span className="row-detail">
               <strong>{c.procedure}</strong>
               <small>
-                {c.encounter ? c.encounter+" · " : ""}{c.member} · {displayDate(c.discharge_date)}
+                {c.encounter ? c.encounter + " · " : ""}
+                {c.member} · {displayDate(c.discharge_date)}
               </small>
               <small>{claimPayerStatus(c.insurer_status || "not_sent")}</small>
             </span>
@@ -214,6 +237,9 @@ function ClaimDetail({
     },
     [],
   );
+  const superseded = claim.history.some((h) => h.revision > claim.revision);
+  const canRecord = (a: string) =>
+    !pinned || (superseded && ["payment", "reply"].includes(a));
   const overview = () => setPanel("overview");
   const saved = () => {
     overview();
@@ -233,12 +259,23 @@ function ClaimDetail({
         .getElementById("source-view")
         ?.scrollIntoView({ block: "start" });
   };
-  if ((panel === "correct"||panel==="sample") && !pinned)
-    return <ClaimUpload claim={claim} useSampleByDefault={panel==="sample"} onSaved={saved} onCancel={overview} />;
-  if (["submission", "reply", "payment", "approve"].includes(panel) && !pinned)
+  if ((panel === "correct" || panel === "sample") && !pinned)
+    return (
+      <ClaimUpload
+        claim={claim}
+        useSampleByDefault={panel === "sample"}
+        onSaved={saved}
+        onCancel={overview}
+      />
+    );
+  if (
+    ["submission", "reply", "payment", "approve"].includes(panel) &&
+    canRecord(panel)
+  )
     return (
       <ClaimMutation
         claim={claim}
+        pinned={pinned}
         action={panel as ClaimAction | "approve"}
         onSaved={saved}
         onCancel={overview}
@@ -297,7 +334,7 @@ function ClaimDetail({
           {claim.reviewer && (
             <p className="hint">Staff reviewer · {claim.reviewer}</p>
           )}
-          
+
           <div className="actions">
             {!pinned && claim.status === "staff_reviewed" && (
               <button
@@ -508,7 +545,11 @@ function ClaimDetail({
                   Correct packet documents
                 </button>
               )}
-              {!pinned&&claim.sample_bill_available&&<button className="primary" onClick={()=>setPanel("sample")}>Try corrected bill</button>}
+              {!pinned && claim.sample_bill_available && (
+                <button className="primary" onClick={() => setPanel("sample")}>
+                  Try corrected bill
+                </button>
+              )}
             </div>
           </div>
         </section>
@@ -529,11 +570,80 @@ function ClaimDetail({
           <span className="small">Revision {claim.revision}</span>
         </div>
         <div className="review-body">
-          {claim.payer_decision||Object.keys(claim.paid_by_currency||{}).length>0?<dl className="settlement-summary"><div><dt>Amount in payer decision</dt><dd>{minorMoney(claim.payer_decision?.amount_minor,claim.payer_decision?.currency)}</dd></div><div><dt>Payments received</dt><dd>{Object.entries(claim.paid_by_currency || {}).map(([currency,amount])=>minorMoney(amount,currency)).join(" · ")||"None recorded"}</dd></div><div><dt>Settlement status</dt><dd>{{unpaid:"No payment recorded",partially_paid:"Partially paid",paid:"Paid",reconciliation_required:"Reconciliation required"}[claim.settlement_status]||claim.settlement_status}</dd></div></dl>:null}
+          {Object.entries(claim.case_paid_by_currency || {}).some(
+            ([currency, amount]) =>
+              amount !== (claim.paid_by_currency || {})[currency],
+          ) && (
+            <p className="history-warning">
+              Payments across all claim revisions ·{" "}
+              {Object.entries(claim.case_paid_by_currency || {})
+                .map(([code, amount]) => minorMoney(amount, code))
+                .join(" · ")}
+              . Review prior revisions to reconcile them.
+            </p>
+          )}
+          {claim.payer_decision ||
+          Object.keys(claim.paid_by_currency || {}).length > 0 ? (
+            <dl className="settlement-summary">
+              <div>
+                <dt>Amount in payer decision</dt>
+                <dd>
+                  {minorMoney(
+                    claim.payer_decision?.amount_minor,
+                    claim.payer_decision?.currency,
+                  )}
+                </dd>
+              </div>
+              <div>
+                <dt>Payments received</dt>
+                <dd>
+                  {Object.entries(claim.paid_by_currency || {})
+                    .map(([currency, amount]) => minorMoney(amount, currency))
+                    .join(" · ") || "None recorded"}
+                </dd>
+              </div>
+              <div>
+                <dt>Settlement status</dt>
+                <dd>
+                  {{
+                    unpaid: "No payment recorded",
+                    partially_paid: "Partially paid",
+                    paid: "Paid",
+                    reconciliation_required: "Reconciliation required",
+                  }[claim.settlement_status] || claim.settlement_status}
+                </dd>
+              </div>
+            </dl>
+          ) : null}
           {claim.events.length ? (
             <ol className="timeline-list">
               {claim.events.map((event, i) => (
-                <RecordedEvent key={event.id} event={typeof event.data.amount_minor==="number"?{...event,data:Object.fromEntries(Object.entries(event.data).filter(([k])=>k!=="currency").map(([k,v])=>k==="amount_minor"?["amount",minorMoney(Number(v),String(event.data.currency))]:[k,v]))}:event} index={i} />
+                <RecordedEvent
+                  key={event.id}
+                  event={
+                    typeof event.data.amount_minor === "number"
+                      ? {
+                          ...event,
+                          data: Object.fromEntries(
+                            Object.entries(event.data)
+                              .filter(([k]) => k !== "currency")
+                              .map(([k, v]) =>
+                                k === "amount_minor"
+                                  ? [
+                                      "amount",
+                                      minorMoney(
+                                        Number(v),
+                                        String(event.data.currency),
+                                      ),
+                                    ]
+                                  : [k, v],
+                              ),
+                          ),
+                        }
+                      : event
+                  }
+                  index={i}
+                />
               ))}
             </ol>
           ) : (
@@ -542,10 +652,14 @@ function ClaimDetail({
               response and an actual payment are separate records.
             </p>
           )}
-          {!pinned && (
+          {claim.allowed_actions.some(canRecord) && (
             <div className="actions">
               {claim.allowed_actions
-                .filter((a) => ["submission", "reply", "payment"].includes(a))
+                .filter(
+                  (a) =>
+                    canRecord(a) &&
+                    ["submission", "reply", "payment"].includes(a),
+                )
                 .map((a, i) => (
                   <button
                     className={i === 0 ? "primary" : "secondary"}

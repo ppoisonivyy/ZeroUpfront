@@ -15,7 +15,7 @@ from pydantic import BaseModel, ConfigDict, Field, StringConstraints, field_vali
 from app import workspace_store as store
 from app import discharge_store
 from app.discharge_api import router as discharge_router
-from app.workspace_http_common import INTAKE_BYTES, _actor, _pdf, _read_upload, _revision
+from app.workspace_http_common import INTAKE_BYTES, _actor, _pdf, _read_upload, _revision, ocr_service_error
 from app.case_workflow import validate_attachment
 from app.staff_access import install_access, initialize_access
 from app.workspace_documents import CASE_INSURERS, evaluate_estimate, packet_bytes, seed_cases
@@ -120,7 +120,7 @@ def _evaluate(case_id, data, filename):
     except ValueError as exc:
         raise HTTPException(422, str(exc)) from exc
     except APIError as exc:
-        raise HTTPException(503, "Demo OCR could not finish. Retry with the scan or use a digital demo estimate.") from exc
+        raise ocr_service_error(exc) from exc
 
 
 @asynccontextmanager
@@ -182,7 +182,7 @@ def _intake(metadata, documents, names, ocr, saved_ocr=None):
     except ValueError as exc:
         raise HTTPException(422, str(exc)) from exc
     except APIError as exc:
-        raise HTTPException(503, "Cloud OCR did not finish. Retry or submit for manual review.") from exc
+        raise ocr_service_error(exc) from exc
 
 
 @app.post("/api/cases", response_model=Case, status_code=201)

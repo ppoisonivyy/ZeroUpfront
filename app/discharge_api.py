@@ -1,6 +1,7 @@
 """Independent discharge intake and manual settlement records for one hospital."""
 
 from datetime import date
+import json
 import os
 from typing import Annotated, Literal
 from uuid import uuid4
@@ -11,7 +12,7 @@ from pydantic import BaseModel, Field
 
 from app import discharge_store as store
 from app.case_workflow import validate_attachment
-from app.workspace_http_common import _actor, _pdf, _read_upload, _revision
+from app.workspace_http_common import _actor, _pdf, _read_upload, _revision, ocr_service_error
 
 
 router = APIRouter(prefix="/api/discharge", tags=["Discharge"])
@@ -73,7 +74,7 @@ def _evaluate(meta, raw, names, ocr):
     except ValueError as exc:
         raise HTTPException(422, str(exc)) from exc
     except APIError as exc:
-        raise HTTPException(503, "Cloud OCR could not finish. Retry or submit for staff review.") from exc
+        raise ocr_service_error(exc) from exc
     return {**meta, **evidence}
 
 
@@ -107,6 +108,7 @@ def intake(
     prior_case_id: Annotated[str | None, Form()] = None,
     as_of: Annotated[date | None, Form()] = None,
     ocr: Annotated[bool, Form()] = False,
+    idempotency_key: Annotated[str | None, Header(min_length=1, max_length=128)] = None,
 ):
     if not confirmed:
         raise HTTPException(422, "Confirm the discharge exhibits belong to this encounter.")
@@ -126,7 +128,17 @@ def intake(
         meta["as_of"] = as_of.isoformat()
     raw, names = _files(dict(bill=bill, summary=summary, letter=letter, records=records))
     result = _evaluate(meta, raw, names, ocr)
-    return store.create(request.app.state.dsn, ident, result, raw, names, prior_case_id or None)
+    key = None
+    if idempotency_key:
+        metadata = {k: v for k, v in meta.items() if k != "id"}
+        manifest = {role: store.document_digest(data) for role, data in raw.items()}
+        encoded = json.dumps([metadata, manifest, names, prior_case_id, ocr], sort_keys=True).encode()
+        key = (
+            getattr(request.state, "username", None) or "local",
+            idempotency_key,
+            store.document_digest(encoded),
+        )
+    return store.create(request.app.state.dsn, ident, result, raw, names, prior_case_id or None, key)
 
 
 @router.post("/examples/{scenario}", response_model=Detail, status_code=201)

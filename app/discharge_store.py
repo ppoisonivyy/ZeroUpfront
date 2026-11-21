@@ -35,6 +35,10 @@ CREATE TABLE IF NOT EXISTS zeroupfront_demo.discharge_events (
 );
 CREATE UNIQUE INDEX IF NOT EXISTS discharge_payment_reference ON zeroupfront_demo.discharge_events
     (case_id,lower(data->>'reference')) WHERE kind='payment';
+CREATE TABLE IF NOT EXISTS zeroupfront_demo.discharge_intake_requests (
+    actor text NOT NULL, request_key text NOT NULL, digest text NOT NULL,
+    case_id text NOT NULL REFERENCES zeroupfront_demo.discharge_cases(id), PRIMARY KEY(actor,request_key)
+);
 """
 
 
@@ -206,24 +210,43 @@ def _write(db, ident, rev, evidence, raw, names):
         )
 
 
-def create(dsn, ident, evidence, raw, names, prior=None):
+def create(dsn, ident, evidence, raw, names, prior=None, request_key=None):
     with psycopg.connect(dsn) as db:
+        if request_key:
+            actor, key, digest = request_key
+            db.execute("SELECT pg_advisory_xact_lock(hashtext(%s),hashtext(%s))", (actor, key))
+            row = db.execute(
+                """SELECT digest,case_id FROM zeroupfront_demo.discharge_intake_requests
+                                WHERE actor=%s AND request_key=%s""",
+                (actor, key),
+            ).fetchone()
+            if row:
+                if row[0] != digest:
+                    raise WorkspaceError(409, "That intake key already identifies a different discharge packet.")
+                return _detail(db, row[1], 1)
         prior_rev = None
         if prior:
             row = db.execute(
                 """
-                SELECT c.head,r.evidence->>'member',r.evidence->>'admission_date' FROM zeroupfront_demo.cases c
+                SELECT c.head,r.evidence->>'member',r.evidence->>'admission_date',r.evidence->>'procedure',
+                       r.evidence->>'insurer' FROM zeroupfront_demo.cases c
                 JOIN zeroupfront_demo.revisions r ON r.case_id=c.id AND r.revision=c.head WHERE c.id=%s FOR SHARE OF c
             """,
                 (prior,),
             ).fetchone()
-            if not row or (row[1], row[2]) != (evidence["member"], evidence["admission_date"]):
+            expected = tuple(evidence[k] for k in ("member", "admission_date", "procedure", "insurer"))
+            if not row or row[1:] != expected:
                 raise WorkspaceError(
-                    422, "The linked pre-admission case must match this member and admission date."
+                    422, "The linked case must match this member, admission date, procedure and insurer."
                 )
             prior_rev = row[0]
         db.execute("INSERT INTO zeroupfront_demo.discharge_cases VALUES (%s,1,%s,%s)", (ident, prior, prior_rev))
         _write(db, ident, 1, evidence, raw, names)
+        if request_key:
+            db.execute(
+                "INSERT INTO zeroupfront_demo.discharge_intake_requests VALUES (%s,%s,%s,%s)",
+                (*request_key, ident),
+            )
         return _detail(db, ident)
 
 

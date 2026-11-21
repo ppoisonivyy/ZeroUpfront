@@ -202,10 +202,15 @@ def _financial(fields, meta, review):
                 continue
             code = parts[0]
             index = charges if key == "Charge" else credits
-            if not re.fullmatch(r"[A-Z0-9-]{2,32}", code) or code in charges or code in credits:
-                original = charges.get(code) or credits.get(code)
-                review.flag("duplicate_line", OWNERS["bill"], "An item ID is invalid or appears more than once. Confirm the original lines.",
-                            original[1] if original else None, entry.ref)
+            if not re.fullmatch(r"[A-Z0-9-]{2,32}", code):
+                review.flag("invalid_line_id", OWNERS["bill"], "Ask billing to confirm the unreadable item identifier on this line.", entry.ref)
+                amount_valid = False
+                continue
+            original = charges.get(code) or credits.get(code)
+            if original:
+                review.flag("duplicate_line", OWNERS["bill"],
+                            f"Item {code} appears more than once. Ask billing whether both entries belong on the final invoice.",
+                            original[1], entry.ref)
                 amount_valid = False
                 continue
             day = parts[1] if key == "Charge" else parts[2]

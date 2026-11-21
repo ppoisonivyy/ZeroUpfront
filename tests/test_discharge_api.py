@@ -12,10 +12,13 @@ from unittest.mock import patch
 
 from fastapi.testclient import TestClient
 from pypdf import PdfReader
+import httpx
+from openai import AuthenticationError, APIConnectionError, RateLimitError
 
 from app.discharge_claim import load_discharge_fixture
 from app.journey_examples import pdf
 from app.workspace_api import app
+from app.workspace_http_common import ocr_service_error
 from bench.case_revision import temporary_database
 
 
@@ -179,3 +182,37 @@ class DischargeApiTests(unittest.TestCase):
         self.assertEqual(newer.json()["paid_by_currency"], {})
         self.assertEqual(self.client.get(archived["source_url"]).content, sent_pdf)
         self.assertEqual(self.client.get(path + "/export?revision=1").status_code, 412)
+
+    def test_intake_retry_key_is_scoped_to_the_original_discharge_manifest(self):
+        meta, raw, names = load_discharge_fixture()
+        data = {k: v for k, v in meta.items() if k != "id"} | {"confirmed": "true"}
+        files = {role: (names[role], pdf_bytes, "application/pdf") for role, pdf_bytes in raw.items()}
+        header = {"Idempotency-Key": "discharge-retry"}
+
+        def intake():
+            return self.client.post(ROOT, data=data, files=files, headers=header)
+
+        with ThreadPoolExecutor(2) as pool:
+            results = [future.result(timeout=20) for future in [pool.submit(intake), pool.submit(intake)]]
+        self.assertEqual([r.status_code for r in results], [201, 201])
+        self.assertEqual(results[0].json()["id"], results[1].json()["id"])
+        del files["records"]
+        self.assertEqual(intake().status_code, 409)
+
+    def test_provider_outage_and_project_errors_remain_distinct_from_document_findings(self):
+        request = httpx.Request("POST", "https://example.invalid/v1/responses")
+        denied = AuthenticationError("denied", response=httpx.Response(401, request=request), body={})
+        rate = RateLimitError("limit", response=httpx.Response(429, request=request), body={})
+        quota = RateLimitError(
+            "quota", response=httpx.Response(429, request=request), body={"code": "insufficient_quota"}
+        )
+        for exc, status, phrase in (
+            (denied, 503, "authenticate"),
+            (rate, 429, "rate limited"),
+            (quota, 503, "quota"),
+            (APIConnectionError(request=request), 503, "temporarily unavailable"),
+        ):
+            with self.subTest(phrase=phrase):
+                response = ocr_service_error(exc)
+                self.assertEqual(response.status_code, status)
+                self.assertIn(phrase, response.detail)

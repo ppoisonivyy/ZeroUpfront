@@ -1,4 +1,4 @@
-import { lazy, Suspense,useState } from "react";
+import { lazy, Suspense, useRef, useState } from "react";
 import { useStaffSession } from "./Auth";
 import { api } from "./api";
 import { AttachmentList } from "./Attachments";
@@ -15,13 +15,13 @@ const actionTitles: Record<ClaimAction | string, string> = {
   reply: "Record written payer reply",
   payment: "Record payment received",
 };
-const PdfPage=lazy(()=>import("./PdfPage"));
+const PdfPage = lazy(() => import("./PdfPage"));
 export function ClaimUpload({
   claim,
   prior,
   onSaved,
   onCancel,
-  useSampleByDefault=false,
+  useSampleByDefault = false,
 }: {
   claim?: DischargeClaim;
   prior?: string;
@@ -29,7 +29,10 @@ export function ClaimUpload({
   onCancel: () => void;
   useSampleByDefault?: boolean;
 }) {
-  const [useSample,setUseSample]=useState(useSampleByDefault&&!!claim?.sample_bill_available);
+  const operation = useRef(crypto.randomUUID());
+  const [useSample, setUseSample] = useState(
+    useSampleByDefault && !!claim?.sample_bill_available,
+  );
   const [busy, setBusy] = useState(false),
     [error, setError] = useState("");
   return (
@@ -47,6 +50,9 @@ export function ClaimUpload({
       </div>
       <form
         className="panel form-body"
+        onChange={() => {
+          operation.current = crypto.randomUUID();
+        }}
         onSubmit={async (e) => {
           e.preventDefault();
           if (busy) return;
@@ -55,8 +61,12 @@ export function ClaimUpload({
             const f = body.get(role);
             if (!(f instanceof File) || !f.name) body.delete(role);
           }
-          if(useSample&&claim?.sample_bill_available)body.set("sample_bill","true");
-          if (!useSample&&!Object.keys(dischargeRoles).some((k) => body.has(k))) {
+          if (useSample && claim?.sample_bill_available)
+            body.set("sample_bill", "true");
+          if (
+            !useSample &&
+            !Object.keys(dischargeRoles).some((k) => body.has(k))
+          ) {
             setError("Select at least one source PDF.");
             return;
           }
@@ -70,7 +80,7 @@ export function ClaimUpload({
                 method: "POST",
                 headers: claim
                   ? { "If-Match": '"' + claim.revision + '"' }
-                  : undefined,
+                  : { "Idempotency-Key": operation.current },
                 body,
               },
             );
@@ -116,14 +126,50 @@ export function ClaimUpload({
               ? "Upload one or more corrected exhibits together."
               : "You can start with an incomplete packet. Missing exhibits will appear in the review."}
           </p>
-          {claim?.sample_bill_available&&<label className="check-field"><input type="checkbox" checked={useSample} onChange={e=>setUseSample(e.target.checked)}/>Use the corrected bill from this local example.</label>}
-          {useSample&&claim?<div className="attachment-preview"><div className="attachment-tools"><strong>Proposed corrected bill</strong><a href={claimPath(claim.id)+"/sample-bill"} target="_blank" rel="noreferrer">Open original PDF</a></div><Suspense fallback={<p>Opening corrected bill…</p>}><PdfPage label="Proposed corrected bill" url={claimPath(claim.id)+"/sample-bill"}/></Suspense></div>:Object.entries(dischargeRoles).map(([role, label]) => (
-            <label className="upload-field" key={role}>
-              <strong>{label} PDF</strong>
-              <input name={role} type="file" accept="application/pdf,.pdf" />
+          {claim?.sample_bill_available && (
+            <label className="check-field">
+              <input
+                type="checkbox"
+                checked={useSample}
+                onChange={(e) => setUseSample(e.target.checked)}
+              />
+              Use the corrected bill from this local example.
             </label>
-          ))}
-          {!useSample&&<label className="check-field"><input type="checkbox" name="ocr" value="true"/>Allow OpenAI to process scanned pages of these exhibits if OCR is needed.</label>}
+          )}
+          {useSample && claim ? (
+            <div className="attachment-preview">
+              <div className="attachment-tools">
+                <strong>Proposed corrected bill</strong>
+                <a
+                  href={claimPath(claim.id) + "/sample-bill"}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  Open original PDF
+                </a>
+              </div>
+              <Suspense fallback={<p>Opening corrected bill…</p>}>
+                <PdfPage
+                  label="Proposed corrected bill"
+                  url={claimPath(claim.id) + "/sample-bill"}
+                />
+              </Suspense>
+            </div>
+          ) : (
+            Object.entries(dischargeRoles).map(([role, label]) => (
+              <label className="upload-field" key={role}>
+                <strong>{label} PDF</strong>
+                <input name={role} type="file" accept="application/pdf,.pdf" />
+              </label>
+            ))
+          )}
+          {!useSample && (
+            <label className="check-field">
+              <input type="checkbox" name="ocr" value="true" />
+              Allow OpenAI to process scanned pages of these exhibits if OCR is
+              needed.
+            </label>
+          )}
           <label className="check-field">
             <input required name="confirmed" type="checkbox" value="true" />I
             verified the files belong to this discharge encounter.
@@ -158,10 +204,12 @@ export function ClaimUpload({
 export function ClaimMutation({
   claim,
   action,
+  pinned = false,
   onSaved,
   onCancel,
 }: {
   claim: DischargeClaim;
+  pinned?: boolean;
   action: ClaimAction | "approve";
   onSaved: () => void;
   onCancel: () => void;
@@ -192,9 +240,13 @@ export function ClaimMutation({
           const body = new FormData(e.currentTarget);
           const name = actor || String(body.get("actor") || "").trim();
           if (!name) return;
+          const head = pinned
+            ? Math.max(claim.revision, ...claim.history.map((h) => h.revision))
+            : claim.revision;
           const headers = new Headers({
-            "If-Match": '"' + claim.revision + '"',
+            "If-Match": '"' + head + '"',
           });
+          if (pinned) body.set("target_revision", String(claim.revision));
           body.set("action", action);
           body.set("workflow_version", String(claim.workflow_version));
           body.set("actor", name);

@@ -2,8 +2,21 @@
 import re
 
 from fastapi import HTTPException, Response
+from openai import APIConnectionError, APITimeoutError, AuthenticationError, PermissionDeniedError, RateLimitError
 
 INTAKE_BYTES = 24 * 1024 * 1024
+
+
+def ocr_service_error(exc):
+    if isinstance(exc, (AuthenticationError, PermissionDeniedError)):
+        return HTTPException(503, "Cloud OCR could not authenticate the configured project or access the configured model.")
+    if isinstance(exc, RateLimitError):
+        if getattr(exc, "code", None) == "insufficient_quota":
+            return HTTPException(503, "The cloud OCR project has insufficient API quota. Check the project billing configuration.")
+        return HTTPException(429, "Cloud OCR is rate limited. Retry after the provider limit clears.")
+    if isinstance(exc, (APIConnectionError, APITimeoutError)) or (getattr(exc, "status_code", None) or 0) >= 500:
+        return HTTPException(503, "The cloud OCR provider timed out or is temporarily unavailable. Retry later.")
+    return HTTPException(502, "The cloud OCR provider rejected this request. Check the model and document settings.")
 
 
 def _revision(if_match):
