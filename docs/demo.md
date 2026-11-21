@@ -4,7 +4,7 @@ A hospital coordinator is preparing the final claim for a fictional wrist-fractu
 
 Start the local coordinator workspace, then open **Discharge claims**. The digital practice case includes all four source PDFs and runs without an API key. [Setup and local workspace link](../README.md#run-the-demo) · [Watch or pause the walkthrough (MP4)](figures/discharge-walkthrough.mp4?raw=1) · [View the animation (GIF)](figures/discharge-walkthrough.gif)
 
-In the video, pause at **0:14** to read both THB 3,600 pharmacy lines on the original bill. At **0:29**, the corrected revision is ready for staff review. At **0:54**, the exported attachment shows the single remaining charge and the separate credit for returned supplies. [Still view of the coordinator workspace](figures/discharge-review.png)
+In the video, pause at **0:13** to read both THB 3,600 pharmacy lines on the original bill. At **0:29**, the corrected revision is ready for staff review. At **0:53**, the exported attachment shows the single remaining charge and the separate credit for returned supplies. [Still view of the coordinator workspace](figures/discharge-review.png)
 
 ## Try it as the hospital coordinator
 
