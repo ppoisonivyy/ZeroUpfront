@@ -222,6 +222,7 @@ export function ClaimMutation({
     [error, setError] = useState("");
   const followUp = claim.payer_decision;
   const [draftDigest, setDraftDigest] = useState("");
+  const [downloadedText, setDownloadedText] = useState("");
   const [fileOrigin, setFileOrigin] = useState<"external" | "workspace">("external");
   const payerReply = [...claim.events].reverse().find(event => event.kind === "reply");
   const [draft, setDraft] = useState(() => {
@@ -255,6 +256,7 @@ Please confirm receipt and the date we can expect your written response.`;
       if (!digest) throw new Error("The downloaded response is missing its document reference.");
       const url = URL.createObjectURL(await res.blob());
       setDraftDigest(digest);
+      setDownloadedText(draft);
       setFileOrigin("workspace");
       const link = document.createElement("a");
       link.href = url;
@@ -299,7 +301,13 @@ Please confirm receipt and the date we can expect your written response.`;
           if (needsOwner) body.set("assign_follow_up", "true");
           if (action === "supplement" && payerReply) {
             body.set("payer_event_id", String(payerReply.id));
-            if (fileOrigin === "workspace" && draftDigest) body.set("draft_sha256", draftDigest);
+            if (fileOrigin === "workspace" && draftDigest) {
+              if (draft !== downloadedText) {
+                setError("The draft text changed. Download the edited response before attaching the exact PDF you sent.");
+                return;
+              }
+              body.set("draft_sha256", draftDigest);
+            }
           }
           if (action === "approve")
             headers.set("Content-Type", "application/json");

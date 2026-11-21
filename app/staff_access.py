@@ -188,7 +188,7 @@ class Login(BaseModel):
 
 
 def _capability(path):
-    if path.endswith("/export"):
+    if path.endswith(("/export", "/follow-up-draft")):
         return "export"
     if "/sources/" in path or path.endswith(("/source", "/sample-estimate", "/sample-bill", "/ocr-review", "/clarification", "/report-example")):
         return "original"
