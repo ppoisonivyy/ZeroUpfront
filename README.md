@@ -1,8 +1,11 @@
 # ZeroUpfront
 
-ZeroUpfront helps hospital coordinators prepare preauthorization requests and check discharge claims. Coordinators inspect source pages, resolve discrepancies, review a packet and record the payer's reply. The hospital retains each document revision and its original PDFs.
+ZeroUpfront helps hospital coordinators prepare preauthorization requests and check discharge claims. Discharge is the main worklist. A coordinator compares the final bill, discharge summary, written payer letter and supporting records, opens the cited page, and signs off the reviewed revision. Staff can then export the packet and record an external submission, a payer decision and actual payments separately. Pre-arrival stays accessible in the same workspace.
 
 ## Start here
+
+- [Run the coordinator workspace](#coordinator-workspace) or [build the release image](docs/deployment.md).
+- [Third-party software, services, fonts, form sources and design references](THIRD_PARTY.md) · [Locked versions and licenses](docs/third-party-packages.md) · [Release image components](docs/release-components.md).
 
 - [Discharge claim workflow and comparison with preauthorization](docs/discharge-workflow.md)
 - [Discharge screening and settlement test results](docs/discharge-journey-results.md) and [live OpenAI OCR on the scanned discharge summary](docs/discharge-ocr.md)
@@ -39,7 +42,7 @@ npm --prefix web run build
 uv run --locked python app/run_workspace.py
 ```
 
-Open [the local workspace](http://127.0.0.1:8038/). On the discharge worklist, choose **Try a discharge case**, then **Duplicate bill line**. Open the page 2 finding, choose **Try corrected bill**, and save the corrected revision. Its original bill and history remain available for inspection.
+Open [the local workspace](http://127.0.0.1:8038/). On the discharge worklist, choose **Try duplicate bill example**. Inspect the repeated pharmacy charge on page 2, choose **Try corrected bill**, and save the corrected revision. Review its attachments, mark the packet reviewed, then open **Claim and attachments** to preview each original or download the export. **Version history** keeps the original bill accessible.
 
 Choose **Try a case** on the pre-arrival worklist to start a fresh synthetic example. Choose **Partial guarantee** to compare the written letter with actual admission charges, or open Z002 to replace an unitemized estimate. Select an attachment to preview the exact original before downloading the reviewed packet.
 
