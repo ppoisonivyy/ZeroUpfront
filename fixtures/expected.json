@@ -1,0 +1,6 @@
+[
+  {"case":"Z001","insurer":"alder","estimate":"estimate.pdf","total_thb":120000,"result":"ready_for_review","flag_clause":null},
+  {"case":"Z002","insurer":"alder","estimate":"estimate.pdf","total_thb":82000,"result":"missing_evidence","flag_clause":"AT-2"},
+  {"case":"Z002","insurer":"alder","estimate":"revised-estimate.pdf","total_thb":82000,"result":"ready_for_review","flag_clause":null},
+  {"case":"Z003","insurer":"mango","estimate":"estimate.pdf","total_thb":95000,"result":"possible_exclusion","flag_clause":"MM-2"}
+]

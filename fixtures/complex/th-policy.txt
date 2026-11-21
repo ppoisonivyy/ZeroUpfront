@@ -1,0 +1,37 @@
+Khlong Meridian • ข้อกำหนดกรมธรรม์จำลอง
+## 1. ตารางผลประโยชน์ / Member schedule
+Edition KM-26C • Thai-origin hospital plan • Gold inpatient option • effective 1 August 2026. All terms, insurers, patients and hospital identifiers are fictional.
+KM-1.1 The enrollment schedule selects a benefit option and any attached riders. เงินบาทไทย (THB) is the settlement currency. Use the service date for benefits and the encounter ID for linking hospital records.
+รายการ / Benefit | Silver | Gold
+ค่าห้อง / Standard room | THB 3,500 per night | THB 5,000 per night
+Annual inpatient ceiling | THB 400,000 | THB 900,000
+Special nursing | Separate approval | Separate approval
+KM-1.2 A direct-billing card permits the hospital to request financial clearance. Hospital staff still need a written response with the authorized amount before recording a guarantee.
+## 2. Dates and waiting periods
+KM-2.1 An ordinary illness admission during the first 30 calendar days after enrollment is subject to review under the waiting-period rule. Count elapsed calendar days from the start date to the admission date.
+KM-2.2 Treatment following a documented accidental injury occurring after enrollment is exempt from the ordinary illness waiting period. Attach the incident date and current treatment plan. A history entry alone does not establish the event.
+KM-2.3 A separately scheduled elective procedure requires its own review. Do not apply the accident exception to an unrelated illness merely because both appear in the same longitudinal history.
+## 3. เครือข่าย / Network and facility
+KM-3.1 Apply the network list effective on admission. A provider name on an older list or a letter for a different branch is insufficient. Use the facility code on the schedule and the treating branch on the admission record.
+KM-3.2 Out-of-network planned admissions proceed to staff review for a settlement arrangement. Emergency records may be submitted for review with the incident report and transfer chronology.
+KM-3.3 Emergency department observation alone does not establish an overnight room entitlement. Use the ward arrival and discharge times together with the billed night lines.
+## 4. Room benefits and companion expenses
+KM-4.1 Gold room charges are limited to THB 5,000 per eligible inpatient night under the base schedule. Test each night separately. Any excess is listed for the coordinator to discuss with the member.
+KM-4.2 A companion bed and visitor meals are member expenses even when they appear under the same room heading. Split these components before applying the cap. An item total plus its subtotal represents one expense.
+KM-4.3 A signed rider can change the limit for the approved facility and dates. An approved limit modifies the eligible room line only; companion expenses remain separate.
+## 5. เอกสารเรียกร้อง / Evidence and reconciliation
+KM-5.1 Request every page of the current itemized estimate. A page counter of 1/2 indicates a missing exhibit if page 2 is absent. A printed net subtotal alone is insufficient to reconcile missing detail.
+KM-5.2 Reconcile each line as gross less discount equals net, then compare the sum of net lines to the reported total. Preserve a separately supplied receipt for paid-to-date. A final statement does not prove settlement.
+KM-5.3 The hospital number on all clinical evidence must match the current encounter record. Quarantine an exhibit for another patient before using its diagnosis or billed service to support a request.
+## 6. Exclusions and special review
+KM-6.1 Room upgrades beyond the active cap, companion services and unitemized personal purchases are excluded from the requested direct-billing amount. Report each member item with the supporting invoice line.
+KM-6.2 Reconstructive treatment after a documented accident requires a functional objective and incident note. Purely cosmetic treatment remains outside this teaching plan. Refer an ambiguous purpose for staff review.
+KM-6.3 Hospital staff may request clarification or missing records. Only the insurer records the actual decision. A mathematical estimate of the member portion remains provisional until that response.
+## 7. สลักหลัง / Active rider and superseded circular
+KM-7.1 Rider R9 increases the Gold room limit to THB 6,000 per eligible night at facility BKK-17 for admissions from 1 November through 31 December 2026 inclusive. The member schedule must explicitly list R9.
+KM-7.2 Circular R8 listed THB 5,500 per night for the same branch through 31 October 2026. R8 expired before November admissions. Do not combine allowances across riders or offset one night's excess against another night.
+KM-7.3 R9 changes only the room limit in KM-4.1. Companion beds and meals remain member expenses under KM-4.2, even when the hospital prints them in the same cost center.
+## 8. Revised packets and insurer decision
+KM-8.1 Keep each upload as a separate dated revision. When page 2 arrives, pair it with page 1 of the same statement revision and rerun arithmetic and identity checks.
+KM-8.2 The hospital-facing pre-check reports actionable gaps, expected member expenses and the draft request amount. Record any later insurer approval or query with its reference and the revision it addresses.
+KM-8.3 At discharge compare the accepted estimate to the final statement and independently reconcile receipts. An absent receipt leaves paid-to-date unknown. Do not substitute the estimated member share for payment evidence.

@@ -1,0 +1,30 @@
+Case NQ-D481 • International patient department packet
+## A. Enrollment and admission
+Member DEMO-NQ-481 • encounter DEMO-BKK-118 • NQ-26B / G2 / M7 • valid 1 July 2026 through 30 June 2027. Facility BKK-29, Bangkok. Proposed inpatient fracture fixation. No actual patient information.
+Enrollment record lists G2 and overseas accident rider M7. An archived M6 information sheet was included in the travel wallet. Case opened by Bangkok admissions on 19 November 2026.
+Document | Date/time ICT | Recorded fact
+Travel record | 15 Nov, 14:15 | Arrived for a family visit
+Incident report | 18 Nov, 07:15 | Slipped at station and injured lower leg
+Ward record | 18 Nov, 09:00 | Unplanned admission from emergency department
+## B. Clinical and operational chronology
+Clinical exhibit P2. Emergency assessment described a closed tibial injury after a fall. The provider planned reduction and fixation to restore weight-bearing function. A prior elective consultation relates to another episode and is listed under history.
+On 19 November the hospital reserved a theatre slot. No procedure or hospital stay had been arranged before the accident. Expected stay is two chargeable nights.
+Assistance receipt N-118 records notification on 20 November at 21:00 ICT. The member file and notice use the same time zone. The hospital requests confirmation of the applicable notice window.
+## C. Provider estimate, revision 2
+Estimate E-118-R2, signed 19 November. This replaces the initial telephone total. All amounts in this table are THB. The two room lines are distinct overnight services.
+Charge | Qty | Net THB
+Surgical services | 1 | 84,000
+Theatre and anesthesia | 1 | 41,000
+Implant provisional allowance | 1 | 62,000
+Room / first night | 1 | 9,000
+Room / second night | 1 | 7,200
+Ward diagnostics | 1 | 16,800
+Reported estimate total | | 220,000
+## D. Correspondence and missing attachments
+Implant supplier message, 19 November. The THB 62,000 line is a provisional allowance. The device model, quantity confirmation and supplier unit-price schedule will follow. No final supplier schedule is attached.
+Assistance desk reference N-118 has status RECEIVED. It acknowledges an inbound packet. The guarantee amount field is blank and the message requests the implant schedule.
+Hospital estimate ledger: an earlier revision quoted THB 210,000 by phone. Revision 2 is the current document. Do not add the two estimates.
+## E. Rate sheet and staff worksheet
+Rate sheet FX-118 records 35.00 THB per USD for the admission date. Use it only for this synthetic case. Hospital settlement was requested in THB. No receipt or deposit statement accompanies the estimate.
+Review fields: identify the notice elapsed time, active rider, maximum for each room night, room excess, pending supplier evidence and insurer reply status. Draft arithmetic assumes no other adjustments after the listed policy checks.
+Staff signature area is intentionally empty. The reviewer must preserve both the USD policy cap and its THB conversion when explaining the adjustment.

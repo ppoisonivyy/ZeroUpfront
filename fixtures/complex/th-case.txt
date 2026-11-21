@@ -1,0 +1,28 @@
+Case KM-D205 • ชุดเอกสารผู้ป่วยในจำลอง
+## A. Member schedule and encounter
+DEMO-KM-205 • hospital number HN-DEMO-205 • encounter IPD-205 • KM-26C Gold / R9. Coverage starts 10 November 2026. Admission at facility BKK-17 on 21 November 2026. Two inpatient nights.
+หนังสือรับรองสิทธิ • แผน Gold • สลักหลัง R9 • สถานพยาบาล BKK-17
+The registrar matched hospital number and encounter at check-in. Another scanned summary has hospital number HN-DEMO-250 and describes an elective visit. It belongs to a different record and is quarantined.
+## B. Clinical timeline / บันทึกการรักษา
+20 Nov, 19:30 ICT: bicycle accident after enrollment. 21 Nov, 08:00: orthopedic assessment recorded an acute wrist injury. 21 Nov, 10:15: admitted for fracture fixation. Discharge planned 23 Nov.
+วัตถุประสงค์การรักษา: ซ่อมแซมกระดูกข้อมือหลังอุบัติเหตุ เพื่อฟื้นฟูการใช้งาน
+Current purpose is restoration of function following the incident. The unrelated elective note must not support the current request. Waiting-period review must distinguish ordinary illness from this documented event.
+## C. Hospital statement R2 • sheet 1 of 2
+ใบแจ้งค่ารักษาพยาบาล • HN-DEMO-205 • IPD-205 • THB • revision R2. Original intake contained sheet 1 only. The final row is a page subtotal, not another expense.
+Item | Gross | Discount | Net
+Surgery and theatre | 80,000 | 5,000 | 75,000
+Diagnostic services | 16,000 | 1,000 | 15,000
+ค่าห้อง คืนที่ 1 / Room night 1 | 7,000 | 0 | 7,000
+Page 1 subtotal | 103,000 | 6,000 | 97,000
+## D. Hospital statement R2 • sheet 2 of 2
+Supplement received 22 November for HN-DEMO-205 and IPD-205. This is the second sheet of the same R2 statement. All amounts are THB.
+Item | Gross | Discount | Net
+ค่าห้อง คืนที่ 2 / Room night 2 | 5,800 | 0 | 5,800
+เตียงผู้ติดตาม / Companion bed | 1,200 | 0 | 1,200
+Implant and supplies | 42,000 | 2,000 | 40,000
+Page 2 subtotal | 49,000 | 2,000 | 47,000
+Statement total | 152,000 | 8,000 | 144,000
+## E. Desk correspondence and settlement
+Desk message KM-Q205 asks for the missing second sheet and member schedule. The corrected packet includes both. The same message confirms receipt only. No approved amount is stated.
+The patient's travel folder contains expired circular R8 from October. The current schedule names R9. The reference branch and admission date must be checked before applying an elevated room limit.
+The cashier supplied a statement but no receipt for payment. Paid-to-date is unknown. Record the projected patient portion independently of cash received. Staff must review any draft amount before transmission.

@@ -1,0 +1,8 @@
+[
+  {"pack":"us","question":"What overseas accident notification deadline applies to this admission under the active rider and did the hospital notify in time?","pages":[3,7],"expected":"M7: 72 hours supersedes 48. Exactly 60 hours elapsed. Receipt alone is not approval."},
+  {"pack":"us","question":"How should the reviewer apply the G2 room allowance to each night at the assistance desk exchange rate?","pages":[1,4],"expected":"USD 220 x 35 = THB 7,700/night. First night excess 1,300; second night zero."},
+  {"pack":"us","question":"Which implant supplier schedule is pending for the device and what is the provisional amount?","pages":[4,8],"expected":"THB 62,000 is pending until supplier device, quantity and price details arrive."},
+  {"pack":"th","question":"How do the base Gold room limit and active rider change the room cap and companion expense at BKK-17?","pages":[4,7],"expected":"R9 cap 6,000. THB 1,000 first-night excess + 1,200 companion = 2,200. Draft 141,800 before insurer determination."},
+  {"pack":"th","question":"Does the ordinary illness waiting period apply to a documented accidental injury after enrollment?","pages":[2],"expected":"11 elapsed days. Documented accident after enrollment supports the exception. Do not link HN-DEMO-250."},
+  {"pack":"th","question":"Can staff reconcile a revised statement missing its second sheet, and does a subtotal prove payment?","pages":[5,8],"expected":"Initial packet lacks sheet 2. Corrected packet reconciles 97,000 + 47,000 = 144,000 net. Paid-to-date remains unknown."}
+]

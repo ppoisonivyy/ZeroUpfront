@@ -1,0 +1,38 @@
+{
+  "alder": {
+    "name": "Alder Transit Cover",
+    "version": "AT-2026.1",
+    "currency": "THB",
+    "limit_thb": 180000,
+    "itemization_from_thb": 50000,
+    "clauses": {
+      "AT-1": "Inpatient treatment estimates up to THB 180,000 per case may be submitted for pre-check.",
+      "AT-2": "For an estimate of THB 50,000 or more, attach a breakdown with each service and its price.",
+      "AT-3": "Attach the planned procedure, admission date and member reference to every request."
+    },
+    "form_order": [
+      "member_reference",
+      "admission_date",
+      "procedure",
+      "estimated_total_thb"
+    ]
+  },
+  "mango": {
+    "name": "Mango Meridian Cover",
+    "version": "MM-2026.1",
+    "currency": "THB",
+    "limit_thb": 220000,
+    "excluded_purpose": "solely cosmetic",
+    "clauses": {
+      "MM-1": "Submit the planned procedure, member reference, admission date and itemized estimate.",
+      "MM-2": "Procedures performed solely for cosmetic appearance are excluded.",
+      "MM-3": "The inpatient estimate limit is THB 220,000 per case."
+    },
+    "form_order": [
+      "procedure",
+      "estimated_total_thb",
+      "admission_date",
+      "member_reference"
+    ]
+  }
+}

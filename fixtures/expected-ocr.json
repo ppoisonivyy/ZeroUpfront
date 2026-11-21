@@ -1,0 +1,4 @@
+[
+  {"case":"Z002","insurer":"alder","policy_file":"alder-mixed.pdf","estimate":"scanned-estimate.pdf","total_thb":82000,"result":"missing_evidence","flag_clause":"AT-2","flag_page":2,"flag_method":"ocr"},
+  {"case":"Z003","insurer":"mango","plan":"scanned-plan.pdf","estimate":"estimate.pdf","total_thb":95000,"result":"possible_exclusion","flag_clause":"MM-2","flag_page":1,"flag_method":"digital"}
+]
