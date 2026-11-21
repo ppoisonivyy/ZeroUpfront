@@ -1,11 +1,11 @@
-# ZeroFront
+# ZeroUpfront
 
 Hackathon project by a team of three.
 
 ## Repository layout
 
 ```text
-ZeroFront/
+ZeroUpfront/
 ├── app/          Application code and tests
 ├── docs/demo.md  Demo script and submission prep
 └── README.md     Project overview and team workflow

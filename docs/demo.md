@@ -3,7 +3,7 @@
 ## Story
 
 - **Problem:** Who is affected, and what are they trying to do?
-- **Solution:** What can they do with ZeroFront?
+- **Solution:** What can they do with ZeroUpfront?
 - **Proof:** What result will the judges see on screen?
 
 ## Run of show
