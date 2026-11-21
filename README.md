@@ -10,6 +10,9 @@ The workspace puts each discrepancy beside the original PDF page. A coordinator 
 
 ## Run the demo
 
+For the **password-protected two-hospital demo**, build the client with the first two commands below, then run `uv run --locked python -m app.hospital_demo`. Choose the judge passwords when prompted and open the [hospital directory](http://127.0.0.1:8040/). In Canal Bridge, select **VISIT-CB-001** to inspect and correct a duplicate charge. Lakeside has its own accounts, claim history and original PDFs. [Full demo and hosting guide](docs/hospital-workspaces.md)
+
+
 The local rehearsal uses fictional patient and billing data and works without an API key. From the repository root, with Python 3.12, uv, Node 24 with npm, and PostgreSQL’s `initdb` and `pg_ctl` on your PATH, run the following as a regular user.
 
 ```sh
@@ -39,6 +42,18 @@ A database rehearsal created **10,000 distinct synthetic inpatient encounters**,
 Deploy the same release with a separate database and staff accounts per hospital. On the 10,000-claim test set, increasing the API from one to four processes raised reviewed PDF export throughput from **73 to 230 requests/s**. A separate test kept four workers fixed and raised the API CPU quota from one to four, moving throughput from **38 to 147 exports/s**. Worklist and search throughput stayed nearly flat as processes were added. [Scaling results, controls and reproduction](docs/scaling.md)
 
 The HTTPS release test verified the database certificate and negotiated PostgreSQL TLS 1.3. Storage encryption, backup keys, access roles and approved overseas processing depend on the hospital’s deployment and agreements. The security audit and privacy guide distinguish tested controls from the controls a real patient-data pilot still needs. [Security audit and encryption](docs/security-and-encryption.md) · [Thailand, US and EU privacy rules](docs/privacy-by-jurisdiction.md)
+
+## Reproducible Python installation
+
+The Python runtime supports a standard pip installation. From the repository root on Python 3.12, run:
+
+```sh
+python3.12 -m venv .venv
+.venv/bin/python -m pip install --require-hashes -r requirements.txt
+.venv/bin/python -m pip check
+```
+
+The requirements file pins direct and transitive runtime packages with SHA-256 artifact hashes and platform markers. CI regenerates it from `uv.lock` and checks a clean pip installation. The web client uses `npm ci` with its committed lockfile. [Python requirements](requirements.txt) · [Software and licenses](THIRD_PARTY.md)
 
 ## Hackathon build declaration
 
