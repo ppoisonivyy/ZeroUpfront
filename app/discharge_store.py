@@ -1,10 +1,13 @@
 """Revisioned discharge packets, external payer decisions and separately recorded remittances."""
 
 import json
+from datetime import date
 from decimal import Decimal, InvalidOperation
 
 import psycopg
 from psycopg.types.json import Jsonb
+
+from app import discharge_followup
 from app.hospital_platform import hospital_path
 
 from app.workspace_store import WorkspaceError, _save_document, _writing, document_digest, lock_intake
@@ -35,6 +38,9 @@ CREATE TABLE IF NOT EXISTS zeroupfront_demo.discharge_events (
     document text REFERENCES zeroupfront_demo.documents(digest), filename text, created_at timestamptz NOT NULL DEFAULT now(),
     UNIQUE(case_id,revision,version), FOREIGN KEY(case_id,revision) REFERENCES zeroupfront_demo.discharge_revisions(case_id,revision)
 );
+CREATE TABLE IF NOT EXISTS zeroupfront_demo.discharge_followup_drafts (
+    digest text PRIMARY KEY, payer_event_id bigint NOT NULL REFERENCES zeroupfront_demo.discharge_events(id)
+);
 CREATE UNIQUE INDEX IF NOT EXISTS discharge_payment_reference ON zeroupfront_demo.discharge_events
     (case_id,lower(data->>'reference')) WHERE kind='payment';
 CREATE TABLE IF NOT EXISTS zeroupfront_demo.discharge_intake_requests (
@@ -62,12 +68,17 @@ def _head(db, ident, rev):
 
 def _projection(events, approved):
     status, decision, payments = "not_sent", None, []
+    followup = None
     for event in events:
         if event["kind"] == "submission":
             status = "submitted"
         elif event["kind"] == "reply":
             decision = event["data"]
             status = decision["outcome"]
+            followup = decision if status in {"query", "partial", "declined"} else None
+        elif event["kind"] == "supplement":
+            followup = event["data"]
+            status = "supplement_sent" if event["data"]["response_kind"] == "Query answer" else "appeal_sent"
         elif event["kind"] == "payment":
             payments.append(event["data"])
     amounts = {}
@@ -92,12 +103,18 @@ def _projection(events, approved):
     actions = []
     if approved:
         actions = ["submission"] if status == "not_sent" else ["reply"]
-        if status in {"partial", "confirmed"}:
+        if status in {"query", "partial", "declined"}:
+            actions.append("supplement")
+        if decision and decision["outcome"] in {"partial", "confirmed"}:
             actions.append("payment")
+        actions.append("patient_statement")
     return dict(
         insurer_status=status,
         settlement_status=settlement,
         payer_decision=decision,
+        follow_up=({"owner": followup.get("owner"), "due": followup.get("follow_up_date"),
+                    "assigned": bool(followup.get("owner") and followup.get("follow_up_date"))}
+                   if followup is not None else None),
         paid_by_currency=amounts,
         workflow_version=len(events),
         allowed_actions=actions,
@@ -162,7 +179,7 @@ def _detail(db, ident, rev=None):
             (ident,),
         ).fetchall()
     )
-    return dict(
+    case = dict(
         evidence,
         ocr_page_count=len(review_pages),
         ocr_review_available=bool(review_pages and codes == {"verify_ocr"} and not actor),
@@ -177,6 +194,34 @@ def _detail(db, ident, rev=None):
         reviewer_username=username,
         status="staff_reviewed" if actor else evidence["status"],
     ) | _projection(events, bool(actor))
+    case["patient_statement_facts"] = _statement_facts(case) if actor and case.get("facility") else None
+    if actor and not case["patient_statement_facts"]:
+        case["allowed_actions"].remove("patient_statement")
+    if case["patient_statement_facts"] and events and events[-1]["kind"] == "patient_statement":
+        last = events[-1]
+        # Older reviews omitted these identifiers. Recover them from this same stored revision.
+        case["reviewed_patient_statement"] = {
+            **last["data"], "case_id": case["id"], "hospital": case["facility"],
+            "reviewer": last["actor"], "reviewed_at": last["created_at"],
+        }
+    return case
+
+
+def _statement_facts(case):
+    decision = case["payer_decision"] or {}
+    facts = dict(case_id=case["id"], hospital=case["facility"], revision=case["revision"],
+                 insurer_status=case["insurer_status"], currency=case.get("currency"),
+                 patient_share_minor=case.get("source_reported_patient_share_minor"),
+                 approved_minor=decision.get("amount_minor"), approved_currency=decision.get("currency"),
+                 patient_fx_minor=None, insurer_outstanding_minor=None)
+    if case.get("example_scenario") == "pattaya_fx":
+        from app.pattaya_agents import review
+
+        rehearsal = review(case)
+        if rehearsal["next_action"] != "review":
+            facts["patient_fx_minor"] = rehearsal["patient_fx_minor"]
+            facts["insurer_outstanding_minor"] = rehearsal["outstanding_minor"]
+    return facts
 
 
 def detail(dsn, ident, rev=None):
@@ -199,9 +244,12 @@ _SUMMARIES = """
         source_reported_cap_minor bigint, source_reported_patient_share_minor bigint)
     LEFT JOIN zeroupfront_demo.discharge_approvals a ON a.case_id=c.id AND a.revision=c.head
     LEFT JOIN LATERAL (
-        SELECT CASE WHEN e.kind='submission' THEN 'submitted' ELSE e.data->>'outcome' END AS status
+        SELECT CASE WHEN e.kind='submission' THEN 'submitted'
+                    WHEN e.kind='supplement' THEN CASE WHEN e.data->>'response_kind'='Query answer'
+                                                       THEN 'supplement_sent' ELSE 'appeal_sent' END
+                    ELSE e.data->>'outcome' END AS status
         FROM zeroupfront_demo.discharge_events e
-        WHERE e.case_id=c.id AND e.revision=c.head AND e.kind IN ('submission','reply')
+        WHERE e.case_id=c.id AND e.revision=c.head AND e.kind IN ('submission','reply','supplement')
         ORDER BY e.version DESC LIMIT 1
     ) stage ON true
 """
@@ -444,6 +492,16 @@ def _required(fields, key, maximum=2000):
     return value.strip()
 
 
+def _date_field(fields, key):
+    value = _required(fields, key, 10)
+    try:
+        if date.fromisoformat(value).isoformat() == value:
+            return value
+    except ValueError:
+        pass
+    raise WorkspaceError(422, "Enter a valid calendar date in YYYY-MM-DD format.")
+
+
 def _amount(fields):
     try:
         amount = Decimal(str(fields.get("amount")))
@@ -468,19 +526,44 @@ def append_event(db, case, action, data, actor, username=None, raw=None, name=No
     )
 
 
+def _followup_decision(case, expected_event=None):
+    if "supplement" not in case["allowed_actions"] or case.get("example_scenario") == "pattaya_fx":
+        raise WorkspaceError(409, "This revision has no open payer query or appeal.")
+    reply = next(event for event in reversed(case["events"]) if event["kind"] == "reply")
+    if expected_event is not None and reply["id"] != expected_event:
+        raise WorkspaceError(409, "The written payer decision changed. Reopen the current claim.")
+    return reply
+
+
+def followup_pdf(dsn, ident, revision, version, payer_event_id, text):
+    with _writing(dsn) as db:
+        _head(db, ident, revision)
+        case = _detail(db, ident, revision)
+        if case["workflow_version"] != version:
+            raise WorkspaceError(409, "The timeline changed. Reopen the claim before preparing the response.")
+        reply = _followup_decision(case, payer_event_id)
+        try:
+            raw = discharge_followup.render(case, reply, text)
+        except ValueError as exc:
+            raise WorkspaceError(422, str(exc)) from exc
+        db.execute("""INSERT INTO zeroupfront_demo.discharge_followup_drafts(digest,payer_event_id)
+                      VALUES(%s,%s) ON CONFLICT DO NOTHING""", (document_digest(raw), reply["id"]))
+        return raw
+
+
 def record(dsn, ident, base, fields, actor, username, raw, name, submitted_packet=None, *, pattaya_rehearsal=False):
     with _writing(dsn) as db:
         _head(db, ident, base)
         target = fields.get("target_revision") or base
         action = fields["action"]
         case = _detail(db, ident, target)
-        if case.get("example_scenario") == "pattaya_fx" and not pattaya_rehearsal:
+        if case.get("example_scenario") == "pattaya_fx" and not pattaya_rehearsal and action != "patient_statement":
             raise WorkspaceError(409, "Use the simulated bank actions for the Pattaya practice revision.")
-        if (target != base and action == "submission") or fields["workflow_version"] != case["workflow_version"]:
+        if (target != base and action not in {"reply", "payment"}) or fields["workflow_version"] != case["workflow_version"]:
             raise WorkspaceError(409, "Reload the specific submitted revision and its latest timeline.")
         if action not in case["allowed_actions"]:
             raise WorkspaceError(409, "This action is unavailable at the current discharge stage.")
-        data = {"reference": _required(fields, "reference", 200)}
+        data = {} if action == "patient_statement" else {"reference": _required(fields, "reference", 200)}
         if action == "submission":
             if raw is not None:
                 raise WorkspaceError(422, "Record the channel and transmission reference for this submission.")
@@ -499,11 +582,50 @@ def record(dsn, ident, base, fields, actor, username, raw, name, submitted_packe
             data.update(outcome=fields["outcome"], terms=_required(fields, "terms"))
             if data["outcome"] in {"partial", "confirmed"}:
                 data.update(_amount(fields))
+            if data["outcome"] in {"query", "partial", "declined"}:
+                # Older clients can log a genuine incoming decision before someone takes ownership.
+                # Never manufacture either an owner or a deadline for those events.
+                if fields.get("assign_follow_up") or fields.get("owner") or fields.get("follow_up_date"):
+                    data.update(owner=_required(fields, "owner", 120), follow_up_date=_date_field(fields, "follow_up_date"))
+                else:
+                    data["follow_up_assignment"] = "unassigned"
+        elif action == "supplement":
+            if not raw or not fields.get("confirmed"):
+                raise WorkspaceError(422, "Attach the exact outbound PDF and confirm its case and recipient.")
+            reply = _followup_decision(case, fields.get("payer_event_id"))
+            digest = document_digest(raw)
+            saved_draft = db.execute("""SELECT payer_event_id FROM zeroupfront_demo.discharge_followup_drafts
+                                        WHERE digest=%s""", (digest,)).fetchone()
+            expected_digest = fields.get("draft_sha256")
+            if expected_digest and expected_digest != digest:
+                raise WorkspaceError(409, "Attach the exact response PDF you downloaded for this record.")
+            if saved_draft:
+                if saved_draft[0] != reply["id"]:
+                    raise WorkspaceError(409, "This PDF belongs to a different claim or written payer decision.")
+            elif expected_digest or fields.get("file_origin") == "workspace" or discharge_followup.is_generated(raw):
+                raise WorkspaceError(409, "This PDF cannot be verified as a saved response to this payer decision.")
+            if db.execute("""SELECT 1 FROM zeroupfront_demo.discharge_events
+                             WHERE case_id=%s AND kind='supplement' AND lower(data->>'reference')=lower(%s)""",
+                          (ident, data["reference"])).fetchone():
+                raise WorkspaceError(409, "This outbound transmission reference was already recorded for this case.")
+            data.update(packet_sha256=digest, source_verification="matched_saved_draft" if saved_draft else "staff_attested",
+                        response_kind="Query answer" if reply["data"]["outcome"] == "query" else "Appeal",
+                        payer_event_id=reply["id"], source_revision=target, channel=_required(fields, "channel", 120),
+                        owner=_required(fields, "owner", 120), follow_up_date=_date_field(fields, "follow_up_date"))
+        elif action == "patient_statement":
+            if not fields.get("confirmed") or raw:
+                raise WorkspaceError(422, "Review the patient financial update and confirm it without an attachment.")
+            contact = _required(fields, "contact", 120)
+            if not contact.isprintable():
+                raise WorkspaceError(422, "Use a single line for the public billing contact.")
+            data = dict(case["patient_statement_facts"], contact=contact, next_update=_date_field(fields, "next_update"))
         elif action == "payment":
             data.update(_amount(fields), notes=_required(fields, "notes"))
             if pattaya_rehearsal and case.get("example_scenario") == "pattaya_fx":
                 for key in ("bank_reference", "value_date", "beneficiary", "gross_minor", "fee_minor"):
                     data[key] = fields["bank_advice"][key]
+                if data["gross_minor"] > data["amount_minor"]:
+                    data["shortfall_follow_up_owner"] = actor
             if data["currency"] != case["payer_decision"]["currency"]:
                 raise WorkspaceError(
                     422, "The recorded payment currency differs from the payer decision. Reconcile it first."

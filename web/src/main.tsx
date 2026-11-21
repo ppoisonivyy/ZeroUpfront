@@ -25,7 +25,7 @@ import {
   Upload,
 } from "lucide-react";
 import type { CaseDetail, CaseSummary, PacketStatus } from "./api";
-import { api, blocked, casePath, displayDate, hospitalPrefix, money, statuses } from "./api";
+import { api, blocked, caseHref, casePath, displayDate, hospitalPrefix, money, statuses } from "./api";
 import { ApproveDraft, ReplaceEstimate } from "./ReviewForms";
 import { SourceView, useSourceNavigation } from "./SourceView";
 import { AttachmentList } from "./Attachments";
@@ -33,6 +33,7 @@ import { NewCase } from "./CaseIntake";
 import { CaseWorkflow, payerStatus } from "./CaseWorkflow";
 import { EvidenceReview } from "./EvidenceReview";
 import { AuthGate, useStaffSession } from "./Auth";
+import { FinanceLedger } from "./FinanceLedger";
 import { OperationalHolds } from "./OperationalHolds";
 import { useResource } from "./useResource";
 import { PayerCase, InsurerInbox } from "./Preclaim";
@@ -52,8 +53,6 @@ type Route = {
   discharge?: boolean;
   prior?: string;
 };
-const caseHref = (id: string, rev?: number) =>
-  "#/cases/" + encodeURIComponent(id) + (rev ? "?revision=" + rev : "");
 function readRoute(): Route {
   const pathAndSearch =
     location.hash.slice(1) || (location.pathname.slice(hospitalPrefix.length) || "/") + location.search;
@@ -871,6 +870,7 @@ function CaseView({
 function App() {
   const session = useStaffSession();
   const insurer = session.role === "insurer";
+  const finance = session.role === "finance";
   const [route, setRoute] = useState<Route>(readRoute);
   const [epoch, setEpoch] = useState(0);
   const retry = () => setEpoch((n) => n + 1);
@@ -883,14 +883,14 @@ function App() {
     return () => window.removeEventListener("hashchange", change);
   }, []);
   useEffect(() => {
-    document.title = insurer ? "Insurer inbox · ZeroUpfront" : route.discharge
+    document.title = insurer ? "Insurer inbox · ZeroUpfront" : finance ? "Finance reconciliation · ZeroUpfront" : route.discharge
       ? "Discharge claims · ZeroUpfront"
       : route.id
         ? "Case " + route.id + " · ZeroUpfront"
         : route.create
           ? "Create a case · ZeroUpfront"
           : "Case worklist · ZeroUpfront";
-  }, [route.id, route.create, route.discharge, insurer]);
+  }, [route.id, route.create, route.discharge, insurer, finance]);
   return (
     <>
       <a
@@ -906,12 +906,12 @@ function App() {
       <div className="app-layout">
         <header className="hospital-masthead">
           <div className="mast-inner">
-            <a href={insurer ? "#/insurer" : "#/discharge"} className="mast-brand" aria-label="ZeroUpfront home">
+            <a href={insurer ? "#/insurer" : finance ? "#/finance" : "#/discharge"} className="mast-brand" aria-label="ZeroUpfront home">
               <span className="mast-symbol"><Layers size={20} aria-hidden="true" /></span>
               ZeroUpfront
             </a>
             <nav className="mast-nav" aria-label="Desk workflows">
-              {insurer ? <a aria-current="page" href="#/insurer">Insurer inbox</a> : <>
+              {insurer ? <a aria-current="page" href="#/insurer">Insurer inbox</a> : finance ? <a href="#/finance" aria-current="page">Reconciliation</a> : <>
               <a aria-current={route.discharge ? "page" : undefined} href="#/discharge">Discharge claims</a>
               <a aria-current={!route.discharge ? "page" : undefined} href="#/cases">Pre-arrival cases</a></>}
             </nav>
@@ -921,13 +921,13 @@ function App() {
             <div id="workspace-context" className="workspace-context" popover="auto">
               <strong>{session.hospital_name || "Hospital workspace"}</strong>
               <span>{session.mode === "local" ? "Local rehearsal" : session.actor}</span>
-              <nav aria-label="Workspace shortcuts" onClick={() => document.getElementById("workspace-context")?.hidePopover()}>
+              {!finance && <nav aria-label="Workspace shortcuts" onClick={() => document.getElementById("workspace-context")?.hidePopover()}>
                 {insurer ? <a href="#/insurer">Insurer inbox <ChevronRight size={15} /></a> : <>
                 <a href="#/discharge">Discharge worklist <ChevronRight size={15} /></a>
                 <a href="#/cases">Pre-arrival worklist <ChevronRight size={15} /></a></>}
-              </nav>
+              </nav>}
               {session.mode === "staff" && <div className="account-actions">
-                <button disabled={session.busy} onClick={() => void session.signOut(false, insurer ? "hospital" : "insurer")}><LogOut size={15} />Switch to {insurer ? "hospital" : "insurer"} desk</button>
+                {!finance && <button disabled={session.busy} onClick={() => void session.signOut(false, insurer ? "hospital" : "insurer")}><LogOut size={15} />Switch to {insurer ? "hospital" : "insurer"} desk</button>}
                 {hospitalPrefix && <button disabled={session.busy} onClick={() => void session.signOut(true)}>
                   <ArrowLeftRight size={15} />Switch hospital
                 </button>}
@@ -941,6 +941,7 @@ function App() {
         </header>
         <div className="app-content">
           <main id="main-content" tabIndex={-1}>
+        {finance ? <FinanceLedger /> : <>
         {(insurer ? route.inbox && route.id : route.id || route.create) && (
           <nav className="breadcrumbs" aria-label="Breadcrumb">
             <a href={insurer ? "#/insurer" : route.discharge ? "#/discharge" : "#/cases"}>
@@ -987,6 +988,7 @@ function App() {
         ) : (
           <Worklist epoch={epoch} retry={retry} />
         )}
+        </>}
           </main>
         </div>
       </div>

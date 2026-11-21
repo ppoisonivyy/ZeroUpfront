@@ -3,6 +3,7 @@
 .pattaya-panel { margin: 18px 0 22px; }
 .pattaya-body { padding: clamp(14px, 2vw, 24px); }
 .pattaya-body > .hint { margin: 0 0 14px; }
+.pattaya-progress { margin: 0 0 14px; font-size: .85rem; font-weight: 650; color: var(--action); }
 .pattaya-body .hint a { text-decoration: underline; }
 .pattaya-balances { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
 .pattaya-balances > div { padding-left: 14px; border-left: 2px solid var(--line); }
@@ -24,6 +25,7 @@
 .pattaya-quotes label strong, .pattaya-reviews li strong { font-size: .86rem; }
 .pattaya-price { margin-left: auto; text-align: right; font-variant-numeric: tabular-nums; }
 .pattaya-deal { color: var(--action); font-weight: 620; }
+.pattaya-trade-ref { overflow-wrap: anywhere; color: var(--muted); }
 .pattaya-reviews ul { list-style: none; margin: 0; padding: 0; }
 .pattaya-reviews li { border-bottom: 1px solid var(--line); padding: 8px 0; }
 .pattaya-reviews li:last-child { border-bottom: 0; }

@@ -35,7 +35,7 @@ export function ClaimFindings({ findings, sources, pick }:
       <p>{layout
         ? "This layout needs manual review. Compare the encounter and amounts, then check any signatures the payer requires. Uploading the same layout leaves this hold open."
         : "Check the original against the encounter and amounts. Request a legible copy or use the scan verification workflow when the text is unclear."}</p>
-      {cite && original && <button className="text-action" onClick={event => pick({ ...original, page: cite.page, quote: cite.quote }, event.currentTarget)}>Inspect original · p. {cite.page}</button>}
+      {cite && original && <button className="text-action" onClick={event => pick({ ...original, page: cite.page, quote: cite.quote, method: cite.method }, event.currentTarget)}>Inspect original · p. {cite.page}</button>}
     </div>}
     {findings.map((finding, i) =>
     <details className="finding-item" key={finding.code + i} open={i === 0}>
@@ -52,7 +52,7 @@ export function ClaimFindings({ findings, sources, pick }:
             const file = sources.find(s => s.role === cite.role);
             if (!file) return null;
             const label = dischargeRoles[cite.role as keyof typeof dischargeRoles] || file.label;
-            return <button type="button" key={n} onClick={event => pick({ ...file, page: cite.page, quote: cite.quote }, event.currentTarget)}
+            return <button type="button" key={n} onClick={event => pick({ ...file, page: cite.page, quote: cite.quote, method: cite.method }, event.currentTarget)}
               title={cite.quote || file.label} aria-label={`Inspect ${label}, page ${cite.page}. ${cite.quote || ""}`}>
               <FileText size={13} />{label} · p. {cite.page}</button>;
           })}

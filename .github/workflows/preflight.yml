@@ -23,6 +23,7 @@ jobs:
       - run: npm ci
       - run: npm run build
       - run: node --test ../tests/role-drafts.test.mjs
+      - run: node --test scripts/citation-match.test.mjs
 
   synthetic-preflight:
     runs-on: ubuntu-latest

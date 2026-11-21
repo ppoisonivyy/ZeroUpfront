@@ -11,6 +11,12 @@ On 21 November 2026, the discharge API recovered the exact procedure, the admiss
 
 The procedure was *Wrist fracture fixation*. The admission and discharge dates were 11 and 13 December 2026. The benchmark compared the exact published strings, including their field labels, to the returned source anchors. The source download matched the uploaded summary bytes in each case.
 
+## Locating a quote inside the original
+
+**Open PDF** opens the unchanged source at the cited physical page. The in-app preview can mark words when the cited quotation matches a unique passage in a usable PDF text layer. A repeated amount, an absent passage, or a scan without dependable positions takes the reviewer to the page. A page can contain both a printed header and a scanned body, so selectable text elsewhere on that page does not locate the quote.
+
+ZeroUpfront’s image-only OCR returns text and legibility per physical page. The saved document and transcript digests bind the evidence to its revision. To highlight individual words within a scan, a future reader would need to retain their bounding polygons and map them back to the original page after rotation, cropping or deskew. A Thai/English pilot could compare mapped rectangles against manually marked clauses and amounts, measuring incorrect boxes and missed boxes separately. Google Enterprise Document OCR supports printed Thai and English and describes text anchors, geometry and page transforms. [OCR language support](https://docs.cloud.google.com/document-ai/docs/processors-list#processor_doc-ocr) · [Document geometry](https://docs.cloud.google.com/document-ai/docs/reference/rest/v1/Document#Page)
+
 ## From the OCR finding to a reviewed submission
 
 In a subsequent live end-to-end run, the two-page raster took **10.684 seconds** to reach the OCR verification finding. The benchmark opened the revision-specific verification view and compared each complete transcript to the known digital original, allowing only whitespace differences. Both pages matched. Two explicitly named synthetic test actors then exercised the separate verification and approval steps. This was an automated rehearsal using known text.

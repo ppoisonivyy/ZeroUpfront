@@ -1,6 +1,6 @@
 # Admission, discharge claim and settlement
 
-**Use the discharge claim as the hackathon's main story.** Start with a planned inpatient admission at a Thai hospital and a payer that offers direct settlement. The hospital already has a preapproval or guarantee letter. The coordinator's job is to send an accurate claim for what actually happened. Keep pre-arrival review available to help prepare a request when the patient has no letter.
+The discharge rehearsal starts with a planned inpatient admission and an existing payer letter. The coordinator prepares a claim for the care actually delivered, records written replies, and follows the balance through settlement. The 30-second pre-arrival demo shows a separate case that still needs authorization. [Discharge rehearsal](demo.md#discharge-claim) · [Pre-arrival walkthrough](../README.md#coordinator-workspace)
 
 ## Where the team's flow fits
 
@@ -21,11 +21,14 @@ flowchart TD
     H --> E
     G -->|No| I["Hospital reviews and sends the versioned claim"]
     I --> J{"Insurer or sponsor replies"}
-    J -->|Query| H
+    J -->|Query| Q["Coordinator owns the follow-up, reviews evidence and records the exact answer sent"]
+    Q --> J
     J -->|Partial or declined| K["Hospital reviews the reasons and patient responsibility"]
     J -->|Confirmed amount| L["Hospital records written decision"]
-    K --> L
-    L --> M["Finance matches remittance when received"]
+    K -->|Appeal| Q
+    K -->|Accept written terms| L
+    L --> M["Hospital records the credit · assigned finance staff reconcile the balance"]
+    M --> N["Coordinator reviews the updated Thai and English patient statement"]
 ```
 
 ## Trade-offs for the team

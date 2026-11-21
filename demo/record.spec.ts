@@ -78,13 +78,35 @@ async function recordHandoff(
     "Missing signature. Code verifies this rule on page 12.",
     async () => {
       await d.click(page.getByRole("button", { name: "View cited clause" }));
-      const clause = page
-        .locator("blockquote")
-        .filter({ hasText: /signed/i })
-        .first();
-      await expect(clause).toBeVisible();
-      await d.highlight(clause);
+      const viewer = page.locator("#source-view");
+      await expect(viewer.locator('[data-citation-status="matched"]')).toBeVisible();
+      await expect(viewer.locator('canvas[role="img"]')).toHaveAttribute("aria-label", /page 12$/);
+      const marks = viewer.locator(".pdf-quote-mark");
+      await expect(marks.first()).toBeVisible();
+      await marks.first().scrollIntoViewIfNeeded();
+      const onOriginal = await marks.evaluateAll((items) => {
+        const canvas = items[0].closest(".pdf-scroll")?.querySelector("canvas")?.getBoundingClientRect();
+        const scroll = items[0].closest(".pdf-scroll")?.getBoundingClientRect();
+        return !!canvas && !!scroll && items.length > 1 && items.every((item) => {
+          const r = item.getBoundingClientRect();
+          return r.width > 1 && r.height > 1 && r.left >= canvas.left - 1 &&
+            r.right <= canvas.right + 1 && r.top >= Math.max(canvas.top, scroll.top) - 1 &&
+            r.bottom <= Math.min(canvas.bottom, scroll.bottom) + 1;
+        });
+      });
+      expect(onOriginal, "The verified lines must be visible on original PDF page 12").toBe(true);
+      const pageNumber = viewer.getByRole("spinbutton", { name: /Page/i });
+      await expect(pageNumber).toHaveValue("12");
+      const pageLabel = await pageNumber.boundingBox();
+      const firstLine = await marks.first().boundingBox();
+      const lastLine = await marks.last().boundingBox();
+      if (!pageLabel || !firstLine || !lastLine) throw new Error("Original page framing failed.");
+      const bottom = lastLine.y + lastLine.height;
+      const centerY = (pageLabel.y + bottom) / 2;
+      const width = Math.max(800, (bottom - pageLabel.y + 90) * 16 / 9);
+      await d.closeUp(marks.first(), width, centerY - firstLine.y - firstLine.height / 2);
     },
+    4000,
   );
   await d.step(
     5,
@@ -98,18 +120,27 @@ async function recordHandoff(
       ).toBeVisible();
     },
   );
-  const formCaption = "Staff review and send the request. The insurer decides.";
-  await d.step(6, formCaption, async () => {
+  await d.step(6, "Staff open the insurer’s request form.", async () => {
     await d.click(page.getByRole("button", { name: "Review insurer form" }));
     await expect(
       page.getByRole("button", { name: "Mark draft reviewed" }),
     ).toBeEnabled();
     await expect(page.locator("canvas").first()).toBeVisible();
   });
-  await d.step(61, formCaption, async () => {
-    await d.click(page.getByRole("button", { name: "Mark draft reviewed" }));
+  await d.step(61, "Staff mark this revision reviewed.", async () => {
+    const review = page.getByRole("button", { name: "Mark draft reviewed" });
+    await d.closeUp(page.locator(".preclaim-next"), 960, 40);
+    await d.click(review);
+    const reviewed = page.getByRole("heading", { name: "Staff reviewed", exact: true });
+    await expect(reviewed).toBeVisible();
+    await expect(page.getByRole("button", { name: "Submit to insurer desk" })).toBeEnabled();
+    await page.waitForTimeout(450);
+    await d.point(reviewed);
+  });
+  await d.step(62, "Staff submit the reviewed form to the insurer.", async () => {
+    await d.closeUp(page.locator(".preclaim-next"), 960, 40);
     await d.click(page.getByRole("button", { name: "Submit to insurer desk" }));
-    await expect(page.getByText(/Waiting for insurer/i).first()).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Waiting for insurer" })).toBeVisible();
   });
   // Reauthentication is real; cut it from the film to keep credentials off screen.
   const inboxCaption = "Meridian Assist receives Amelia’s reviewed request.";

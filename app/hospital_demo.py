@@ -15,7 +15,7 @@ import uvicorn
 
 from app import preclaims, discharge_store, pattaya_case, pattaya_workflow, staff_access, workspace_store
 from app.discharge_claim import evaluate_discharge, load_discharge_fixture
-from app.hospital_platform import Hospital, bind_database, configured_hospitals
+from app.hospital_platform import OPENAI_USES, Hospital, bind_database, configured_hospitals
 from app.intake_documents import evaluate_intake
 from app.journey_examples import NAMES, exhibits
 from app.run_workspace import ROOT, _terminate, workspace_database
@@ -95,7 +95,7 @@ def set_demo_password(dsn, name, username, *, reset=False):
                            first, reset=reset, insurer="Meridian Assist" if reviewer and not reset else None)
 
 
-def prepare(admin_dsn):
+def prepare(admin_dsn, approved_uses=()):
     directory = {}
     with psycopg.connect(admin_dsn, autocommit=True) as admin:
         for slug, (name, _) in HOSPITALS.items():
@@ -111,7 +111,10 @@ def prepare(admin_dsn):
                     set_demo_password(dsn, name, username)
             variable = "ZU_DEMO_" + slug.upper().replace("-", "_") + "_DSN"
             os.environ[variable] = dsn
-            directory[slug] = {"hospital_name": name, "database_url_env": variable}
+            directory[slug] = {
+                "hospital_name": name, "database_url_env": variable,
+                "approved_openai_uses": [use for use in OPENAI_USES if f"{slug}/{use}" in approved_uses],
+            }
     os.environ["WORKSPACE_HOSPITALS"] = json.dumps(directory)
 
 
@@ -123,7 +126,12 @@ def main():
                         help="Account to update with the password action")
     parser.add_argument("--port", type=int, default=8040)
     parser.add_argument("--data-dir", type=Path, default=DEFAULT_STATE)
+    parser.add_argument("--approve-openai-use", action="append", default=[], metavar="HOSPITAL/USE",
+                        choices=[f"{slug}/{use}" for slug in HOSPITALS for use in OPENAI_USES],
+                        help="Approve one external document-processing use for a fictional hospital on this launch.")
     args = parser.parse_args()
+    if args.approve_openai_use and args.action != "serve":
+        parser.error("--approve-openai-use applies to the local serve command.")
     folder = args.data_dir.resolve() / "postgres"
     try:
         if args.action == "seed-configured":
@@ -150,7 +158,7 @@ def main():
             parser.error("Build the client with npm --prefix web ci and npm --prefix web run build.")
         signal.signal(signal.SIGTERM, _terminate)
         with workspace_database(folder):
-            prepare(os.environ["DATABASE_URL"])
+            prepare(os.environ["DATABASE_URL"], args.approve_openai_use)
             os.environ.update(WORKSPACE_AUTH_MODE="staff", WORKSPACE_SEED_DEMO="0")
             print(f"Hospital directory: http://127.0.0.1:{args.port}/", flush=True)
             uvicorn.run("app.workspace_server:app", host="127.0.0.1", port=args.port, access_log=False)

@@ -38,8 +38,10 @@ class CitationTests(unittest.TestCase):
         pages = [identity + " " + difference, obligation]
         self.assertEqual(fees.verify(reading, pages)["status"], "needs_review")
         fee.definition = fees.PartyDefinition(name="Blue Willow Ltd", page=1, quote=identity)
-        result = fees.verify(reading, pages)
+        result = fees.verify(reading, pages, transcribed_pages={1})
         self.assertEqual(result["status"], "cited")
+        self.assertEqual(result["findings"][0]["method"], "digital")
+        self.assertEqual(result["findings"][0]["definition"]["method"], "ocr")
         self.assertEqual(result["findings"][0]["definition"]["page"], 1)
         confusing = "Blue Willow Ltd is the hospital and Alder Ltd is the insurer."
         fee.definition.quote = confusing

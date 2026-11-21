@@ -6,6 +6,7 @@ import os
 import re
 from datetime import UTC, date, datetime
 from decimal import Decimal, ROUND_HALF_UP
+from time import time
 
 from openai import OpenAI, OpenAIError
 
@@ -17,21 +18,27 @@ SHORT_CREDIT_MINOR = 23_870_000
 TRADE_DATE = "2026-11-19"
 HOSPITAL_DUE_DATE = "2026-11-30"
 BANK_TERMS = {"spot": ("34.00", "2026-11-23"), "forward": ("34.80", HOSPITAL_DUE_DATE)}
+QUOTE_WINDOW_SECONDS = 300
 
 
-def _quote(instrument, rate, trade_date, value_date, due_date):
+def _quote(instrument, rate, trade_date, value_date, due_date, expires_at=None):
     terms = dict(instrument=instrument, rate_thb_per_usd=rate, trade_date=trade_date,
                  value_date=value_date, hospital_due_date=due_date, buy_currency="THB",
                  thb_minor=GUARANTEE_MINOR, sell_currency="USD",
                  usd_minor=int((GUARANTEE_MINOR / Decimal(rate)).quantize(Decimal("1"), rounding=ROUND_HALF_UP)))
+    if expires_at is not None:
+        terms["expires_at"] = expires_at
     payload = json.dumps(terms, sort_keys=True, separators=(",", ":")).encode()
-    terms["quote_id"] = "v1-" + hashlib.sha256(payload).hexdigest()
+    prefix = "v2-" if expires_at is not None else "v1-"
+    terms["quote_id"] = prefix + hashlib.sha256(payload).hexdigest()
     return terms
 
 
 def quotes():
-    """The simulator accepts only the ID of a quote on its current sheet."""
-    return {instrument: _quote(instrument, rate, TRADE_DATE, value_date, HOSPITAL_DUE_DATE)
+    """All workers rotate the simulated quote sheet on the same UTC boundary."""
+    window_end = (int(time()) // QUOTE_WINDOW_SECONDS + 1) * QUOTE_WINDOW_SECONDS
+    expires_at = datetime.fromtimestamp(window_end, UTC).isoformat()
+    return {instrument: _quote(instrument, rate, TRADE_DATE, value_date, HOSPITAL_DUE_DATE, expires_at)
             for instrument, (rate, value_date) in BANK_TERMS.items()}
 
 
@@ -73,7 +80,11 @@ def _funding(case):
     if (trade.isoformat() != TRADE_DATE or due.isoformat() != HOSPITAL_DUE_DATE
             or not trade <= value <= due or (instrument == "forward" and trade == value)):
         return None, False
-    ticket = _quote(instrument, rate, trade.isoformat(), value.isoformat(), due.isoformat())
+    expires_at = saved.get("expires_at")
+    if "expires_at" in saved and (not isinstance(expires_at, str) or
+            not re.fullmatch(r"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\+00:00", expires_at)):
+        return None, False
+    ticket = _quote(instrument, rate, trade.isoformat(), value.isoformat(), due.isoformat(), expires_at)
     # Original tickets had an implicit buy-THB / sell-USD direction and THB 239,000 notional.
     versioned = {"quote_id", "buy_currency", "sell_currency", "thb_minor"}
     has_version = bool(versioned.intersection(saved))

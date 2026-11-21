@@ -11,7 +11,7 @@ from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
 from app import workspace_api
-from app.staff_access import COOKIE, disable, install_access, provision
+from app.staff_access import COOKIE, disable, initialize_access, install_access, provision
 from bench.case_revision import temporary_database
 
 
@@ -153,6 +153,55 @@ class StaffAccessTest(unittest.TestCase):
         self.browser.post("/api/access/login", json={**reviewer, "username": "hospital-review"})
         self.assertEqual(self.browser.get(url, headers={"X-Insurer": payer}).status_code, 403)
         self.assertEqual(self.browser.get("/api/cases").status_code, 200)
+
+    def test_three_roles_retain_distinct_routes_and_credentials(self):
+        routes = ("/api/cases", "/api/finance/reconciliation", "/api/insurer/preclaims")
+        for role, expected in (("coordinator", (200, 403, 403)), ("finance", (403, 200, 403)),
+                               ("insurer", (403, 403, 200))):
+            with self.subTest(role=role):
+                name = "matrix-" + role
+                payer = "Meridian Assist" if role == "insurer" else None
+                provision(self.dsn, name, "Desk", self.credential, role=role, insurer=payer)
+                login = self.browser.post("/api/access/login", json={"username":name, "password":self.credential})
+                self.assertEqual(login.json()["role"], role)
+                self.assertEqual(login.json().get("insurer"), payer)
+                self.assertEqual(self.browser.get("/api/access/session").json(), login.json())
+                self.assertEqual(tuple(self.browser.get(url).status_code for url in routes), expected)
+                if role != "coordinator":
+                    for endpoint in ("/api/preclaims/ZU-0248/attach-report", "/api/preclaims/ZU-0248/submit"):
+                        self.assertEqual(self.browser.post(endpoint, json={"confirmed":True},
+                                                          headers={"If-Match":'"1"'}).status_code, 403)
+                self.assertEqual(self.browser.post("/api/access/logout").status_code, 200)
+        with self.assertRaises(ValueError):
+            provision(self.dsn, "matrix-insurer", "Desk", self.credential, reset=True, role="finance")
+        with self.assertRaises(ValueError):
+            provision(self.dsn, "no-scope", "Desk", self.credential, role="insurer")
+        with self.assertRaises(ValueError):
+            provision(self.dsn, "mixed-scopes", "Desk", self.credential, insurer="Meridian Assist", role="finance")
+
+    def test_migrating_existing_scope_and_finance_accounts(self):
+        # Each earlier release used one of the two columns. Apply the integrated
+        # DDL to both original table shapes and verify it is safe to run again.
+        for column, account_value, expected_role in (
+            ("insurer_scope text", "Meridian Assist", "insurer"),
+            ("role text NOT NULL DEFAULT 'coordinator' CHECK (role IN ('coordinator','finance'))", "finance", "finance"),
+        ):
+            with self.subTest(role=expected_role), temporary_database() as dsn:
+                with psycopg.connect(dsn) as db:
+                    db.execute("CREATE SCHEMA zeroupfront_demo")
+                    db.execute("CREATE TABLE zeroupfront_demo.staff_accounts (username text PRIMARY KEY, "
+                               "display_name text NOT NULL, password_hash text NOT NULL, active boolean DEFAULT true, "
+                               + column + ")")
+                    db.execute("INSERT INTO zeroupfront_demo.staff_accounts VALUES ('desk','Reviewer','old-hash',true,%s)",
+                               (account_value,))
+                initialize_access(dsn)
+                initialize_access(dsn)
+                with psycopg.connect(dsn) as db:
+                    role, scope, encoded = db.execute(
+                        "SELECT role,insurer_scope,password_hash FROM zeroupfront_demo.staff_accounts"
+                    ).fetchone()
+                    self.assertEqual((role, encoded), (expected_role, "old-hash"))
+                    self.assertEqual(scope, account_value if role == "insurer" else None)
 
     def test_account_lockout_and_disable(self):
         provision(self.dsn, "shift", "Night shift", self.credential)

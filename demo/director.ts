@@ -1,8 +1,11 @@
 import type { Locator, Page } from "@playwright/test";
 
+type Frame = { x: number; y: number; width: number; height: number };
+
 export type Scene = {
   id: number;
   caption: string;
+  frame?: Frame;
   start: number[];
   end: number[];
 };
@@ -10,13 +13,14 @@ export class Director {
   readonly scenes: Scene[] = [];
   readonly skipped: { id: number; reason: string }[] = [];
   private sequence = 0;
+  private frame?: Frame;
   private position = { x: 360, y: 260 };
   constructor(readonly page: Page) {}
 
   skip(id: number, reason: string) {
     this.skipped.push({ id, reason });
   }
-  async click(target: Locator) {
+  async point(target: Locator) {
     await target.scrollIntoViewIfNeeded();
     const box = await target.boundingBox();
     if (!box) throw new Error("The selected control is not visible");
@@ -49,10 +53,11 @@ export class Director {
         pointer.animate(
           [
             { boxShadow: "0 0 0 2px #1f4d3f" },
-            { boxShadow: "0 0 0 18px #74b59866" },
+            { boxShadow: "0 0 0 11px #f8c762cc", offset: 0.25 },
+            { boxShadow: "0 0 0 18px #35825b66", offset: 0.65 },
             { boxShadow: "0 0 0 2px #1f4d3f" },
           ],
-          480,
+          650,
         );
       });
     });
@@ -64,17 +69,24 @@ export class Director {
       await new Promise((resolve) => setTimeout(resolve, 20));
     }
     this.position = next;
+  }
+  async click(target: Locator) {
+    await this.point(target);
     await target.click({ timeout: 5000 });
   }
-  async highlight(target: Locator) {
-    await target.scrollIntoViewIfNeeded();
-    await target.evaluate((el) => {
-      el.setAttribute("data-zu-recording-highlight", "");
-      const sheet = document.createElement("style");
-      sheet.textContent =
-        "[data-zu-recording-highlight]{outline:4px solid #35825b!important;outline-offset:5px!important}";
-      document.head.append(sheet);
-    });
+  async closeUp(target: Locator, width: number, offsetY = 0) {
+    const bounds = await target.boundingBox();
+    const screen = this.page.viewportSize();
+    if (!bounds || !screen) throw new Error("Unable to frame the visible target.");
+    const w = Math.min(screen.width, Math.ceil(width / 32) * 32);
+    const h = w * 9 / 16;
+    const origin = (center: number, size: number, limit: number) =>
+      2 * Math.floor(Math.max(0, Math.min(center - size / 2, limit - size)) / 2);
+    this.frame = {
+      x: origin(bounds.x + bounds.width / 2, w, screen.width),
+      y: origin(bounds.y + bounds.height / 2 + offsetY, h, screen.height),
+      width: w, height: h,
+    };
   }
   private async marker(rgb: number[]) {
     await this.page.evaluate((color) => {
@@ -104,6 +116,7 @@ export class Director {
     holdMs = 2500,
   ): Promise<boolean> {
     const index = this.sequence++;
+    this.frame = undefined;
     const colors = (n: number) => [
       42 + Math.floor(n / 16) * 70,
       32 + (Math.floor(n / 4) % 4) * 62,
@@ -122,7 +135,7 @@ export class Director {
       });
       await this.page.waitForTimeout(holdMs);
       await this.marker(end);
-      this.scenes.push({ id, caption, start, end });
+      this.scenes.push({ id, caption, start, end, frame: this.frame });
       return true;
     } catch (err) {
       this.skip(

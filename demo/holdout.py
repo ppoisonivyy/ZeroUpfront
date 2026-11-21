@@ -1,4 +1,4 @@
-"""Show the historical holdout and replay the frozen packets against the current HTTP API."""
+"""Score frozen synthetic packets against the current HTTP API."""
 
 import json
 import subprocess
@@ -9,9 +9,9 @@ from tempfile import TemporaryDirectory
 ROOT = Path(__file__).resolve().parents[1]
 
 
-def run_benchmark(output, *arguments):
+def run_benchmark(output):
     subprocess.run(
-        [sys.executable, "bench/payer_challenge.py", "--out", str(output), *arguments],
+        [sys.executable, "bench/payer_challenge.py", "--out", str(output)],
         cwd=ROOT,
         check=True,
         stdout=subprocess.DEVNULL,
@@ -22,17 +22,8 @@ def run_benchmark(output, *arguments):
 def main():
     with TemporaryDirectory(prefix="zeroupfront-holdout-") as directory:
         scratch = Path(directory)
-        first = run_benchmark(
-            scratch / "first",
-            "--score-observed",
-            "bench/payer_challenge_cases/first-observations.json",
-        )["summary"]
-        print("Frozen claim values on known AIA, CMS-1450 and FEP forms")
-        print(
-            f"First blinded run (archived): {first['targets'].get('target-and-page', 0)}/"
-            f"{first['target_challenges']} target findings on the correct page."
-        )
-        print("\nUploading the frozen PDFs to the current API ...", flush=True)
+        print("Frozen synthetic cases on known AIA, CMS-1450 and FEP forms")
+        print("Uploading packets to the current API ...", flush=True)
         current = run_benchmark(scratch / "current")
         scores = current["summary"]
         print(f"Cases evaluated:                  {scores['cases']}")

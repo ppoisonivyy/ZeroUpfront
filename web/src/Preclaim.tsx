@@ -87,7 +87,7 @@ function PacketView({ packet: initial, root, insurer, refresh }: { packet: Packe
   const lastQuestion = packet.questions.at(-1);
   const handoffAt = lastQuestion?.replied_at || lastQuestion?.asked_at || packet.submitted_at;
   const nextDesk = packet.status === "hospital_reply_needed" ? "Hospital IPD" : packet.insurer;
-  const ruleSource: Source = { role: "policy", label: "Insurer rule " + (rule.clause || ""), url: rule.source_url, page: rule.page, quote: rule.quote };
+  const ruleSource: Source = { role: "policy", label: "Insurer rule " + (rule.clause || ""), url: rule.source_url, page: rule.page, quote: rule.verified ? rule.quote : "", method: rule.verified ? "digital" : "unverified" };
   const draftSource: Source | null = packet.draft_url ? {
     role: "draft", label: packet.insurer + " form " + packet.form_edition, url: packet.draft_url, page: 1, quote: "",
     recordedSummary: waiting ? "The request form submitted by the hospital." : "Inpatient request prepared for staff review.",
@@ -139,6 +139,9 @@ function PacketView({ packet: initial, root, insurer, refresh }: { packet: Packe
                 packet.status === "hospital_replied" ? "The insurer can review the hospital’s answer beside the cited document." : "The submitted request is awaiting the insurer’s review.") :
                 packet.status === "staff_reviewed" ? "A staff member reviewed the insurer form. The hospital can now send the packet." : "The signed report is attached. Open the insurer form and check the request before sending."}</p>}
             {waiting && <p className="handoff-line">{nextDesk} · Last handoff {handoffTime(handoffAt)}</p>}
+            {waiting && !historical && ((insurer && packet.status === "hospital_reply_needed") ||
+              (!insurer && packet.status !== "hospital_reply_needed")) &&
+              <button type="button" className="text-action" onClick={refresh}>Check for an update</button>}
             {packet.gap?.code === "missing_signed_report" && <p>Treating physician signs the replacement. Hospital IPD attaches it for recheck.</p>}
             {packet.gap && <button className="text-action" onClick={e => show("rule", e.currentTarget)}><BookOpen size={15}/> View cited clause</button>}
           </section>

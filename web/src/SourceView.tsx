@@ -52,6 +52,8 @@ function SourcePanel({ source, revision, historical, onReady, onReturn }: Props)
   }
   const page = source.page || 1;
   const [viewedPage, setViewedPage] = useState(page);
+  const anchor = source.anchors?.find(a => a.page === page && a.quote === source.quote);
+  const method = source.method ?? anchor?.method;
   return (
     <section className="panel viewer" id="source-view" tabIndex={-1} aria-labelledby="source-title">
       <div className="panel-heading">
@@ -75,7 +77,8 @@ function SourcePanel({ source, revision, historical, onReady, onReturn }: Props)
       </div>
       {url ? (
         <Suspense fallback={<p className="loading">Loading viewer…</p>}>
-          <PdfPage url={url} page={page} label={source.label} readable onReady={onReady} onPageChange={setViewedPage} />
+          <PdfPage url={url} page={page} label={source.label} readable onReady={onReady} onPageChange={setViewedPage}
+            quote={source.recordedSummary ? "" : source.quote} method={method} />
         </Suspense>
       ) : <p className="empty-view">The original PDF address is unavailable.</p>}
     </section>

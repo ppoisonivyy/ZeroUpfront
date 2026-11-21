@@ -11,6 +11,7 @@ from pydantic import BaseModel, ConfigDict
 from pypdf import PdfReader
 from pypdf.errors import PdfReadError
 
+from app.hospital_platform import disclosure_client, hosted_ocr_enabled
 from app.document_text import IncompleteTranscription, ocr_page
 from app.payer_ai_reader import MAX_TOTAL_BYTES, MAX_TOTAL_PAGES
 
@@ -67,7 +68,7 @@ def _normalized(text):
     return " ".join(unicodedata.normalize("NFC", text).split())
 
 
-def verify(reading, pages):
+def verify(reading, pages, *, transcribed_pages=()):
     categories = {"exchange_difference", "bank_fees"}
     if len(reading.clauses) != 2 or {item.category for item in reading.clauses} != categories:
         return _review("The reader did not resolve both fee categories. Review the original guarantee.")
@@ -90,6 +91,7 @@ def verify(reading, pages):
             continue
         role = PARTY_TERMS.get(item.payer)
         evidence = item.model_dump(exclude={"state", "definition"})
+        evidence["method"] = "ocr" if item.page in transcribed_pages else "digital"
         if role and not re.search(role, quote, re.I):
             link = item.definition
             if not link or not 1 <= link.page <= len(pages):
@@ -109,7 +111,7 @@ def verify(reading, pages):
                                      definition, re.I)):
                 pending.append(f"{name}: the named party could not be linked to its role on the cited pages.")
                 continue
-            evidence["definition"] = link.model_dump()
+            evidence["definition"] = {**link.model_dump(), "method": "ocr" if link.page in transcribed_pages else "digital"}
         findings.append(evidence)
     if pending:
         return _review(" ".join(pending) + " Staff must review the original before assigning responsibility.", findings)
@@ -132,9 +134,9 @@ def read(original):
             pages.append(native)
     except (PdfReadError, ValueError, KeyError, TypeError, IndexError, RecursionError, ArithmeticError):
         return _review("The PDF pages could not be verified. Review the original guarantee.")
-    if scans and (os.getenv("WORKSPACE_ENABLE_OCR") != "1" or len(scans) > 4):
+    if scans and (not hosted_ocr_enabled() or len(scans) > 4):
         return _review("Scanned pages require visual verification. The automatic reader supports up to four OCR pages when enabled.")
-    with OpenAI(timeout=90, max_retries=0) as client:
+    with disclosure_client(OpenAI, "guarantee_fees", timeout=90, max_retries=0) as client:
         try:
             for index in scans:
                 pages[index] = ocr_page(reader.pages[index], index + 1, client)
@@ -146,4 +148,4 @@ def read(original):
                     "detail": "high", "file_data": "data:application/pdf;base64," + base64.b64encode(original).decode()}]}])
     if response.status != "completed" or response.output_parsed is None:
         return _review("The reader returned no complete assessment. Inspect the original guarantee.")
-    return verify(response.output_parsed, pages)
+    return verify(response.output_parsed, pages, transcribed_pages={index + 1 for index in scans})

@@ -375,7 +375,7 @@ def ask_question(request: Request, ident: str, question: CitedQuestion, if_match
 
 @router.post("/api/preclaims/{ident}/clarifications/{sequence}/reply")
 def answer_question(request: Request, ident: str, sequence: int, answer: HospitalReply, if_match: Match = None):
-    if not getattr(request.state, "username", None) or request.state.role != "hospital":
+    if not getattr(request.state, "username", None) or request.state.role != "coordinator":
         raise HTTPException(403, "Hospital staff sign-in required to answer this question.")
     revision = _revision(if_match)
     with psycopg.connect(request.app.state.dsn, row_factory=dict_row) as db:

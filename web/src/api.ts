@@ -27,6 +27,7 @@ export type Source = {
   page: number;
   quote: string;
   recordedSummary?: string;
+  method?: string;
   anchors?: { page: number; quote: string; clause?: string; method?: string }[];
 };
 export type WorkflowAction =
@@ -88,6 +89,9 @@ export type CaseDetail = CaseSummary & {
     currency?: string;
   } | null;
 };
+
+export const caseHref = (id: string, revision?: number) =>
+  "#/cases/" + encodeURIComponent(id) + (revision ? "?revision=" + revision : "");
 
 export const statuses: Record<PacketStatus, string> = {
   needs_itemization: "Missing itemization",

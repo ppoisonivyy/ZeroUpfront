@@ -156,6 +156,7 @@ function Compare({
   );
 }
 export function ReplaceEstimate(props: FormProps) {
+  const { hosted_ocr_enabled } = useStaffSession();
   const { packet, onCancel, onStale } = props;
   const sampleAvailable =
     packet.sample_estimate_available ?? packet.id === "Z002";
@@ -257,7 +258,7 @@ export function ReplaceEstimate(props: FormProps) {
                 Use the estimate issued for the same admission. The current
                 revision is preserved in case history.
               </p>
-              <label className="check-field">
+              {hosted_ocr_enabled && <label className="check-field">
                 <input
                   type="checkbox"
                   checked={ocr}
@@ -266,7 +267,7 @@ export function ReplaceEstimate(props: FormProps) {
                 />
                 Allow OpenAI to process scanned pages of this estimate if OCR is
                 needed.
-              </label>
+              </label>}
             </div>
           )}
           {mode === "sample" && sample ? (
