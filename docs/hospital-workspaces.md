@@ -77,6 +77,31 @@ A coordinator can prepare a claim, review its evidence and send it to the in-pla
 
 Give each judge their own account for an individual audit trail. Deliver credentials privately. Configure provider secrets, web HTTPS and database certificate verification before issuing the link. [Staff access and encryption](security-and-encryption.md)
 
+## Share the Mac demo for a supervised judging session
+
+1. Open the [local hospital directory](http://127.0.0.1:8040/) and verify a hospital sign-in with synthetic cases. Keep the staffed app running, the Mac powered with its lid open, and the network connected.
+2. Install `cloudflared` once with `brew install cloudflared`. In a second Terminal window, run the command below. `caffeinate -i` prevents idle sleep while the tunnel runs. [Cloudflare installation](https://developers.cloudflare.com/cloudflare-one/networks/connectors/cloudflare-tunnel/downloads/)
+
+   ```sh
+   caffeinate -i cloudflared tunnel --url http://127.0.0.1:8040
+   ```
+
+3. Open the temporary HTTPS address printed by `cloudflared` on another device. Anyone with the link can see the directory. Opening a hospital desk requires its account and password. Share the link privately with judges and deliver the hospital name, username and password through a separate private channel. Keep the temporary address and all credentials out of Git.
+4. Press **Control-C** in the tunnel window when judging finishes. The local app remains available. Running the same command again prints a new HTTPS address to share. [Cloudflare Quick Tunnels](https://developers.cloudflare.com/tunnel/get-started/quick-tunnels/)
+
+### What you can access from the temporary judge link
+
+Choose **Canal Bridge** for the walkthrough. **Lakeside** has its own sign-in, synthetic cases and saved work. Use the password supplied for the selected hospital and username.
+
+| Sign in as | What opens | What to try |
+| --- | --- | --- |
+| Signed out | Hospital directory and sign-in | Choose a hospital. Its case queue requires a login. |
+| `judge` | Hospital coordinator desk | Open Amelia Morgan (ZU-0248), inspect the clause on page 12, attach the signed sample and review the insurer form. Submitting the reviewed form delivers that revision to the payer inbox. |
+| `reviewer` | Meridian Assist insurer desk | Open the received packet after the coordinator submits it. A separate browser window in private mode lets the presenter keep both desks open. |
+| `finance` | Assigned reconciliation | Inspect payer amounts, recorded credits and the outstanding balance for the assigned Pattaya case in that hospital. |
+
+The link opens the running synthetic workspace. Changes made during judging persist there. For a file-upload demonstration, use the discharge bill correction described in the [walkthrough](demo.md#live-file-upload).
+
 ## One day of judging
 
 For a judge link usable while the team’s laptop is offline, an always-on Singapore service is a reasonable first deployment for a Bangkok event. A 1 CPU / 2 GB Render web service and a 0.5 CPU / 1 GB managed PostgreSQL service at monthly rates of $25 and $19 amount to roughly **$1.47 for 24 hours**, assuming a 30-day month, one instance of each and usage-based compute billing. Budget separately for storage, network usage, API calls and any paid workspace subscription. Render supports two logical databases on the same PostgreSQL instance. Confirm current prices at checkout. Its internal database TLS uses self-signed certificates. To retain this release’s hostname verification, use the external database hostname with a trusted root, restrict database ingress to the service egress ranges and measure the resulting latency. [Pricing](https://render.com/pricing) · [Plans](https://render.com/docs/compute-plans) · [Database connections and multiple databases](https://render.com/docs/postgresql-creating-connecting) · [Regions](https://render.com/docs/regions)
