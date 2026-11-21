@@ -31,13 +31,19 @@ class MultipartBodyLimit:
             return await self.app(scope, receive, send)
 
         # Only the hospital's protected case workflows accept uploaded files.
-        workflow = get_route_path(scope).split("/")[:3]
-        if scope["method"] != "POST" or workflow not in (["", "api", "cases"], ["", "api", "discharge"]):
+        path = get_route_path(scope)
+        workflow = path.split("/")[:3]
+        report_upload = re.fullmatch(r"/api/preclaims/[^/]+/reports", path)
+        if scope["method"] != "POST" or (not report_upload and workflow not in (["", "api", "cases"], ["", "api", "discharge"])):
             return await JSONResponse({"detail": "This route does not accept multipart uploads."},
                                       status_code=415)(scope, receive, send)
 
+        maximum = self.maximum
+        if report_upload:
+            from app.preclaim_report_evidence import MAX_BYTES as report_limit
+            maximum = min(maximum, report_limit + 1024 * 1024)
         too_large = JSONResponse(
-            {"detail": f"All files and form data together must fit within {self.maximum / (1024 * 1024):g} MiB."},
+            {"detail": f"All files and form data together must fit within {maximum / (1024 * 1024):g} MiB."},
             status_code=413,
         )
         length = headers.get("content-length")
@@ -48,7 +54,7 @@ class MultipartBodyLimit:
                     raise ValueError
             except ValueError:
                 return await JSONResponse({"detail": "Invalid Content-Length."}, status_code=400)(scope, receive, send)
-            if declared > self.maximum:
+            if declared > maximum:
                 return await too_large(scope, receive, send)
 
         # A private temporary file keeps the raw body off the Python heap. The
@@ -61,7 +67,7 @@ class MultipartBodyLimit:
                     return await Response(status_code=400)(scope, receive, send)
                 chunk = message.get("body", b"")
                 total += len(chunk)
-                if total > self.maximum:
+                if total > maximum:
                     return await too_large(scope, receive, send)
                 if chunk:
                     await run_in_threadpool(spool.write, chunk)
@@ -132,7 +138,7 @@ def _pdf(data, filename, disposition="inline"):
 def _read_upload(file, maximum=INTAKE_BYTES):
     raw = file.file.read(maximum + 1)
     if len(raw) > maximum:
-        raise HTTPException(413, f"Choose a PDF of at most {maximum // (1024 * 1024)} MiB.")
+        raise HTTPException(413, f"Choose a file of at most {maximum // (1024 * 1024)} MiB.")
     return raw
 
 

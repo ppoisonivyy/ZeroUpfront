@@ -144,8 +144,8 @@ def case_values(hospital):
     }
 
 
-def checks(policy_bytes, report_bytes, estimate_bytes, case_id, values):
-    policy_pages, report_pages, estimate_pages = map(pages, (policy_bytes, report_bytes, estimate_bytes))
+def checks(policy_bytes, report_bytes, estimate_bytes, case_id, values, *, signed_attestation=False):
+    policy_pages, estimate_pages = map(pages, (policy_bytes, estimate_bytes))
     page = values["rule_page"]
     verified = len(policy_pages) >= page and values["rule_quote"] in policy_pages[page - 1]
     identity = [
@@ -156,15 +156,19 @@ def checks(policy_bytes, report_bytes, estimate_bytes, case_id, values):
         f"Planned procedure: {values['procedure']}",
         f"Admission date: {values['admission_date']}",
     ]
-    signed = len(report_pages) == 1 and all(
-        text in report_pages[0] for text in [*identity, values["indication"], values["signature"]]
-    )
+    if report_bytes is None:
+        signed = signed_attestation
+    else:
+        report_pages = pages(report_bytes)
+        signed = len(report_pages) == 1 and all(
+            text in report_pages[0] for text in [*identity, values["indication"], values["signature"]]
+        )
     amount = f"Estimated total: {values['currency']} {values['total']:,}"
     estimated = len(estimate_pages) == 1 and all(text in estimate_pages[0] for text in [*identity, amount])
     return verified, signed, estimated
 
 
-def request_pdf(case_id, values, revision, actor=None):
+def request_pdf(case_id, values, revision, actor=None, *, report_page=None):
     title = f"{values['insurer']} | Global Select | {values['form_edition']} (fictional)"
     return pdf(
         title,
@@ -181,7 +185,9 @@ def request_pdf(case_id, values, revision, actor=None):
                     f"Itemised estimate: {values['currency']} {values['total']:,}",
                     "Exhibits: policy wording, signed treating physician report and itemised estimate.",
                     f"Rule: Global Select section 4.2, physical page {values['rule_page']}.",
-                    "Verified case packet: signed medical report with indication and procedure.",
+                    (f"Hospital staff visually attested the treating physician mark on report page {report_page} "
+                     "and confirmed the encounter, indication and planned procedure.")
+                    if report_page else "Verified case packet: signed medical report with indication and procedure.",
                     f"Hospital staff review: {actor}" if actor else "Draft for hospital staff review.",
                     "The hospital requests pre-authorisation. The insurer has not issued a payment guarantee.",
                 ],

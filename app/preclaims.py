@@ -3,20 +3,21 @@
 from typing import Annotated, Literal
 
 import psycopg
-from fastapi import APIRouter, Header, HTTPException, Query, Request
+from fastapi import APIRouter, Depends, File, Form, Header, HTTPException, Query, Request, Response, UploadFile
 from psycopg.rows import dict_row
 from psycopg.types.json import Jsonb
 from pydantic import BaseModel, ConfigDict, Field
 
 from app import preclaim_fixture as fixture
+from app.preclaim_report_evidence import MAX_BYTES, inspect_report
 from app.hospital_platform import hospital_path
-from app.workspace_http_common import _actor, _pdf, _revision
+from app.workspace_http_common import _actor, _pdf, _read_upload, _revision, accept_files
 from app.workspace_store import _save_document
 
 router = APIRouter()
 Match = Annotated[str | None, Header(alias="If-Match")]
 SelectedRevision = Annotated[int | None, Query(ge=1)]
-SourceRole = Literal["policy", "report", "estimate", "draft", "request"]
+SourceRole = Literal["policy", "report", "original-report", "estimate", "draft", "request"]
 DDL = """
 CREATE TABLE IF NOT EXISTS zeroupfront_demo.preclaims (
     id text PRIMARY KEY, insurer text NOT NULL, hospital text NOT NULL,
@@ -32,6 +33,9 @@ CREATE TABLE IF NOT EXISTS zeroupfront_demo.preclaim_revisions (
     created_by text NOT NULL, created_at timestamptz NOT NULL DEFAULT now(),
     PRIMARY KEY(case_id, revision)
 );
+ALTER TABLE zeroupfront_demo.preclaim_revisions
+    ADD COLUMN IF NOT EXISTS original_report text REFERENCES zeroupfront_demo.documents(digest),
+    ADD COLUMN IF NOT EXISTS report_evidence jsonb;
 CREATE TABLE IF NOT EXISTS zeroupfront_demo.preclaim_reviews (
     case_id text NOT NULL, revision integer NOT NULL,
     actor text NOT NULL, username text NOT NULL, created_at timestamptz NOT NULL DEFAULT now(),
@@ -91,7 +95,7 @@ def seed(dsn, hospital):
 
 def summaries(dsn):
     with psycopg.connect(dsn) as db:
-        rows = db.execute("""SELECT c.id,c.head,a.actor,s.revision,r.case_values,q.sequence,q.reply FROM zeroupfront_demo.preclaims c
+        rows = db.execute("""SELECT c.id,c.head,a.actor,s.revision,r.case_values,q.sequence,q.reply,r.draft IS NOT NULL AS ready FROM zeroupfront_demo.preclaims c
             JOIN zeroupfront_demo.preclaim_revisions r ON r.case_id=c.id AND r.revision=c.head
             LEFT JOIN zeroupfront_demo.preclaim_reviews a ON a.case_id=c.id AND a.revision=c.head
             LEFT JOIN zeroupfront_demo.preclaim_submissions s ON s.case_id=c.id AND s.revision=c.head
@@ -110,17 +114,17 @@ def summaries(dsn):
             "admission_date": values["admission_date"],
             "intake": True,
             "input_kind": "payer_preclaim",
-            "status": "staff_reviewed" if actor else "ready_for_review" if rev > 1 else "needs_review",
+            "status": "staff_reviewed" if actor else "ready_for_review" if ready else "needs_review",
             "insurer_status": "submitted" if sent else "not_sent",
             "workflow_stage": "hospital_reply_needed" if sequence and reply is None else "hospital_replied" if sequence else "waiting_for_insurer"
             if sent
             else "staff_reviewed"
             if actor
             else "ready_for_review"
-            if rev > 1
+            if ready
             else "needs_documents",
         }
-        for ident, rev, actor, sent, values, sequence, reply in rows
+        for ident, rev, actor, sent, values, sequence, reply, ready in rows
     ]
 
 
@@ -132,7 +136,7 @@ def _insurer(request):
 
 def _row(db, ident, revision=None, *, payer=None):
     row = db.execute(
-        """SELECT c.id,c.insurer,c.hospital,c.head,r.revision,r.policy,r.report,r.estimate,r.draft,r.case_values,
+        """SELECT c.id,c.insurer,c.hospital,c.head,r.revision,r.policy,r.report,r.estimate,r.draft,r.case_values,r.original_report,r.report_evidence,r.created_at,
                         a.actor AS reviewer,a.form,s.revision AS submitted_revision,s.created_at AS submitted_at
                  FROM zeroupfront_demo.preclaims c
                  JOIN zeroupfront_demo.preclaim_revisions r ON r.case_id=c.id AND r.revision=coalesce(%s::int,c.head)
@@ -154,12 +158,14 @@ def _value(db, digest):
 
 
 def _check(db, row, report=None):
+    evidence = None if report else row["report_evidence"]
     return fixture.checks(
         _value(db, row["policy"]),
-        _value(db, report or row["report"]),
+        None if evidence else _value(db, report or row["report"]),
         _value(db, row["estimate"]),
         row["id"],
         row["case_values"],
+        signed_attestation=evidence["status"] == "staff_attested" if evidence else False,
     )
 
 
@@ -180,7 +186,11 @@ def _detail(db, row, *, payer=None):
         issues.append(
             dict(code="unverified_rule", title="Verify the policy wording against the original page", **rule)
         )
-    if not signed:
+    evidence = row["report_evidence"]
+    if evidence is not None and not signed:
+        issues.append(dict(code="report_attestation_required", title="Inspect the uploaded report and confirm the signature page",
+                           page=1, source_url=source + "report", quote="", verified=False))
+    elif not signed:
         issues.append(
             dict(code="missing_signed_report", title="Signed treating physician report required", **rule)
         )
@@ -222,10 +232,9 @@ def _detail(db, row, *, payer=None):
             ),
             (
                 "report",
-                "Signed medical report" if signed else "Initial medical report",
-                1,
-                values["signature"]
-                if signed
+                "Uploaded medical report" if evidence else "Signed medical report" if signed else "Initial medical report",
+                (evidence.get("page") or 1) if evidence else 1,
+                "" if evidence else values["signature"] if signed
                 else (
                     "Treating physician signature: Pending"
                     if "Treating physician signature: Pending" in fixture.pages(_value(db, row["report"]))[0]
@@ -240,7 +249,11 @@ def _detail(db, row, *, payer=None):
             ),
         )
     ]
+    from app.preclaim_signature_assist import enabled as hint_enabled
+
     return {
+        "report_signature_hint_enabled": bool(not payer and row["revision"] == row["head"] and evidence
+                                              and evidence["status"] == "needs_review" and hint_enabled()),
         "id": row["id"],
         "patient": values["patient"],
         "member": values["member"],
@@ -257,6 +270,8 @@ def _detail(db, row, *, payer=None):
         "issues": issues,
         "rule": rule,
         "sources": sources,
+        "report_evidence": dict(evidence, original_url=source + "original-report", sha256=row["original_report"],
+                                attested_at=row["created_at"] if evidence["status"] == "staff_attested" else None) if evidence else None,
         "draft_url": source + "request" if row["form"] else source + "draft" if row["draft"] else None,
         "form_edition": values["form_edition"],
         "reviewer": row["reviewer"],
@@ -302,6 +317,15 @@ def _source(request, ident, revision, role, payer=None):
         row = _row(db, ident, revision, payer=payer)
         if role == "draft" and payer:
             raise HTTPException(404, "Only the staff-reviewed request was submitted.")
+        if role == "original-report":
+            if not row["original_report"]:
+                raise HTTPException(404, "No uploaded original for this revision.")
+            evidence = row["report_evidence"]
+            extension = {"application/pdf": "pdf", "image/png": "png", "image/jpeg": "jpg"}[evidence["content_type"]]
+            return Response(_value(db, row["original_report"]), media_type=evidence["content_type"], headers={
+                "Content-Disposition": f'inline; filename="{row["id"]}-R{revision}-original-report.{extension}"',
+                "Cache-Control": "private, no-store", "X-Content-Type-Options": "nosniff",
+            })
         digest = row["form"] if role == "request" else row[role]
         return _pdf(_value(db, digest), f"{row['id']}-R{revision}-{role}.pdf")
 
@@ -390,6 +414,99 @@ def answer_question(request: Request, ident: str, sequence: int, answer: Hospita
         return _detail(db, row)
 
 
+def _report_coordinator(request):
+    username = getattr(request.state, "username", None)
+    if not username or getattr(request.state, "role", None) != "coordinator":
+        raise HTTPException(403, "Hospital coordinator sign-in is required to update the report.")
+    return username
+
+
+def _lock_head(db, ident, base):
+    locked = db.execute(
+        "SELECT head,replacement FROM zeroupfront_demo.preclaims WHERE id=%s FOR UPDATE", (ident,)
+    ).fetchone()
+    if not locked:
+        raise HTTPException(404, "Pre-claim not found.")
+    if locked["head"] != base:
+        raise HTTPException(412, "The evidence revision changed. Reopen the current case.")
+    return locked
+
+
+def _editable_report(db, ident, base):
+    row = _row(db, ident)
+    if row["head"] != base:
+        raise HTTPException(412, "The evidence revision changed. Reopen the current case.")
+    if row["form"] or row["submitted_revision"]:
+        raise HTTPException(409, "A reviewed or submitted report cannot be replaced.")
+    return row
+
+
+def _save_report_revision(db, row, report, original, evidence, username, draft=None):
+    revision = row["revision"] + 1
+    db.execute("""
+        INSERT INTO zeroupfront_demo.preclaim_revisions
+            (case_id,revision,policy,report,estimate,case_values,draft,created_by,original_report,report_evidence)
+        VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
+        """, (row["id"], revision, row["policy"], report, row["estimate"], Jsonb(row["case_values"]), draft, username,
+              original, Jsonb(evidence) if evidence else None))
+    db.execute("UPDATE zeroupfront_demo.preclaims SET head=%s WHERE id=%s", (revision, row["id"]))
+
+
+@router.post("/api/preclaims/{ident}/reports", dependencies=[Depends(accept_files("file"))])
+def upload_report(request: Request, ident: str, file: Annotated[UploadFile, File()],
+                  confirmed: Annotated[bool, Form()], if_match: Match = None):
+    username, base = _report_coordinator(request), _revision(if_match)
+    if not confirmed:
+        raise HTTPException(422, "Confirm that this report belongs to the selected encounter.")
+    dsn = request.app.state.dsn
+    with psycopg.connect(dsn, row_factory=dict_row) as db:
+        row = _editable_report(db, ident, base)
+    raw = _read_upload(file, maximum=MAX_BYTES)
+    try:
+        inspection = inspect_report(raw, case_id=ident, values=row["case_values"])
+    except ValueError as exc:
+        raise HTTPException(422, str(exc)) from exc
+    if inspection["identity_status"] == "mismatch":
+        raise HTTPException(422, "Report conflicts with this encounter: " + ", ".join(inspection["conflict_fields"]) + ".")
+    evidence = dict(status="needs_review", identity_status=inspection["identity_status"], pages=inspection["page_count"],
+                    content_type=inspection["media_type"], page=None, uploaded_by=username, attested_by=None)
+    # Parse outside the transaction and check the head again under lock before saving either copy.
+    with psycopg.connect(dsn, row_factory=dict_row) as db:
+        _lock_head(db, ident, base)
+        row = _editable_report(db, ident, base)
+        original = _save_document(db, raw)
+        if original == row["original_report"]:
+            raise HTTPException(409, "This file is already attached to the current revision.")
+        report = original if inspection["media_type"] == "application/pdf" else _save_document(db, inspection["pdf_bytes"])
+        _save_report_revision(db, row, report, original, evidence, username)
+        return _detail(db, _row(db, ident))
+
+
+class ReportAttestation(Confirmation):
+    page: int = Field(strict=True, ge=1)
+    identity_confirmed: Literal[True]
+
+
+@router.post("/api/preclaims/{ident}/reports/attest")
+def attest_report(request: Request, ident: str, attestation: ReportAttestation, if_match: Match = None):
+    username, base = _report_coordinator(request), _revision(if_match)
+    with psycopg.connect(request.app.state.dsn, row_factory=dict_row) as db:
+        _lock_head(db, ident, base)
+        row = _editable_report(db, ident, base)
+        evidence = row["report_evidence"]
+        if not row["original_report"] or not evidence or evidence["status"] != "needs_review":
+            raise HTTPException(409, "Choose a report awaiting visual review.")
+        if evidence["identity_status"] not in ("matched", "manual_review") or attestation.page > evidence["pages"]:
+            raise HTTPException(422, "Choose a physical page of this encounter's report.")
+        evidence = dict(evidence, status="staff_attested", page=attestation.page, attested_by=username)
+        verified, _, estimated = _check(db, row)
+        draft = None
+        if verified and estimated:
+            draft = _save_document(db, fixture.request_pdf(ident, row["case_values"], base + 1, report_page=attestation.page))
+        _save_report_revision(db, row, row["report"], row["original_report"], evidence, username, draft)
+        return _detail(db, _row(db, ident))
+
+
 Action = Literal["attach-report", "review", "submit"]
 
 
@@ -401,42 +518,23 @@ def advance(request: Request, ident: str, action: Action, confirmation: Confirma
     if not username:
         raise HTTPException(403, "Staff sign-in is required to update this request.")
     with psycopg.connect(request.app.state.dsn, row_factory=dict_row) as db:
-        locked = db.execute(
-            "SELECT head,replacement FROM zeroupfront_demo.preclaims WHERE id=%s FOR UPDATE", (ident,)
-        ).fetchone()
-        if not locked:
-            raise HTTPException(404, "Pre-claim not found.")
-        if locked["head"] != base:
-            raise HTTPException(412, "The evidence revision changed. Reopen the current case.")
+        locked = _lock_head(db, ident, base)
         row = _row(db, ident, base)
         verified, signed, estimated = _check(db, row)
         if action == "attach-report":
-            if not verified or not estimated or signed or row["form"] or row["submitted_revision"]:
+            if not verified or not estimated or signed or row["original_report"] or row["form"] or row["submitted_revision"]:
                 raise HTTPException(409, "This revision cannot accept the bundled signed replacement.")
             if _check(db, row, locked["replacement"]) != (True, True, True):
                 raise HTTPException(
                     422, "The replacement does not satisfy the encounter and signed-report checks."
                 )
             draft = _save_document(db, fixture.request_pdf(ident, row["case_values"], base + 1))
-            db.execute(
-                """INSERT INTO zeroupfront_demo.preclaim_revisions(case_id,revision,policy,report,estimate,case_values,draft,created_by)
-                          VALUES(%s,%s,%s,%s,%s,%s,%s,%s)""",
-                (
-                    ident,
-                    base + 1,
-                    row["policy"],
-                    locked["replacement"],
-                    row["estimate"],
-                    Jsonb(row["case_values"]),
-                    draft,
-                    username,
-                ),
-            )
-            db.execute("UPDATE zeroupfront_demo.preclaims SET head=%s WHERE id=%s", (base + 1, ident))
+            _save_report_revision(db, row, locked["replacement"], None, None, username, draft)
         elif action == "review":
             if not verified or not signed or not estimated or not row["draft"] or row["form"]:
                 raise HTTPException(409, "Only a complete draft awaiting staff review can be reviewed.")
-            form = _save_document(db, fixture.request_pdf(ident, row["case_values"], base, actor))
+            report_page = row["report_evidence"]["page"] if row["report_evidence"] else None
+            form = _save_document(db, fixture.request_pdf(ident, row["case_values"], base, actor, report_page=report_page))
             db.execute(
                 "INSERT INTO zeroupfront_demo.preclaim_reviews(case_id,revision,actor,username,form) VALUES(%s,%s,%s,%s,%s)",
                 (ident, base, actor, username, form),
