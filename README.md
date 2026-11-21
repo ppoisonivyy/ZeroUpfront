@@ -8,13 +8,13 @@ Choose a hospital first. The example usernames below belong to that hospital. Ea
 
 | Sign-in | What this person needs to know | What they can do |
 | --- | --- | --- |
-| **Hospital coordinator** · `judge` | “What is missing before I send this request?” | Inspect the patient’s evidence, correct the packet, review the insurer form, submit it and answer a payer question. This is the starting account for hackathon judges. |
+| **Hospital coordinator** · `coordinator` | “What is missing before I send this request?” | Inspect the patient’s evidence, correct the packet, review the insurer form, submit it and answer a payer question. This is the starting account for hackathon judges. |
 | **Insurer reviewer** · `reviewer` | “What exactly did the hospital send our payer?” | Read the submitted revision and its original attachments. Ask the hospital a question tied to a document and physical page. The payer owns the coverage decision. |
 | **Hospital finance** · `finance` | “How much did we actually receive, and what is outstanding?” | Read the payer amount, credits and balance for assigned discharge cases. The Pattaya example shows the difference between a remittance instruction and receipt of funds. |
 
 The treating physician supplies the signed medical report. The patient receives treatment and hears the deposit decision from the hospital. Both participate without a demo login. Staff apply a valid written guarantee at admission and refer changed or missing terms back to the payer.
 
-**Presenting the flow.** Allow about two minutes with two browser windows ready. Open Canal Bridge as `judge` in one and as `reviewer` in a private window. Show the missing evidence, correct it, pause at staff review, then submit and open the same revision in the insurer window. The handoff ends with a request awaiting a payer decision. If judges ask about settlement, allow another 30 seconds to open `finance` on the separate Pattaya case. These are presentation estimates. [Detailed walkthrough](docs/demo.md)
+**Presenting the flow.** Allow about two minutes with two browser windows ready. Open Canal Bridge as `coordinator` in one and as `reviewer` in a private window. Show the missing evidence, correct it, pause at staff review, then submit and open the same revision in the insurer window. The handoff ends with a request awaiting a payer decision. If judges ask about settlement, allow another 30 seconds to open `finance` on the separate Pattaya case. These are presentation estimates. [Detailed walkthrough](docs/demo.md)
 
 <a id="coordinator-workspace"></a>
 
@@ -26,7 +26,9 @@ Amelia Morgan is a fictional patient at Canal Bridge Demo Hospital. Her knee art
 
 ![Amelia’s missing report beside the highlighted signature requirement on original policy page 12](docs/figures/amelia-rule.png)
 
-**2. Review the corrected request.** Attaching the signed report creates revision 2. The coordinator previews the insurer form, checks the supporting PDFs and marks that revision reviewed before submitting it.
+**Try a handwritten report.** The bundled signed sample uses a known typed signature field. To try a scan, upload the two-page fictional report and inspect the treating physician’s signature area on physical page 2. The coordinator confirms the encounter, visible mark and page before the insurer form can be reviewed. A blank field should remain pending. An optional, hospital-approved OpenAI visual check can suggest a page for inspection. A visible mark alone cannot establish who signed it. [Marked scan (PDF)](fixtures/physician-reports/canal-bridge-marked.pdf) · [Blank comparison (PDF)](fixtures/physician-reports/canal-bridge-blank.pdf)
+
+**2. Review the corrected request.** Attaching the bundled signed sample creates revision 2. Uploading a report from disk records separate revisions for receipt and staff confirmation. The coordinator previews the insurer form, checks the supporting PDFs and marks that revision reviewed before submitting it.
 
 ![Amelia’s corrected request in the hospital form review](docs/figures/amelia-request.png)
 
@@ -48,7 +50,7 @@ npm --prefix web run build
 uv run --locked python -m app.hospital_demo
 ```
 
-Open the hospital directory and select **Canal Bridge**, then open **Pre-arrival cases** for Amelia. The first interactive launch prompts for separate passwords for `judge` (hospital coordinator) and `reviewer` (insurer) in each hospital. If the host has already set up the demo, use the credentials they provide privately. [Local directory](http://127.0.0.1:8040/) · [Accounts and password reset](docs/hospital-workspaces.md)
+Open the hospital directory and select **Canal Bridge**, then open **Pre-arrival cases** for Amelia. The first interactive launch prompts for separate passwords for `coordinator` (hospital coordinator) and `reviewer` (insurer) in each hospital. If the host has already set up the demo, use the credentials they provide privately. [Local directory](http://127.0.0.1:8040/) · [Accounts and password reset](docs/hospital-workspaces.md)
 
 | Another case to try | What to look for |
 | --- | --- |
