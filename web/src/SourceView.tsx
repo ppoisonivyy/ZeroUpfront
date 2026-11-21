@@ -7,10 +7,12 @@ export function SourceView({
   source,
   revision,
   historical,
+  onReady,
 }: {
   source: Source;
   revision: number;
   historical: boolean;
+  onReady?: () => void;
 }) {
   let url = "";
   try {
@@ -61,7 +63,7 @@ export function SourceView({
       </div>
       {url ? (
         <Suspense fallback={<p className="loading">Loading viewer…</p>}>
-          <PdfPage url={url} page={page} label={source.label} />
+          <PdfPage url={url} page={page} label={source.label} onReady={onReady} />
         </Suspense>
       ) : (
         <p className="empty-view">The original PDF address is unavailable.</p>
