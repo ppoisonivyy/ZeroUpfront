@@ -1,6 +1,8 @@
 # From planned admission to direct billing
 
-The team's four lanes fit a planned international admission. Keep the patient, hospital international patient department (IPD), ZeroUpfront and insurer or third-party administrator (TPA). Keep the loop that returns missing exhibits to the hospital. Change the headline to **“Resolve insurance questions before arrival so the hospital can confirm the deposit.”** Preauthorization, a written payment guarantee, and the hospital's deposit decision each have their own evidence.
+The team's four lanes fit a planned international admission. The alternative keeps the patient, hospital international patient department (IPD), ZeroUpfront and insurer or third-party administrator (TPA), along with the loop that returns missing exhibits to the hospital. It shows the evidence for preauthorization, a written payment guarantee and the hospital's deposit decision.
+
+[Original team diagram](figures/planned-admission-team-original.png)
 
 ![Planned admission across the patient, hospital, ZeroUpfront and payer lanes](figures/planned-admission-flow.svg)
 
@@ -22,4 +24,4 @@ Bangkok Hospital Phuket describes requesting an adjustment when treatment change
 
 Start with the team's first half. In synthetic Z002, show the missing estimate breakdown, its source clause, the corrected estimate on the same case, staff review, and the insurer-formatted **request** and gap report. Keep **No insurer response on file** visible until a separate document arrives. The admission comparison only makes sense once a specific insurer response is recorded. A future demonstration can use an explicitly simulated letter to show both an unchanged admission and a changed plan that needs an amendment.
 
-For the pitch diagram, replace “Drafts final GOP” with **“Compares admission to insurer letter and drafts an amendment if needed.”** Replace “Treated with zero deposit” with **“Hospital confirms deposit due or waived.”** A zero-deposit admission can be shown as one successful branch. Compare time to a correctly prepared request in the [coordinator pilot](coordinator-pilot.md). Track insurer turnaround and hospital-recorded deposits separately.
+In the alternative pitch diagram, the coordinator compares the admission with the insurer's letter and drafts an amendment when needed. The hospital confirms whether a deposit is waived, reduced or due. A zero-deposit admission is one successful branch. Compare time to a correctly prepared request in the [coordinator pilot](coordinator-pilot.md). Track insurer turnaround and hospital-recorded deposits separately.
