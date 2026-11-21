@@ -2,6 +2,20 @@
 
 ZeroUpfront helps hospital staff catch missing evidence before an inpatient insurance request reaches the payer. A coordinator can open the exact policy clause, correct the packet and send the reviewed version to the insurer. At discharge, staff can trace a charge or payment discrepancy back to the original bill, clinical record or guarantee.
 
+## Who uses each desk
+
+Choose a hospital first. The example usernames below belong to that hospital. Each signs in to a different desk.
+
+| Sign-in | What this person needs to know | What they can do |
+| --- | --- | --- |
+| **Hospital coordinator** · `judge` | “What is missing before I send this request?” | Inspect the patient’s evidence, correct the packet, review the insurer form, submit it and answer a payer question. This is the starting account for hackathon judges. |
+| **Insurer reviewer** · `reviewer` | “What exactly did the hospital send our payer?” | Read the submitted revision and its original attachments. Ask the hospital a question tied to a document and physical page. The payer owns the coverage decision. |
+| **Hospital finance** · `finance` | “How much did we actually receive, and what is outstanding?” | Read the payer amount, credits and balance for assigned discharge cases. The Pattaya example shows the difference between a remittance instruction and receipt of funds. |
+
+The treating physician supplies the signed medical report. The patient receives treatment and hears the deposit decision from the hospital. Both participate without a demo login. Staff apply a valid written guarantee at admission and refer changed or missing terms back to the payer.
+
+**Presenting the flow.** Allow about two minutes with two browser windows ready. Open Canal Bridge as `judge` in one and as `reviewer` in a private window. Show the missing evidence, correct it, pause at staff review, then submit and open the same revision in the insurer window. The handoff ends with a request awaiting a payer decision. If judges ask about settlement, allow another 30 seconds to open `finance` on the separate Pattaya case. These are presentation estimates. [Detailed walkthrough](docs/demo.md)
+
 <a id="coordinator-workspace"></a>
 
 ## A case from hospital desk to insurer inbox
