@@ -5,6 +5,7 @@ ZeroUpfront helps a hospital's international patient department prepare a clause
 ## Start here
 
 - [US policy accuracy and field-specific verification](docs/us-hybrid-decision.md)
+- [Coordinator pilot, staff time and cost per verified question](docs/coordinator-pilot.md)
 - [Same-case replacement during a live OCR request](docs/same-case-revision.md) and [encounter, lease and export trials](docs/case-revision-guards.md)
 - [Benchmark comparison and preprocessing recommendation](docs/benchmark-comparison.md)
 - [Context sizing and token counts](docs/context-budget.md)
@@ -20,10 +21,10 @@ ZeroUpfront helps a hospital's international patient department prepare a clause
 
 ## Run the demo
 
-For this preparation snapshot, clone the research branch. Use Python 3.12 and [uv](https://docs.astral.sh/uv/getting-started/installation/). Create the local key file and enter your project key. The private file is Git-ignored.
+Clone the repository and use Python 3.12 and [uv](https://docs.astral.sh/uv/getting-started/installation/). Create the local key file and enter your project key. The private file is Git-ignored.
 
 ```sh
-git clone --branch prep/research-reliability https://github.com/aowngong/ZeroUpfront.git
+git clone https://github.com/aowngong/ZeroUpfront.git
 cd ZeroUpfront
 uv sync --locked --python 3.12
 test -e .env || (umask 077 && cp .env.example .env)
