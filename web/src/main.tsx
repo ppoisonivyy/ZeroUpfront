@@ -3,6 +3,9 @@ import { createRoot } from "react-dom/client";
 import {
   ArrowLeft,
   BookOpen,
+  ReceiptText,
+  PanelTop,
+  Hospital,
   Building2,
   Check,
   ChevronRight,
@@ -32,6 +35,7 @@ import { AuthGate, useStaffSession } from "./Auth";
 import { OperationalHolds } from "./OperationalHolds";
 import "./style.css";
 import "./caseflow.css";
+import "./workspace.css";
 
 const Discharge = lazy(() =>
   import("./Discharge").then((m) => ({ default: m.Discharge })),
@@ -919,37 +923,32 @@ function App() {
       >
         Skip to case workspace
       </a>
-      <header className="app-header">
-        <div className="header-inner">
-          <a href="#/discharge" className="brand">
-            <span className="logomark" aria-hidden="true">
-              Z
-            </span>
+      <div className="app-layout">
+        <header className="app-rail">
+          <a href="#/discharge" className="product-brand" aria-label="ZeroUpfront home">
+            <span className="product-symbol" aria-hidden="true"><i /><i /></span>
             ZeroUpfront
           </a>
-          <span className="header-divider" />
-          <span className="header-label">Coordinator workspace</span>
-          <span className="demo-label">
-            <i />
-            {session.mode === "local" ? "Local workspace" : "Staff workspace"}
-          </span>
-        </div>
-      </header>
-      <main id="main-content" tabIndex={-1}>
-        <nav className="workspace-nav" aria-label="Hospital workflows">
-          <a
-            aria-current={route.discharge ? "page" : undefined}
-            href="#/discharge"
-          >
-            Discharge claims
-          </a>
-          <a
-            aria-current={!route.discharge ? "page" : undefined}
-            href="#/cases"
-          >
-            Pre-arrival cases
-          </a>
-        </nav>
+          <nav className="workflow-links" aria-label="Hospital workflows">
+            <p className="rail-label">Workspace</p>
+            <a aria-current={route.discharge ? "page" : undefined} href="#/discharge">
+              <ReceiptText size={18} /> Discharge claims
+            </a>
+            <a aria-current={!route.discharge ? "page" : undefined} href="#/cases">
+              <ClipboardList size={18} /> Pre-arrival cases
+            </a>
+          </nav>
+          <div className="rail-session"><Hospital size={18} /><div>
+            <strong>{session.mode === "local" ? "Local workspace" : "Hospital workspace"}</strong>
+            <span>{session.mode === "local" ? "Rehearsal mode" : "Staff access"}</span>
+          </div></div>
+        </header>
+        <div className="app-content">
+          <div className="context-strip"><PanelTop size={16} />
+            <span>Coordinator workspace</span><ChevronRight size={13} />
+            <strong>{route.discharge ? "Discharge claims" : "Pre-arrival cases"}</strong>
+          </div>
+          <main id="main-content" tabIndex={-1}>
         {(route.id || route.create) && (
           <nav className="breadcrumbs" aria-label="Breadcrumb">
             <a href={route.discharge ? "#/discharge" : "#/cases"}>
@@ -959,7 +958,7 @@ function App() {
             {(route.id || route.create) && (
               <>
                 <ChevronRight size={14} />
-                <span aria-current="page">
+                <span aria-current="page" title={route.id && route.id !== "new" ? route.id : undefined}>
                   {route.create
                     ? "Create a case"
                     : route.discharge && route.id === "new"
@@ -994,7 +993,9 @@ function App() {
         ) : (
           <Worklist epoch={epoch} retry={retry} />
         )}
-      </main>
+          </main>
+        </div>
+      </div>
     </>
   );
 }

@@ -7,10 +7,9 @@ import {
   Download,
   FileText,
   History,
-  Plus,
-  ReceiptText,
 } from "lucide-react";
-import { useStaffSession } from "./Auth";
+import { ClaimFindings } from "./ClaimFindings";
+import { ClaimPill, DischargeList } from "./DischargeQueue";
 import { api, displayDate, type Source } from "./api";
 import { AttachmentList } from "./Attachments";
 import { SourceView } from "./SourceView";
@@ -20,7 +19,6 @@ import DischargeOcr from "./DischargeOcr";
 import {
   claimPath,
   claimHref,
-  claimStatus,
   claimPayerStatus,
   dischargeRoles,
   minorMoney,
@@ -37,188 +35,6 @@ type Panel =
   | "export"
   | "ocr"
   | ClaimAction;
-const examples: Record<string, string> = {
-  aligned: "Aligned discharge packet",
-  duplicate_line: "Duplicate bill line",
-  over_cap: "Bill exceeds written cap",
-  missing_records: "Missing supporting records",
-  unapproved_procedure: "Unapproved procedure",
-  total_mismatch: "Invoice totals disagree",
-  orphan_credit: "Unmatched credit",
-  share_mismatch: "Patient share differs",
-  member_mismatch: "Member mismatch",
-  stay_extension: "Stay exceeds recorded dates",
-  late_reply: "Late payer reply",
-  mixed_currency: "Mixed currencies",
-  unreadable_summary: "Unreadable discharge summary",
-};
-function ClaimPill({ status }: { status: string }) {
-  return (
-    <span
-      className={"pill " + (status === "needs_review" ? "warning" : "good")}
-    >
-      <i />
-      {claimStatus(status)}
-    </span>
-  );
-}
-function DischargeList({
-  rows,
-  prior,
-}: {
-  rows: DischargeClaim[];
-  prior?: string;
-}) {
-  const { mode } = useStaffSession();
-  const [example, setExample] = useState("duplicate_line"),
-    [busy, setBusy] = useState(false),
-    [error, setError] = useState("");
-  const [search, setSearch] = useState("");
-  async function openExample(scenario: string) {
-    setBusy(true);
-    setError("");
-    try {
-      const c: DischargeClaim = await (
-        await api("/api/discharge/examples/" + scenario, {
-          method: "POST",
-        })
-      ).json();
-      location.hash = claimHref(c.id);
-    } catch (e) {
-      setError(
-        e instanceof Error ? e.message : "Example could not be created.",
-      );
-    } finally {
-      setBusy(false);
-    }
-  }
-  const cases = rows.filter((c) =>
-    [c.id, c.encounter, c.member, c.procedure, c.insurer].some((field) =>
-      (field || "").toLowerCase().includes(search.trim().toLowerCase()),
-    ),
-  );
-  return (
-    <>
-      <div className="page-title">
-        <div>
-          <p className="section-label">Hospital billing</p>
-          <h1>Discharge claims</h1>
-          <p>
-            Reconcile final charges with the clinical record and the payer’s
-            written terms.
-          </p>
-        </div>
-        <div className="page-actions">
-          {" "}
-          <a
-            className="primary"
-            href={
-              "#/discharge/new" +
-              (prior ? "?case=" + encodeURIComponent(prior) : "")
-            }
-          >
-            <Plus size={16} />
-            Open a discharge claim
-          </a>
-          {mode === "local" && (
-            <button
-              type="button"
-              className="secondary"
-              disabled={busy}
-              onClick={() => void openExample("duplicate_line")}
-            >
-              Try duplicate bill example
-            </button>
-          )}
-        </div>
-      </div>
-      {mode === "local" && (
-        <details className="examples">
-          <summary>More discharge examples</summary>
-          <p>
-            Start a fresh local example with the original bill, clinical record
-            and payer evidence.
-          </p>
-          <div className="actions">
-            <label className="stack-field">
-              <span>Example</span>
-              <select
-                value={example}
-                onChange={(e) => setExample(e.target.value)}
-              >
-                {Object.entries(examples).map(([k, v]) => (
-                  <option key={k} value={k}>
-                    {v}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <button
-              className="secondary"
-              disabled={busy}
-              onClick={() => void openExample(example)}
-            >
-              {busy ? "Creating…" : "Open example"}
-            </button>
-          </div>
-        </details>
-      )}
-      {error && (
-        <p className="error-message" role="alert">
-          {error}
-        </p>
-      )}
-      <section className="panel">
-        <div className="panel-heading">
-          <h2>
-            <ReceiptText size={17} />
-            Discharged encounters
-          </h2>
-          <span className="small">
-            {cases.length} {cases.length === 1 ? "claim" : "claims"}
-          </span>
-        </div>
-        {!!rows.length && (
-          <div className="worklist-filters">
-            <label className="stack-field">
-              <span>Find a claim</span>
-              <input
-                type="search"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder="Claim, member or encounter"
-              />
-            </label>
-          </div>
-        )}
-        {!cases.length && (
-          <p className="empty-view">
-            {rows.length
-              ? "No claims match the search."
-              : "No discharge claims yet."}
-          </p>
-        )}
-        {cases.map((c) => (
-          <a className="case-row" key={c.id} href={claimHref(c.id)}>
-            <span className="file-icon">
-              <ReceiptText size={17} />
-            </span>
-            <span className="row-detail">
-              <strong>{c.procedure}</strong>
-              <small>
-                {c.encounter ? c.encounter + " · " : ""}
-                {c.member} · {displayDate(c.discharge_date)}
-              </small>
-              <small>{claimPayerStatus(c.insurer_status || "not_sent")}</small>
-            </span>
-            <ClaimPill status={c.status} />
-            <ChevronRight size={16} />
-          </a>
-        ))}
-      </section>
-    </>
-  );
-}
 function ClaimDetail({
   claim,
   pinned,
@@ -247,10 +63,13 @@ function ClaimDetail({
     overview();
     reload();
   };
-  const source =
-    selection ||
-    claim.sources.find((s) => s.role === "bill") ||
-    claim.sources[0];
+  const findings = [...claim.findings].sort((a, b) => Number(b.severity === "blocker") - Number(a.severity === "blocker"));
+  const firstCitation = findings.flatMap(f => f.sources).find(cite =>
+    claim.sources.some(item => item.role === cite.role));
+  const citedFile = firstCitation && claim.sources.find(item => item.role === firstCitation.role);
+  const source = selection || (firstCitation && citedFile
+    ? { ...citedFile, page: firstCitation.page, quote: firstCitation.quote }
+    : claim.sources.find(item => item.role === "bill") || claim.sources[0]);
   const actionable =
     claim.status === "ready_for_review" ||
     claim.status === "ready_for_staff_review";
@@ -262,10 +81,11 @@ function ClaimDetail({
     claim.findings.every((f) => f.code === "verify_ocr");
   const pick = (s: Source) => {
     setSelection(s);
-    if (matchMedia("(max-width:760px)").matches)
-      document
-        .getElementById("source-view")
-        ?.scrollIntoView({ block: "start" });
+    if (matchMedia("(max-width:760px)").matches) {
+      const viewer = document.getElementById("source-view");
+      viewer?.focus({ preventScroll: true });
+      viewer?.scrollIntoView({ block: "start" });
+    }
   };
   if (panel === "ocr" && canVerifyOcr)
     return <DischargeOcr claim={claim} onSaved={saved} onBack={overview} />;
@@ -331,7 +151,7 @@ function ClaimDetail({
       <section className="form-wrap">
         <div className="page-title">
           <div>
-            <p className="section-label">Discharge claim · R{claim.revision}</p>
+            <p className="section-label">Discharge claim <span className="revision-chip">R{claim.revision}</span></p>
             <h1>Claim and attachments</h1>
             <p>
               {claim.encounter} · {claim.procedure}
@@ -423,7 +243,7 @@ function ClaimDetail({
           <a href={claimHref(claim.id)}>Open current claim</a>
         </p>
       )}
-      <dl className="facts">
+      <dl className="facts claim-facts">
         <div>
           <dt>Final bill total</dt>
           <dd>{minorMoney(claim.bill_total_minor, claim.currency)}</dd>
@@ -446,12 +266,13 @@ function ClaimDetail({
           <dd>{claimPayerStatus(claim.insurer_status || "not_sent")}</dd>
         </div>
       </dl>
-      <div className="workspace-grid">
+      <div className="workspace-grid discharge-layout">
         <section className="panel">
           <div className="panel-heading">
             <h2>
               <ClipboardCheck size={18} />
               Discharge review
+              {claim.findings.length > 0 && <span className="quantity">{claim.findings.length}</span>}
             </h2>
             <button className="text-action" onClick={() => setPanel("history")}>
               <History size={15} />
@@ -465,83 +286,11 @@ function ClaimDetail({
                   <Check size={16} /> No discrepancies recorded
                 </h3>
                 <p>
-                  The hospital can review the packet for submission. The insurer
-                  determines the covered amount.
+                  {claim.status === "staff_reviewed" ? `Reviewed by ${claim.reviewer || "hospital staff"}.` : "Check the original documents, then record the staff review."}
                 </p>
               </div>
             ) : (
-              <div className="discharge-findings">
-                {claim.findings.map((f, i) => (
-                  <article className="finding gap" key={f.code + "-" + i}>
-                    <div className="finding-kicker">
-                      {f.severity === "blocker"
-                        ? "Blocking issue"
-                        : "Needs review"}
-                    </div>
-                    <h3>{f.message}</h3>
-                    <p>Next owner · {f.owner || "Hospital coordinator"}</p>
-                    <div className="finding-sources">
-                      {f.sources.map((a, n) => {
-                        const exhibit = claim.sources.find(
-                          (s) => s.role === a.role,
-                        );
-                        return exhibit ? (
-                          <button
-                            key={n}
-                            className="text-action"
-                            onClick={() =>
-                              pick({ ...exhibit, page: a.page, quote: a.quote })
-                            }
-                          >
-                            <FileText size={14} />
-                            {exhibit.label} · p. {a.page}
-                          </button>
-                        ) : null;
-                      })}
-                    </div>
-                  </article>
-                ))}
-              </div>
-            )}
-            <div className="subhead">
-              <h3>Original exhibits</h3>
-              <span>{claim.sources.length} sources</span>
-            </div>
-            {claim.sources.map((s) => (
-              <button
-                key={s.role}
-                className={
-                  "source-row " + (s.role === source?.role ? "chosen" : "")
-                }
-                onClick={() => pick(s)}
-                aria-pressed={s.role === source?.role}
-              >
-                <span className="file-icon">
-                  <FileText size={16} />
-                </span>
-                <span className="row-detail">
-                  <strong>
-                    {dischargeRoles[s.role as keyof typeof dischargeRoles] ||
-                      s.role}
-                  </strong>
-                  <small>
-                    {s.label} · p. {s.page}
-                  </small>
-                </span>
-                <ChevronRight size={15} />
-              </button>
-            ))}
-            {claim.ocr_attestation && (
-              <p className="notice">
-                <Check size={15} />
-                Scan verification recorded
-                {claim.ocr_attestation.reviewer || claim.ocr_attestation.actor
-                  ? " by " +
-                    (claim.ocr_attestation.reviewer ||
-                      claim.ocr_attestation.actor)
-                  : ""}{" "}
-                for this revision.
-              </p>
+              <ClaimFindings findings={findings} sources={claim.sources} pick={pick} />
             )}
             <div className="actions">
               {canVerifyOcr && (
@@ -565,7 +314,7 @@ function ClaimDetail({
               {!pinned && (
                 <button
                   className={
-                    claim.status === "needs_review" ? "primary" : "secondary"
+                    claim.status === "needs_review" && !claim.sample_bill_available && !canVerifyOcr ? "primary" : "secondary"
                   }
                   onClick={() => setPanel("correct")}
                 >
@@ -578,6 +327,47 @@ function ClaimDetail({
                 </button>
               )}
             </div>
+            <div className="subhead documents-head">
+              <h3>Source documents</h3>
+              <span>{claim.sources.length} sources</span>
+            </div>
+            {claim.sources.map((s) => (
+              <button
+                key={s.role}
+                className={
+                  "source-row " + (s.role === source?.role ? "chosen" : "")
+                }
+                onClick={() => pick(s)}
+                aria-pressed={s.role === source?.role}
+              >
+                <span className="file-icon">
+                  <FileText size={16} />
+                </span>
+                <span className="row-detail">
+                  <strong>
+                    {dischargeRoles[s.role as keyof typeof dischargeRoles] ||
+                      s.role}
+                  </strong>
+                  <small>
+                    {s.label}
+                  </small>
+                </span>
+                <ChevronRight size={15} />
+              </button>
+            ))}
+            {claim.ocr_attestation && (
+              <p className="notice">
+                <Check size={15} />
+                Scan verification recorded
+                {claim.ocr_attestation.reviewer || claim.ocr_attestation.actor
+                  ? " by " +
+                    (claim.ocr_attestation.reviewer ||
+                      claim.ocr_attestation.actor)
+                  : ""}{" "}
+                for this revision.
+              </p>
+            )}
+
           </div>
         </section>
         {source && (
