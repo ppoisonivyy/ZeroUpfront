@@ -1,0 +1,2040 @@
+{
+  "suite_sha256": "03150efda99737bb8663385e62aad5089c5f02723bde124db78e5a96b7b875fc",
+  "run_id": "4ad281c6ae04a2c95d31",
+  "cells": [
+    {
+      "id": "us01",
+      "language": "en",
+      "rag": {
+        "model": "gpt-6.2-astra",
+        "answerable": true,
+        "values": {
+          "reduction_usd": 500,
+          "bangkok_precert": false
+        },
+        "cited_pages": [
+          24
+        ],
+        "page_rubric_pass": true,
+        "seconds": 3.518
+      },
+      "retrieved_pages": [
+        24,
+        28,
+        27,
+        78,
+        85,
+        96,
+        29,
+        77
+      ],
+      "full": {
+        "model": "gpt-6.2-astra",
+        "answerable": true,
+        "values": {
+          "reduction_usd": 500,
+          "bangkok_precert": false
+        },
+        "cited_pages": [
+          24
+        ],
+        "page_rubric_pass": true,
+        "seconds": 5.403
+      },
+      "verifier": {
+        "model": "gpt-6.2-astra",
+        "values": {
+          "reduction_usd": 500,
+          "bangkok_precert": false
+        },
+        "cited_pages_by_field": {
+          "reduction_usd": [
+            24
+          ],
+          "bangkok_precert": [
+            24
+          ]
+        },
+        "seconds": 6.814
+      }
+    },
+    {
+      "id": "us01",
+      "language": "th",
+      "full": {
+        "model": "gpt-6.2-astra",
+        "answerable": true,
+        "values": {
+          "reduction_usd": 500,
+          "bangkok_precert": false
+        },
+        "cited_pages": [
+          24
+        ],
+        "page_rubric_pass": true,
+        "seconds": 6.378
+      },
+      "rag": {
+        "model": "gpt-6.2-astra",
+        "answerable": true,
+        "values": {
+          "reduction_usd": 500,
+          "bangkok_precert": false
+        },
+        "cited_pages": [
+          24
+        ],
+        "page_rubric_pass": true,
+        "seconds": 2.917
+      },
+      "retrieved_pages": [
+        29,
+        85,
+        156,
+        24,
+        78,
+        77,
+        81,
+        87
+      ],
+      "verifier": {
+        "model": "gpt-6.2-astra",
+        "values": {
+          "reduction_usd": 500,
+          "bangkok_precert": false
+        },
+        "cited_pages_by_field": {
+          "reduction_usd": [
+            24
+          ],
+          "bangkok_precert": [
+            24
+          ]
+        },
+        "seconds": 6.851
+      }
+    },
+    {
+      "id": "us02",
+      "language": "en",
+      "rag": {
+        "model": "gpt-6.2-astra",
+        "answerable": true,
+        "values": {
+          "basic_member_usd": 0,
+          "standard_costshare": false
+        },
+        "cited_pages": [
+          131
+        ],
+        "page_rubric_pass": true,
+        "seconds": 3.819
+      },
+      "retrieved_pages": [
+        131,
+        78,
+        34,
+        77,
+        85,
+        88,
+        84,
+        33
+      ],
+      "full": {
+        "model": "gpt-6.2-astra",
+        "answerable": true,
+        "values": {
+          "basic_member_usd": 0,
+          "standard_costshare": false
+        },
+        "cited_pages": [
+          131
+        ],
+        "page_rubric_pass": true,
+        "seconds": 7.93
+      },
+      "verifier": {
+        "model": "gpt-6.2-astra",
+        "values": {
+          "basic_member_usd": 0,
+          "standard_costshare": false
+        },
+        "cited_pages_by_field": {
+          "basic_member_usd": [
+            131
+          ],
+          "standard_costshare": [
+            131
+          ]
+        },
+        "seconds": 7.239
+      }
+    },
+    {
+      "id": "us02",
+      "language": "th",
+      "full": {
+        "model": "gpt-6.2-astra",
+        "answerable": true,
+        "values": {
+          "basic_member_usd": 0,
+          "standard_costshare": false
+        },
+        "cited_pages": [
+          131
+        ],
+        "page_rubric_pass": true,
+        "seconds": 4.055
+      },
+      "rag": {
+        "model": "gpt-6.2-astra",
+        "answerable": true,
+        "values": {
+          "basic_member_usd": 0,
+          "standard_costshare": false
+        },
+        "cited_pages": [
+          131
+        ],
+        "page_rubric_pass": true,
+        "seconds": 3.9
+      },
+      "retrieved_pages": [
+        131,
+        152,
+        88,
+        34,
+        158,
+        150,
+        120,
+        132
+      ],
+      "verifier": {
+        "model": "gpt-6.2-astra",
+        "values": {
+          "basic_member_usd": 0,
+          "standard_costshare": false
+        },
+        "cited_pages_by_field": {
+          "basic_member_usd": [
+            131
+          ],
+          "standard_costshare": [
+            131
+          ]
+        },
+        "seconds": 6.066
+      }
+    },
+    {
+      "id": "us03",
+      "language": "en",
+      "full": {
+        "model": "gpt-6.2-astra",
+        "answerable": true,
+        "values": {
+          "snf_precert": true,
+          "annual_days": 30,
+          "ordinary_precert": false
+        },
+        "cited_pages": [
+          24,
+          85
+        ],
+        "page_rubric_pass": true,
+        "seconds": 14.742
+      },
+      "rag": {
+        "model": "gpt-6.2-astra",
+        "answerable": true,
+        "values": {
+          "snf_precert": true,
+          "annual_days": 30,
+          "ordinary_precert": false
+        },
+        "cited_pages": [
+          24,
+          85
+        ],
+        "page_rubric_pass": true,
+        "seconds": 4.249
+      },
+      "retrieved_pages": [
+        24,
+        85,
+        78,
+        77,
+        28,
+        29,
+        22,
+        86
+      ],
+      "verifier": {
+        "model": "gpt-6.2-astra",
+        "values": {
+          "snf_precert": true,
+          "annual_days": 30,
+          "ordinary_precert": false
+        },
+        "cited_pages_by_field": {
+          "snf_precert": [
+            85
+          ],
+          "annual_days": [
+            85
+          ],
+          "ordinary_precert": [
+            24
+          ]
+        },
+        "seconds": 9.024
+      }
+    },
+    {
+      "id": "us03",
+      "language": "th",
+      "rag": {
+        "model": "gpt-6.2-astra",
+        "answerable": true,
+        "values": {
+          "snf_precert": true,
+          "annual_days": 30,
+          "ordinary_precert": false
+        },
+        "cited_pages": [
+          24,
+          85
+        ],
+        "page_rubric_pass": true,
+        "seconds": 4.541
+      },
+      "retrieved_pages": [
+        85,
+        152,
+        146,
+        24,
+        86,
+        150,
+        151,
+        166
+      ],
+      "full": {
+        "model": "gpt-6.2-astra",
+        "answerable": true,
+        "values": {
+          "snf_precert": true,
+          "annual_days": 30,
+          "ordinary_precert": false
+        },
+        "cited_pages": [
+          24,
+          85
+        ],
+        "page_rubric_pass": true,
+        "seconds": 39.683
+      },
+      "verifier": {
+        "model": "gpt-6.2-astra",
+        "values": {
+          "snf_precert": true,
+          "annual_days": 30,
+          "ordinary_precert": false
+        },
+        "cited_pages_by_field": {
+          "snf_precert": [
+            85
+          ],
+          "annual_days": [
+            85
+          ],
+          "ordinary_precert": [
+            24
+          ]
+        },
+        "seconds": 6.772
+      }
+    },
+    {
+      "id": "us04",
+      "language": "en",
+      "full": {
+        "model": "gpt-6.2-astra",
+        "answerable": true,
+        "values": {
+          "prior_approval": true,
+          "extra_transport": false
+        },
+        "cited_pages": [
+          131,
+          132
+        ],
+        "page_rubric_pass": true,
+        "seconds": 7.421
+      },
+      "rag": {
+        "model": "gpt-6.2-astra",
+        "answerable": true,
+        "values": {
+          "prior_approval": true,
+          "extra_transport": false
+        },
+        "cited_pages": [
+          131,
+          132
+        ],
+        "page_rubric_pass": true,
+        "seconds": 4.823
+      },
+      "retrieved_pages": [
+        89,
+        88,
+        24,
+        27,
+        132,
+        131,
+        26,
+        164
+      ],
+      "verifier": {
+        "model": "gpt-6.2-astra",
+        "values": {
+          "prior_approval": true,
+          "extra_transport": false
+        },
+        "cited_pages_by_field": {
+          "prior_approval": [
+            131
+          ],
+          "extra_transport": [
+            132
+          ]
+        },
+        "seconds": 4.967
+      }
+    },
+    {
+      "id": "us04",
+      "language": "th",
+      "full": {
+        "model": "gpt-6.2-astra",
+        "answerable": true,
+        "values": {
+          "prior_approval": true,
+          "extra_transport": false
+        },
+        "cited_pages": [
+          131,
+          132
+        ],
+        "page_rubric_pass": true,
+        "seconds": 7.268
+      },
+      "rag": {
+        "model": "gpt-6.2-astra",
+        "answerable": true,
+        "values": {
+          "prior_approval": true,
+          "extra_transport": false
+        },
+        "cited_pages": [
+          89,
+          131
+        ],
+        "page_rubric_pass": true,
+        "seconds": 4.123
+      },
+      "retrieved_pages": [
+        89,
+        88,
+        74,
+        166,
+        131,
+        79,
+        78,
+        87
+      ],
+      "verifier": {
+        "model": "gpt-6.2-astra",
+        "values": {
+          "prior_approval": true,
+          "extra_transport": false
+        },
+        "cited_pages_by_field": {
+          "prior_approval": [
+            131
+          ],
+          "extra_transport": [
+            132
+          ]
+        },
+        "seconds": 12.709
+      }
+    },
+    {
+      "id": "us05",
+      "language": "en",
+      "rag": {
+        "model": "gpt-6.2-astra",
+        "answerable": true,
+        "values": {
+          "notify_business_days": 2,
+          "possible_penalty": true
+        },
+        "cited_pages": [
+          28
+        ],
+        "page_rubric_pass": true,
+        "seconds": 3.293
+      },
+      "retrieved_pages": [
+        28,
+        27,
+        77,
+        29,
+        90,
+        85,
+        78,
+        92
+      ],
+      "full": {
+        "model": "gpt-6.2-astra",
+        "answerable": true,
+        "values": {
+          "notify_business_days": 2,
+          "possible_penalty": true
+        },
+        "cited_pages": [
+          28
+        ],
+        "page_rubric_pass": true,
+        "seconds": 4.754
+      },
+      "verifier": {
+        "model": "gpt-6.2-astra",
+        "values": {
+          "notify_business_days": 2,
+          "possible_penalty": true
+        },
+        "cited_pages_by_field": {
+          "notify_business_days": [
+            28
+          ],
+          "possible_penalty": [
+            28
+          ]
+        },
+        "seconds": 6.324
+      }
+    },
+    {
+      "id": "us05",
+      "language": "th",
+      "full": {
+        "model": "gpt-6.2-astra",
+        "answerable": true,
+        "values": {
+          "notify_business_days": 2,
+          "possible_penalty": true
+        },
+        "cited_pages": [
+          28
+        ],
+        "page_rubric_pass": true,
+        "seconds": 6.166
+      },
+      "rag": {
+        "model": "gpt-6.2-astra",
+        "answerable": true,
+        "values": {
+          "notify_business_days": 2,
+          "possible_penalty": true
+        },
+        "cited_pages": [
+          28
+        ],
+        "page_rubric_pass": true,
+        "seconds": 3.248
+      },
+      "retrieved_pages": [
+        88,
+        28,
+        139,
+        131,
+        92,
+        156,
+        77,
+        90
+      ],
+      "verifier": {
+        "model": "gpt-6.2-astra",
+        "values": {
+          "notify_business_days": 2,
+          "possible_penalty": true
+        },
+        "cited_pages_by_field": {
+          "notify_business_days": [
+            28
+          ],
+          "possible_penalty": [
+            28
+          ]
+        },
+        "seconds": 5.378
+      }
+    },
+    {
+      "id": "us06",
+      "language": "en",
+      "rag": {
+        "model": "gpt-6.2-astra",
+        "answerable": true,
+        "values": {
+          "advance_hours": 24,
+          "decision_hours": 24
+        },
+        "cited_pages": [
+          28
+        ],
+        "page_rubric_pass": true,
+        "seconds": 2.718
+      },
+      "retrieved_pages": [
+        28,
+        27,
+        29,
+        140,
+        138,
+        111,
+        139,
+        141
+      ],
+      "full": {
+        "model": "gpt-6.2-astra",
+        "answerable": true,
+        "values": {
+          "advance_hours": 24,
+          "decision_hours": 24
+        },
+        "cited_pages": [
+          28
+        ],
+        "page_rubric_pass": true,
+        "seconds": 4.935
+      },
+      "verifier": {
+        "model": "gpt-6.2-astra",
+        "values": {
+          "advance_hours": 24,
+          "decision_hours": 24
+        },
+        "cited_pages_by_field": {
+          "advance_hours": [
+            28
+          ],
+          "decision_hours": [
+            28
+          ]
+        },
+        "seconds": 5.837
+      }
+    },
+    {
+      "id": "us06",
+      "language": "th",
+      "rag": {
+        "model": "gpt-6.2-astra",
+        "answerable": true,
+        "values": {
+          "advance_hours": 24,
+          "decision_hours": 24
+        },
+        "cited_pages": [
+          28
+        ],
+        "page_rubric_pass": true,
+        "seconds": 3.986
+      },
+      "retrieved_pages": [
+        28,
+        29,
+        27,
+        140,
+        23,
+        156,
+        102,
+        139
+      ],
+      "full": {
+        "model": "gpt-6.2-astra",
+        "answerable": true,
+        "values": {
+          "advance_hours": 24,
+          "decision_hours": 24
+        },
+        "cited_pages": [
+          28
+        ],
+        "page_rubric_pass": true,
+        "seconds": 30.763
+      },
+      "verifier": {
+        "model": "gpt-6.2-astra",
+        "values": {
+          "advance_hours": 24,
+          "decision_hours": 24
+        },
+        "cited_pages_by_field": {
+          "advance_hours": [
+            28
+          ],
+          "decision_hours": [
+            28
+          ]
+        },
+        "seconds": 4.99
+      }
+    },
+    {
+      "id": "us07",
+      "language": "en",
+      "full": {
+        "model": "gpt-6.2-astra",
+        "answerable": true,
+        "values": {
+          "initial_days": 30,
+          "appeal_months": 6
+        },
+        "cited_pages": [
+          138,
+          140
+        ],
+        "page_rubric_pass": true,
+        "seconds": 3.767
+      },
+      "rag": {
+        "model": "gpt-6.2-astra",
+        "answerable": true,
+        "values": {
+          "initial_days": 30,
+          "appeal_months": 6
+        },
+        "cited_pages": [
+          138,
+          140
+        ],
+        "page_rubric_pass": true,
+        "seconds": 3.672
+      },
+      "retrieved_pages": [
+        140,
+        29,
+        28,
+        138,
+        27,
+        141,
+        139,
+        137
+      ],
+      "verifier": {
+        "model": "gpt-6.2-astra",
+        "values": {
+          "initial_days": 30,
+          "appeal_months": 6
+        },
+        "cited_pages_by_field": {
+          "initial_days": [
+            138
+          ],
+          "appeal_months": [
+            140
+          ]
+        },
+        "seconds": 5.259
+      }
+    },
+    {
+      "id": "us07",
+      "language": "th",
+      "rag": {
+        "model": "gpt-6.2-astra",
+        "answerable": true,
+        "values": {
+          "initial_days": 30,
+          "appeal_months": 6
+        },
+        "cited_pages": [
+          138,
+          140
+        ],
+        "page_rubric_pass": true,
+        "seconds": 3.401
+      },
+      "retrieved_pages": [
+        28,
+        139,
+        27,
+        138,
+        140,
+        23,
+        137,
+        13
+      ],
+      "full": {
+        "model": "gpt-6.2-astra",
+        "answerable": true,
+        "values": {
+          "initial_days": 30,
+          "appeal_months": 6
+        },
+        "cited_pages": [
+          138,
+          140
+        ],
+        "page_rubric_pass": true,
+        "seconds": 11.492
+      },
+      "verifier": {
+        "model": "gpt-6.2-astra",
+        "values": {
+          "initial_days": 30,
+          "appeal_months": 6
+        },
+        "cited_pages_by_field": {
+          "initial_days": [
+            138
+          ],
+          "appeal_months": [
+            140
+          ]
+        },
+        "seconds": 5.375
+      }
+    },
+    {
+      "id": "us08",
+      "language": "en",
+      "full": {
+        "model": "gpt-6.2-astra",
+        "answerable": true,
+        "values": {
+          "maximum_usd": 6000,
+          "penalty_counts": false
+        },
+        "cited_pages": [
+          35
+        ],
+        "page_rubric_pass": true,
+        "seconds": 18.285
+      },
+      "rag": {
+        "model": "gpt-6.2-astra",
+        "answerable": true,
+        "values": {
+          "maximum_usd": 6000,
+          "penalty_counts": false
+        },
+        "cited_pages": [
+          35
+        ],
+        "page_rubric_pass": true,
+        "seconds": 3.058
+      },
+      "retrieved_pages": [
+        35,
+        167,
+        165,
+        94,
+        30,
+        36,
+        40,
+        33
+      ],
+      "verifier": {
+        "model": "gpt-6.2-astra",
+        "values": {
+          "maximum_usd": 6000,
+          "penalty_counts": false
+        },
+        "cited_pages_by_field": {
+          "maximum_usd": [
+            35
+          ],
+          "penalty_counts": [
+            35
+          ]
+        },
+        "seconds": 5.905
+      }
+    },
+    {
+      "id": "us08",
+      "language": "th",
+      "rag": {
+        "model": "gpt-6.2-astra",
+        "answerable": true,
+        "values": {
+          "maximum_usd": 6000,
+          "penalty_counts": false
+        },
+        "cited_pages": [
+          35
+        ],
+        "page_rubric_pass": true,
+        "seconds": 3.57
+      },
+      "retrieved_pages": [
+        35,
+        94,
+        165,
+        30,
+        76,
+        167,
+        152,
+        32
+      ],
+      "full": {
+        "model": "gpt-6.2-astra",
+        "answerable": true,
+        "values": {
+          "maximum_usd": 6000,
+          "penalty_counts": false
+        },
+        "cited_pages": [
+          35
+        ],
+        "page_rubric_pass": true,
+        "seconds": 6.081
+      },
+      "verifier": {
+        "model": "gpt-6.2-astra",
+        "values": {
+          "maximum_usd": 6000,
+          "penalty_counts": false
+        },
+        "cited_pages_by_field": {
+          "maximum_usd": [
+            35
+          ],
+          "penalty_counts": [
+            35
+          ]
+        },
+        "seconds": 4.915
+      }
+    },
+    {
+      "id": "us09",
+      "language": "en",
+      "full": {
+        "model": "gpt-6.2-astra",
+        "answerable": true,
+        "values": {
+          "child_usd": 2500,
+          "adult_usd": 2500,
+          "child_years": 1,
+          "adult_years": 5,
+          "approval": true
+        },
+        "cited_pages": [
+          58
+        ],
+        "page_rubric_pass": true,
+        "seconds": 5.395
+      },
+      "rag": {
+        "model": "gpt-6.2-astra",
+        "answerable": true,
+        "values": {
+          "child_usd": 2500,
+          "adult_usd": 2500,
+          "child_years": 1,
+          "adult_years": 5,
+          "approval": true
+        },
+        "cited_pages": [
+          58
+        ],
+        "page_rubric_pass": true,
+        "seconds": 3.831
+      },
+      "retrieved_pages": [
+        58,
+        55,
+        165,
+        124,
+        25,
+        59,
+        167,
+        31
+      ],
+      "verifier": {
+        "model": "gpt-6.2-astra",
+        "values": {
+          "child_usd": 2500,
+          "adult_usd": 2500,
+          "child_years": 1,
+          "adult_years": 5,
+          "approval": true
+        },
+        "cited_pages_by_field": {
+          "child_usd": [
+            58
+          ],
+          "adult_usd": [
+            58
+          ],
+          "child_years": [
+            58
+          ],
+          "adult_years": [
+            58
+          ],
+          "approval": [
+            58
+          ]
+        },
+        "seconds": 5.656
+      }
+    },
+    {
+      "id": "us09",
+      "language": "th",
+      "full": {
+        "model": "gpt-6.2-astra",
+        "answerable": true,
+        "values": {
+          "child_usd": 2500,
+          "adult_usd": 2500,
+          "child_years": 1,
+          "adult_years": 5,
+          "approval": true
+        },
+        "cited_pages": [
+          58
+        ],
+        "page_rubric_pass": true,
+        "seconds": 8.311
+      },
+      "rag": {
+        "model": "gpt-6.2-astra",
+        "answerable": false,
+        "values": {
+          "child_usd": null,
+          "adult_usd": null,
+          "child_years": null,
+          "adult_years": null,
+          "approval": null
+        },
+        "cited_pages": [
+          56
+        ],
+        "page_rubric_pass": false,
+        "seconds": 5.24
+      },
+      "retrieved_pages": [
+        31,
+        162,
+        124,
+        121,
+        56,
+        53,
+        44,
+        150
+      ],
+      "verifier": {
+        "model": "gpt-6.2-astra",
+        "values": {
+          "child_usd": 2500,
+          "adult_usd": 2500,
+          "child_years": 1,
+          "adult_years": 5,
+          "approval": true
+        },
+        "cited_pages_by_field": {
+          "child_usd": [
+            58
+          ],
+          "adult_usd": [
+            58
+          ],
+          "child_years": [
+            58
+          ],
+          "adult_years": [
+            58
+          ],
+          "approval": [
+            58
+          ]
+        },
+        "seconds": 5.171
+      }
+    },
+    {
+      "id": "us10",
+      "language": "en",
+      "full": {
+        "model": "gpt-6.2-astra",
+        "answerable": true,
+        "values": {
+          "standard_visits": 75,
+          "basic_visits": 50
+        },
+        "cited_pages": [
+          81
+        ],
+        "page_rubric_pass": true,
+        "seconds": 4.883
+      },
+      "rag": {
+        "model": "gpt-6.2-astra",
+        "answerable": true,
+        "values": {
+          "standard_visits": 75,
+          "basic_visits": 50
+        },
+        "cited_pages": [
+          81
+        ],
+        "page_rubric_pass": true,
+        "seconds": 4.2
+      },
+      "retrieved_pages": [
+        55,
+        81,
+        56,
+        62,
+        61,
+        86,
+        95,
+        60
+      ],
+      "verifier": {
+        "model": "gpt-6.2-astra",
+        "values": {
+          "standard_visits": 75,
+          "basic_visits": 50
+        },
+        "cited_pages_by_field": {
+          "standard_visits": [
+            81
+          ],
+          "basic_visits": [
+            81
+          ]
+        },
+        "seconds": 4.274
+      }
+    },
+    {
+      "id": "us10",
+      "language": "th",
+      "rag": {
+        "model": "gpt-6.2-astra",
+        "answerable": false,
+        "values": {
+          "standard_visits": null,
+          "basic_visits": null
+        },
+        "cited_pages": [
+          56
+        ],
+        "page_rubric_pass": false,
+        "seconds": 6.215
+      },
+      "retrieved_pages": [
+        39,
+        152,
+        63,
+        62,
+        96,
+        98,
+        56,
+        61
+      ],
+      "full": {
+        "model": "gpt-6.2-astra",
+        "answerable": true,
+        "values": {
+          "standard_visits": 75,
+          "basic_visits": 50
+        },
+        "cited_pages": [
+          81
+        ],
+        "page_rubric_pass": true,
+        "seconds": 7.938
+      },
+      "verifier": {
+        "model": "gpt-6.2-astra",
+        "values": {
+          "standard_visits": 75,
+          "basic_visits": 50
+        },
+        "cited_pages_by_field": {
+          "standard_visits": [
+            81
+          ],
+          "basic_visits": [
+            81
+          ]
+        },
+        "seconds": 4.664
+      }
+    },
+    {
+      "id": "us11",
+      "language": "en",
+      "full": {
+        "model": "gpt-6.2-astra",
+        "answerable": true,
+        "values": {
+          "device_usd": 1250,
+          "ordinary_computer": false
+        },
+        "cited_pages": [
+          60
+        ],
+        "page_rubric_pass": true,
+        "seconds": 3.834
+      },
+      "rag": {
+        "model": "gpt-6.2-astra",
+        "answerable": true,
+        "values": {
+          "device_usd": 1250,
+          "ordinary_computer": false
+        },
+        "cited_pages": [
+          60
+        ],
+        "page_rubric_pass": true,
+        "seconds": 2.847
+      },
+      "retrieved_pages": [
+        60,
+        59,
+        154,
+        55,
+        124,
+        58,
+        104,
+        61
+      ],
+      "verifier": {
+        "model": "gpt-6.2-astra",
+        "values": {
+          "device_usd": 1250,
+          "ordinary_computer": false
+        },
+        "cited_pages_by_field": {
+          "device_usd": [
+            60
+          ],
+          "ordinary_computer": [
+            60
+          ]
+        },
+        "seconds": 8.371
+      }
+    },
+    {
+      "id": "us11",
+      "language": "th",
+      "full": {
+        "model": "gpt-6.2-astra",
+        "answerable": true,
+        "values": {
+          "device_usd": 1250,
+          "ordinary_computer": false
+        },
+        "cited_pages": [
+          60
+        ],
+        "page_rubric_pass": true,
+        "seconds": 5.747
+      },
+      "rag": {
+        "model": "gpt-6.2-astra",
+        "answerable": true,
+        "values": {
+          "device_usd": 1250,
+          "ordinary_computer": false
+        },
+        "cited_pages": [
+          60
+        ],
+        "page_rubric_pass": true,
+        "seconds": 3.958
+      },
+      "retrieved_pages": [
+        60,
+        154,
+        58,
+        59,
+        45,
+        43,
+        42,
+        136
+      ],
+      "verifier": {
+        "model": "gpt-6.2-astra",
+        "values": {
+          "device_usd": 1250,
+          "ordinary_computer": false
+        },
+        "cited_pages_by_field": {
+          "device_usd": [
+            60
+          ],
+          "ordinary_computer": [
+            60
+          ]
+        },
+        "seconds": 7.445
+      }
+    },
+    {
+      "id": "us12",
+      "language": "en",
+      "rag": {
+        "model": "gpt-6.2-astra",
+        "answerable": true,
+        "values": {
+          "composite_qualifies": true,
+          "crown_qualifies": false,
+          "treatment_plan": true
+        },
+        "cited_pages": [
+          122,
+          123
+        ],
+        "page_rubric_pass": true,
+        "seconds": 4.833
+      },
+      "retrieved_pages": [
+        123,
+        160,
+        122,
+        153,
+        67,
+        68,
+        137,
+        90
+      ],
+      "full": {
+        "model": "gpt-6.2-astra",
+        "answerable": true,
+        "values": {
+          "composite_qualifies": true,
+          "crown_qualifies": false,
+          "treatment_plan": true
+        },
+        "cited_pages": [
+          122,
+          123
+        ],
+        "page_rubric_pass": true,
+        "seconds": 7.47
+      },
+      "verifier": {
+        "model": "gpt-6.2-astra",
+        "values": {
+          "composite_qualifies": true,
+          "crown_qualifies": false,
+          "treatment_plan": true
+        },
+        "cited_pages_by_field": {
+          "composite_qualifies": [
+            123
+          ],
+          "crown_qualifies": [
+            123
+          ],
+          "treatment_plan": [
+            122
+          ]
+        },
+        "seconds": 8.907
+      }
+    },
+    {
+      "id": "us12",
+      "language": "th",
+      "rag": {
+        "model": "gpt-6.2-astra",
+        "answerable": true,
+        "values": {
+          "composite_qualifies": true,
+          "crown_qualifies": false,
+          "treatment_plan": true
+        },
+        "cited_pages": [
+          122,
+          123
+        ],
+        "page_rubric_pass": true,
+        "seconds": 4.772
+      },
+      "retrieved_pages": [
+        129,
+        35,
+        88,
+        123,
+        122,
+        26,
+        164,
+        67
+      ],
+      "full": {
+        "model": "gpt-6.2-astra",
+        "answerable": true,
+        "values": {
+          "composite_qualifies": true,
+          "crown_qualifies": false,
+          "treatment_plan": true
+        },
+        "cited_pages": [
+          122,
+          123
+        ],
+        "page_rubric_pass": true,
+        "seconds": 6.038
+      },
+      "verifier": {
+        "model": "gpt-6.2-astra",
+        "values": {
+          "composite_qualifies": true,
+          "crown_qualifies": false,
+          "treatment_plan": true
+        },
+        "cited_pages_by_field": {
+          "composite_qualifies": [
+            123
+          ],
+          "crown_qualifies": [
+            123
+          ],
+          "treatment_plan": [
+            122
+          ]
+        },
+        "seconds": 7.689
+      }
+    },
+    {
+      "id": "us13",
+      "language": "en",
+      "full": {
+        "model": "gpt-6.2-astra",
+        "answerable": true,
+        "values": {
+          "inpatient": false
+        },
+        "cited_pages": [
+          157
+        ],
+        "page_rubric_pass": true,
+        "seconds": 6.324
+      },
+      "rag": {
+        "model": "gpt-6.2-astra",
+        "answerable": true,
+        "values": {
+          "inpatient": false
+        },
+        "cited_pages": [
+          156
+        ],
+        "page_rubric_pass": true,
+        "seconds": 3.303
+      },
+      "retrieved_pages": [
+        156,
+        29,
+        24,
+        80,
+        28,
+        78,
+        41,
+        27
+      ],
+      "verifier": {
+        "model": "gpt-6.2-astra",
+        "values": {
+          "inpatient": false
+        },
+        "cited_pages_by_field": {
+          "inpatient": [
+            157
+          ]
+        },
+        "seconds": 4.482
+      }
+    },
+    {
+      "id": "us13",
+      "language": "th",
+      "full": {
+        "model": "gpt-6.2-astra",
+        "answerable": true,
+        "values": {
+          "inpatient": false
+        },
+        "cited_pages": [
+          157
+        ],
+        "page_rubric_pass": true,
+        "seconds": 4.286
+      },
+      "rag": {
+        "model": "gpt-6.2-astra",
+        "answerable": true,
+        "values": {
+          "inpatient": false
+        },
+        "cited_pages": [
+          157
+        ],
+        "page_rubric_pass": true,
+        "seconds": 3.658
+      },
+      "retrieved_pages": [
+        156,
+        21,
+        9,
+        90,
+        24,
+        29,
+        157,
+        10
+      ],
+      "verifier": {
+        "model": "gpt-6.2-astra",
+        "values": {
+          "inpatient": false
+        },
+        "cited_pages_by_field": {
+          "inpatient": [
+            157
+          ]
+        },
+        "seconds": 3.976
+      }
+    },
+    {
+      "id": "us14",
+      "language": "en",
+      "full": {
+        "model": "gpt-6.2-astra",
+        "answerable": true,
+        "values": {
+          "deductible": false,
+          "filing_years": 1
+        },
+        "cited_pages": [
+          132
+        ],
+        "page_rubric_pass": true,
+        "seconds": 5.985
+      },
+      "rag": {
+        "model": "gpt-6.2-astra",
+        "answerable": true,
+        "values": {
+          "deductible": false,
+          "filing_years": 1
+        },
+        "cited_pages": [
+          132
+        ],
+        "page_rubric_pass": true,
+        "seconds": 3.596
+      },
+      "retrieved_pages": [
+        132,
+        139,
+        133,
+        121,
+        112,
+        115,
+        100,
+        109
+      ],
+      "verifier": {
+        "model": "gpt-6.2-astra",
+        "values": {
+          "deductible": false,
+          "filing_years": 1
+        },
+        "cited_pages_by_field": {
+          "deductible": [
+            132
+          ],
+          "filing_years": [
+            132
+          ]
+        },
+        "seconds": 4.477
+      }
+    },
+    {
+      "id": "us14",
+      "language": "th",
+      "rag": {
+        "model": "gpt-6.2-astra",
+        "answerable": true,
+        "values": {
+          "deductible": false,
+          "filing_years": 1
+        },
+        "cited_pages": [
+          132
+        ],
+        "page_rubric_pass": true,
+        "seconds": 4.505
+      },
+      "retrieved_pages": [
+        109,
+        139,
+        115,
+        133,
+        112,
+        40,
+        121,
+        132
+      ],
+      "full": {
+        "model": "gpt-6.2-astra",
+        "answerable": true,
+        "values": {
+          "deductible": false,
+          "filing_years": 1
+        },
+        "cited_pages": [
+          132
+        ],
+        "page_rubric_pass": true,
+        "seconds": 5.35
+      },
+      "verifier": {
+        "model": "gpt-6.2-astra",
+        "values": {
+          "deductible": false,
+          "filing_years": 1
+        },
+        "cited_pages_by_field": {
+          "deductible": [
+            132
+          ],
+          "filing_years": [
+            132
+          ]
+        },
+        "seconds": 4.992
+      }
+    },
+    {
+      "id": "us15",
+      "language": "en",
+      "full": {
+        "model": "gpt-6.2-astra",
+        "answerable": true,
+        "values": {
+          "can_ship": false
+        },
+        "cited_pages": [
+          133
+        ],
+        "page_rubric_pass": true,
+        "seconds": 4.957
+      },
+      "rag": {
+        "model": "gpt-6.2-astra",
+        "answerable": true,
+        "values": {
+          "can_ship": false
+        },
+        "cited_pages": [
+          133
+        ],
+        "page_rubric_pass": true,
+        "seconds": 3.813
+      },
+      "retrieved_pages": [
+        100,
+        133,
+        39,
+        132,
+        27,
+        102,
+        109,
+        118
+      ],
+      "verifier": {
+        "model": "gpt-6.2-astra",
+        "values": {
+          "can_ship": false
+        },
+        "cited_pages_by_field": {
+          "can_ship": [
+            133
+          ]
+        },
+        "seconds": 5.952
+      }
+    },
+    {
+      "id": "us15",
+      "language": "th",
+      "full": {
+        "model": "gpt-6.2-astra",
+        "answerable": true,
+        "values": {
+          "can_ship": false
+        },
+        "cited_pages": [
+          133
+        ],
+        "page_rubric_pass": true,
+        "seconds": 7.096
+      },
+      "rag": {
+        "model": "gpt-6.2-astra",
+        "answerable": true,
+        "values": {
+          "can_ship": false
+        },
+        "cited_pages": [
+          133
+        ],
+        "page_rubric_pass": true,
+        "seconds": 4.282
+      },
+      "retrieved_pages": [
+        133,
+        39,
+        100,
+        146,
+        109,
+        151,
+        108,
+        139
+      ],
+      "verifier": {
+        "model": "gpt-6.2-astra",
+        "values": {
+          "can_ship": false
+        },
+        "cited_pages_by_field": {
+          "can_ship": [
+            133
+          ]
+        },
+        "seconds": 6.046
+      }
+    },
+    {
+      "id": "us16",
+      "language": "en",
+      "full": {
+        "model": "gpt-6.2-astra",
+        "answerable": true,
+        "values": {
+          "enrollment_code": 113,
+          "employee_cents": 31925
+        },
+        "cited_pages": [
+          168
+        ],
+        "page_rubric_pass": true,
+        "seconds": 10.597
+      },
+      "rag": {
+        "model": "gpt-6.2-astra",
+        "answerable": true,
+        "values": {
+          "enrollment_code": 113,
+          "employee_cents": 31925
+        },
+        "cited_pages": [
+          168
+        ],
+        "page_rubric_pass": true,
+        "seconds": 3.76
+      },
+      "retrieved_pages": [
+        168,
+        164,
+        11,
+        13,
+        94,
+        64,
+        76,
+        1
+      ],
+      "verifier": {
+        "model": "gpt-6.2-astra",
+        "values": {
+          "enrollment_code": 113,
+          "employee_cents": 31925
+        },
+        "cited_pages_by_field": {
+          "enrollment_code": [
+            1
+          ],
+          "employee_cents": [
+            168
+          ]
+        },
+        "seconds": 5.514
+      }
+    },
+    {
+      "id": "us16",
+      "language": "th",
+      "full": {
+        "model": "gpt-6.2-astra",
+        "answerable": true,
+        "values": {
+          "enrollment_code": 113,
+          "employee_cents": 31925
+        },
+        "cited_pages": [
+          168
+        ],
+        "page_rubric_pass": true,
+        "seconds": 13.519
+      },
+      "rag": {
+        "model": "gpt-6.2-astra",
+        "answerable": true,
+        "values": {
+          "enrollment_code": 113,
+          "employee_cents": 31925
+        },
+        "cited_pages": [
+          168
+        ],
+        "page_rubric_pass": true,
+        "seconds": 3.532
+      },
+      "retrieved_pages": [
+        168,
+        1,
+        11,
+        13,
+        94,
+        35,
+        12,
+        64
+      ],
+      "verifier": {
+        "model": "gpt-6.2-astra",
+        "values": {
+          "enrollment_code": 113,
+          "employee_cents": 31925
+        },
+        "cited_pages_by_field": {
+          "enrollment_code": [
+            168
+          ],
+          "employee_cents": [
+            168
+          ]
+        },
+        "seconds": 4.503
+      }
+    },
+    {
+      "id": "us17",
+      "language": "en",
+      "full": {
+        "model": "gpt-6.2-astra",
+        "answerable": false,
+        "values": {
+          "guaranteed_usd": null
+        },
+        "cited_pages": [
+          131
+        ],
+        "page_rubric_pass": true,
+        "seconds": 6.886
+      },
+      "rag": {
+        "model": "gpt-6.2-astra",
+        "answerable": false,
+        "values": {
+          "guaranteed_usd": null
+        },
+        "cited_pages": [
+          131
+        ],
+        "page_rubric_pass": true,
+        "seconds": 2.708
+      },
+      "retrieved_pages": [
+        157,
+        78,
+        164,
+        131,
+        34,
+        166,
+        30,
+        31
+      ],
+      "verifier": {
+        "model": "gpt-6.2-astra",
+        "values": {
+          "guaranteed_usd": null
+        },
+        "cited_pages_by_field": {
+          "guaranteed_usd": []
+        },
+        "seconds": 3.161
+      }
+    },
+    {
+      "id": "us17",
+      "language": "th",
+      "full": {
+        "model": "gpt-6.2-astra",
+        "answerable": false,
+        "values": {
+          "guaranteed_usd": null
+        },
+        "cited_pages": [
+          131
+        ],
+        "page_rubric_pass": true,
+        "seconds": 5.133
+      },
+      "rag": {
+        "model": "gpt-6.2-astra",
+        "answerable": false,
+        "values": {
+          "guaranteed_usd": null
+        },
+        "cited_pages": [],
+        "page_rubric_pass": true,
+        "seconds": 4.445
+      },
+      "retrieved_pages": [
+        166,
+        167,
+        164,
+        83,
+        35,
+        165,
+        19,
+        88
+      ],
+      "verifier": {
+        "model": "gpt-6.2-astra",
+        "values": {
+          "guaranteed_usd": null
+        },
+        "cited_pages_by_field": {
+          "guaranteed_usd": []
+        },
+        "seconds": 2.435
+      }
+    },
+    {
+      "id": "us18",
+      "language": "en",
+      "rag": {
+        "model": "gpt-6.2-astra",
+        "answerable": false,
+        "values": {
+          "credited_usd": null
+        },
+        "cited_pages": [
+          35
+        ],
+        "page_rubric_pass": true,
+        "seconds": 4.15
+      },
+      "retrieved_pages": [
+        35,
+        167,
+        165,
+        36,
+        94,
+        30,
+        32,
+        118
+      ],
+      "full": {
+        "model": "gpt-6.2-astra",
+        "answerable": false,
+        "values": {
+          "credited_usd": null
+        },
+        "cited_pages": [
+          35
+        ],
+        "page_rubric_pass": true,
+        "seconds": 10.877
+      },
+      "verifier": {
+        "model": "gpt-6.2-astra",
+        "values": {
+          "credited_usd": null
+        },
+        "cited_pages_by_field": {
+          "credited_usd": []
+        },
+        "seconds": 2.829
+      }
+    },
+    {
+      "id": "us18",
+      "language": "th",
+      "full": {
+        "model": "gpt-6.2-astra",
+        "answerable": false,
+        "values": {
+          "credited_usd": null
+        },
+        "cited_pages": [
+          35
+        ],
+        "page_rubric_pass": true,
+        "seconds": 19.632
+      },
+      "rag": {
+        "model": "gpt-6.2-astra",
+        "answerable": false,
+        "values": {
+          "credited_usd": null
+        },
+        "cited_pages": [
+          35
+        ],
+        "page_rubric_pass": true,
+        "seconds": 3.329
+      },
+      "retrieved_pages": [
+        35,
+        165,
+        94,
+        167,
+        30,
+        31,
+        59,
+        40
+      ],
+      "verifier": {
+        "model": "gpt-6.2-astra",
+        "values": {
+          "credited_usd": null
+        },
+        "cited_pages_by_field": {
+          "credited_usd": []
+        },
+        "seconds": 2.637
+      }
+    }
+  ]
+}
