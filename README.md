@@ -1,6 +1,6 @@
 # ZeroUpfront
 
-ZeroUpfront helps a hospital's international patient department prepare a clause-cited guarantee-of-payment request. This repository includes the stack design, original synthetic PDFs, an executable pre-check evaluation and performance benchmarks.
+ZeroUpfront helps a hospital's international patient department prepare a clause-cited guarantee-of-payment request. Its local coordinator app includes three synthetic cases, revision-specific source previews and a staff-reviewed PDF export. The research tools also evaluate scanned and digital Thai and US documents.
 
 ## Start here
 
@@ -22,6 +22,24 @@ ZeroUpfront helps a hospital's international patient department prepare a clause
 - [Demo script](docs/demo.md)
 
 ## Run the demo
+
+### Coordinator workspace
+
+Use Python 3.12, uv, Node 24 with npm, and PostgreSQL with `initdb` and `pg_ctl` on PATH. From a checkout containing the coordinator app, run the following as a regular user.
+
+```sh
+npm --prefix web ci
+npm --prefix web run build
+uv run --locked python app/run_workspace.py
+```
+
+Open [the local workspace](http://127.0.0.1:8038/). Z002 opens with an estimate missing its breakdown. Select **Replace estimate**, compare the two service amounts, confirm the encounter, then review the revised draft. Open each attachment to inspect its original PDF. Enter a demo reviewer name and download the reviewed packet. It contains a request, a gap report and the three source files for that revision.
+
+The app saves revisions in a dedicated local PostgreSQL cluster under `.local/workspace/`. Restarting the launcher preserves them. To rehearse with a fresh set of cases, pass `--data-dir .local/rehearsal/postgres --port 8040` with a new directory. A dedicated managed database can be supplied through `DATABASE_URL`. The app accepts the included case-specific demo estimates. Reviewer names are local attestations. The demo has no hospital authentication or payer submission integration.
+
+The digital workflow runs offline. To exercise the supported synthetic scanned estimate, copy `.env.example` to `.env`, set a funded server-side `OPENAI_API_KEY` and `WORKSPACE_ENABLE_OCR=1`, and use `uv run --locked --env-file .env python app/run_workspace.py`. The long-policy evaluation commands below run separately. [Measured workspace performance](docs/workspace-performance.md)
+
+### Research tools
 
 Clone the repository and use Python 3.12 and [uv](https://docs.astral.sh/uv/getting-started/installation/). Create the local key file and enter your project key. The private file is Git-ignored.
 

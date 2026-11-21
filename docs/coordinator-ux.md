@@ -1,6 +1,6 @@
 # Coordinator workspace design review
 
-Give the hospital coordinator one place to answer three questions. What holds up this request? Which source proves it? What can I do next? The proposed desktop workflow opens a case from the queue, keeps the original evidence beside the selected finding, and asks for staff approval of a particular revision. The mockup illustrates that workflow. The working research software is a CLI and database harness. Browser intake, authenticated review and insurer-format PDF export are application build work. [Application contracts](application-design.md)
+Give the hospital coordinator one place to answer three questions. What holds up this request? Which source proves it? What can I do next? The desktop workflow opens a case from the queue, keeps the original evidence beside the selected finding, and asks for staff approval of a particular revision. The synthetic app implements this flow, including clickable attachment previews and a PDF with the original exhibits embedded. Production authentication, arbitrary document intake and insurer submission are future work. [Run the demo](../README.md#coordinator-workspace) · [Application contracts](application-design.md)
 
 ## Walk through case Z002
 
