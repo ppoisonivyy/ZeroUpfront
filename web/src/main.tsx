@@ -944,9 +944,10 @@ function App() {
           </div></div>
         </header>
         <div className="app-content">
-          <div className="context-strip"><PanelTop size={16} />
-            <span>Coordinator workspace</span><ChevronRight size={13} />
-            <strong>{route.discharge ? "Discharge claims" : "Pre-arrival cases"}</strong>
+          <div className={"context-strip" + (session.hospital_name ? " named-workspace" : "")}>
+            {session.hospital_name ? <Hospital size={16} /> : <PanelTop size={16} />}
+            <span>{session.hospital_name || "Coordinator workspace"}</span><ChevronRight className="context-path" size={13} />
+            <strong className="context-path">{route.discharge ? "Discharge claims" : "Pre-arrival cases"}</strong>
           </div>
           <main id="main-content" tabIndex={-1}>
         {(route.id || route.create) && (

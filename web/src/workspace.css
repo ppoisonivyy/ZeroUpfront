@@ -59,6 +59,8 @@
 .rail-session span { color: #b7c9d9; font-size: .71rem; }
 .context-strip { display: flex; align-items: center; gap: 9px; padding: 13px clamp(18px, 3vw, 52px); border-bottom: 1px solid var(--line); background: white; color: var(--muted); font-size: .77rem; min-height: 48px; }
 .context-strip strong { color: var(--ink); font-weight: 570; }
+.named-workspace > span { color: var(--ink); font-weight: 620; overflow-wrap: anywhere; }
+.named-workspace > svg { flex: none; }
 .app-content, .app-layout main { min-width: 0; }
 .app-content main { max-width: 1540px; padding: 32px clamp(17px, 3vw, 52px) 56px; }
 .app-content .breadcrumbs { margin-bottom: 18px; }
@@ -190,6 +192,8 @@
   .product-symbol { width: 22px; height: 25px; transform: scale(.75); transform-origin: left top; margin-right: -3px; }
   .workflow-links a { padding: 7px 9px; font-size: .78rem; }
   .context-strip { display: none; }
+  .context-strip.named-workspace { display: flex; min-height: 32px; padding: 7px 15px; }
+  .named-workspace .context-path { display: none; }
   .desk-heading { margin-bottom: 15px; }
   .desk-heading p { font-size: .84rem; }
   .queue-switches { display: flex; gap: 5px; flex-wrap: wrap; margin-bottom: 15px; }
