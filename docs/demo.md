@@ -39,6 +39,10 @@ Bangkok Hospital Pattaya publishes a THB 239,000 multifocal lens replacement pac
 
 The market-data lookup is free and requires no key. The optional original-letter read uses the server’s OpenAI project credentials, `WORKSPACE_ENABLE_AI_REVIEW=1` and the configured `OPENAI_MODEL`. For scanned originals, enable `WORKSPACE_ENABLE_OCR=1` for independent page transcription. Staff can inspect the PDF whenever either service is unavailable. The reader is advisory and leaves the ledger untouched. Actual trading and remittance require a contracted provider and confirmation of the beneficiary credit.
 
+### How the guarantee reader was checked
+
+The expanded first run held a letter that named the insurer on page 1 and assigned fees to that company on page 2. The reader now verifies and links both the role definition and the obligation. In the final live run, all 10 synthetic letters and all 20 exchange-difference or bank-fee outcomes matched their expected payer and page or their expected manual-review hold. The cases include a Thai scan, different payers for the two categories, a negation, conditional wording, conflicting pages and a silent letter. These examples exercise the implementation and do not establish accuracy on a hospital’s own guarantees. [Scored results](../bench/results/guarantee-fees.json) · [Synthetic cases and replay](../bench/guarantee_fees.py)
+
 ## Other ways to explore
 
 The primary walkthrough uses a supported synthetic layout. The official Thai and US form rehearsals show how the workspace handles unfamiliar layouts, missing evidence and claims that still need manual review. The policy research tools separately exercise Thai and US pre-arrival packets, scans, retrieval, and page citations. [Thai form results](thai-payer-forms.md) · [US form results](us-payer-forms.md) · [Policy and fixture CLI commands](../CONTRIBUTING.md#optional-openai-workflows)
