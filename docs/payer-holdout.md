@@ -20,6 +20,8 @@ A single affirmative check can corroborate related fields, such as a matching pr
 
 A later update increased explicit corroboration to **22 of the same 45 fields**. The original blinded and immediate-fix scores above remain available for comparison. [Corroboration follow-up and model audit](payer-model-fidelity.md)
 
+A separately frozen follow-up passed five new payee decisions and three new amount comparisons on the first attempt. [New cases and outcomes](payer-confirmation.md)
+
 ## What the packets tested
 
 | Published specimen and case | Required outcome | Form page | First run | Retest |
