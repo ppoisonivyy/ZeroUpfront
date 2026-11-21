@@ -29,6 +29,28 @@ class CitationTests(unittest.TestCase):
             self.assertEqual(changed["status"], "needs_review")
             self.assertEqual(len(changed["findings"]), 1)
 
+    def test_named_party_requires_verified_role_definition_and_both_pages(self):
+        identity = "Blue Willow Ltd is the insurer under this guarantee."
+        obligation = "Blue Willow Ltd shall pay all bank fees."
+        difference = "The insurer covers exchange-rate differences."
+        fee = item("bank_fees", 2, obligation)
+        reading = fees.Reading(clauses=[fee, item("exchange_difference", 1, difference)])
+        pages = [identity + " " + difference, obligation]
+        self.assertEqual(fees.verify(reading, pages)["status"], "needs_review")
+        fee.definition = fees.PartyDefinition(name="Blue Willow Ltd", page=1, quote=identity)
+        result = fees.verify(reading, pages)
+        self.assertEqual(result["status"], "cited")
+        self.assertEqual(result["findings"][0]["definition"]["page"], 1)
+        confusing = "Blue Willow Ltd is the hospital and Alder Ltd is the insurer."
+        fee.definition.quote = confusing
+        self.assertEqual(fees.verify(reading, [confusing + " " + difference, obligation])["status"], "needs_review")
+        fee.definition.quote = identity
+        fee.definition.page = 2
+        self.assertEqual(fees.verify(reading, pages)["status"], "needs_review")
+        fee.definition.page = 1
+        fee.definition.quote = identity.replace("is the", "is not the")
+        self.assertEqual(fees.verify(reading, [fee.definition.quote + " " + difference, obligation])["status"], "needs_review")
+
     def test_absence_conflict_and_nonspecific_payment_text(self):
         generic = "Insurer has agreed to pay the hospital bill in full."
         for state in ("silent","conflict","ambiguous"):

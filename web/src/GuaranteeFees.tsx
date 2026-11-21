@@ -8,6 +8,7 @@ type Finding = {
   payer: "insurer" | "patient" | "hospital" | "other" | "unclear";
   page: number;
   quote: string;
+  definition?: { name: string; page: number; quote: string };
 };
 type Assessment = { status: "cited" | "needs_review"; reason: string; findings: Finding[]; source_url: string };
 const categories = { exchange_difference: "Exchange-rate differences", bank_fees: "Bank fees" };
@@ -55,6 +56,9 @@ function FeeReader({ path, revision, eventId, source, openLetter }: {
         <dt>{categories[finding.category]}</dt><dd>{payers[finding.payer]}</dd>
         {finding.page > 0 && finding.quote && <dd className="guarantee-fee-citation"><q lang={/[\u0E00-\u0E7F]/u.test(finding.quote) ? "th" : undefined}>{finding.quote}</q>{" "}
           <button type="button" className="text-action" onClick={() => openLetter({ ...source, page: finding.page, quote: finding.quote })}>View page {finding.page}</button>
+        </dd>}
+        {finding.definition && <dd className="guarantee-fee-citation">Party definition: <q>{finding.definition.quote}</q>{" "}
+          <button type="button" className="text-action" onClick={() => openLetter({ ...source, page: finding.definition!.page, quote: finding.definition!.quote })}>View definition on page {finding.definition.page}</button>
         </dd>}
       </div>)}</dl>}
       <p>Confirm each responsibility against the signed letter before assigning a charge.</p>
