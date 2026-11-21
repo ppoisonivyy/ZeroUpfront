@@ -36,3 +36,14 @@
 .preclaim-questions :is(textarea, input, select) { width: 100%; box-sizing: border-box; padding: .55rem; border: 1px solid var(--line); border-radius: 6px; color: inherit; background: white; font: inherit; font-weight: 400; }
 .preclaim-questions textarea { resize: vertical; }
 .question-citation { display: grid; grid-template-columns: minmax(0, 1fr) 5rem; gap: .6rem; }
+.report-upload, .report-visual { border-top: 1px solid var(--line); padding-block: .8rem; }
+.report-upload summary, .report-hint summary { color: var(--action); cursor: pointer; font-weight: 600; }
+.report-form, .report-visual fieldset { display: grid; gap: .65rem; margin: .8rem 0 0; }
+.report-form > button, .report-visual fieldset > button { justify-self: start; }
+.report-image { max-height: 44rem; overflow: auto; padding: .6rem; }
+.report-image img { display: block; max-width: 100%; height: auto; }
+.report-visual, .report-finding { padding-inline: 1rem; }
+.report-visual h3 { margin: 0; }
+.report-visual p, .report-finding { font-size: .9rem; }
+.report-visual fieldset { min-width: 0; border: 0; padding: 0; }
+.report-visual legend { font-weight: 600; margin-bottom: .5rem; }

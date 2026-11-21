@@ -11,6 +11,7 @@ type Props = {
   label: string;
   onText?: (text: string) => void;
   onReady?: () => void;
+  onVisualPageReady?: (page: number) => void;
   openSequence?: number;
   onPageChange?: (page: number) => void;
   fixedPage?: boolean;
@@ -43,6 +44,7 @@ function DocumentPage({
   label,
   onText,
   onReady,
+  onVisualPageReady,
   onPageChange,
   openSequence,
   fixedPage = false,
@@ -150,6 +152,7 @@ function DocumentPage({
       host!.replaceChildren(surface);
       setStatus("");
       onReady?.();
+      onVisualPageReady?.(active);
       const isOcr = /ocr/i.test(method || "");
       const shouldLocate = !!quote?.trim() && active === page && !isOcr;
       if (quote !== undefined && !shouldLocate) {
@@ -176,7 +179,7 @@ function DocumentPage({
       rendering?.cancel();
       surface.remove();
     };
-  }, [doc, active, width, label, onText, onReady, readText, quote, method, page, zoom]);
+  }, [doc, active, width, label, onText, onReady, onVisualPageReady, readText, quote, method, page, zoom]);
   function selectPage(value: number) {
     if (doc && Number.isInteger(value) && value >= 1 && value <= doc.numPages) {
       setActive(value);

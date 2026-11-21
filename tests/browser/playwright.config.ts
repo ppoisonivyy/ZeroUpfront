@@ -8,6 +8,9 @@ const baseURL = `http://127.0.0.1:${port}`;
 process.env.CITATION_TEST_COORDINATOR ??= randomBytes(24).toString("hex");
 process.env.CITATION_TEST_INSURER ??= randomBytes(24).toString("hex");
 
+process.env.TEST_LAKESIDE_COORDINATOR ??= randomBytes(24).toString("hex");
+process.env.TEST_LAKESIDE_INSURER ??= randomBytes(24).toString("hex");
+
 export default defineConfig({
   testDir: ".",
   outputDir: "../../.local/browser-tests",

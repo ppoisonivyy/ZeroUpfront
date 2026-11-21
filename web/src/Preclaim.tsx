@@ -5,6 +5,7 @@ import { useResource } from "./useResource";
 import { SourceView, useSourceNavigation } from "./SourceView";
 import { useStaffSession } from "./Auth";
 import { PreclaimQuestions, handoffTime, type CitedQuestion } from "./PreclaimQuestions";
+import { PhysicianReportViewer, ReportUpload, type ReportEvidence } from "./PhysicianReport";
 import "./preclaim.css";
 
 type Stage = "needs_documents" | "ready_for_review" | "staff_reviewed" | "waiting_for_insurer" | "hospital_reply_needed" | "hospital_replied";
@@ -12,6 +13,7 @@ type Rule = { clause?: string; quote: string; page: number; verified: boolean; s
 type Packet = {
   id: string; revision: number; current_revision: number; patient: string; member: string;
   form_edition: string; reviewer: string | null; procedure: string; insurer: string; total: number; currency: string; status: Stage;
+  report_evidence?: ReportEvidence | null; report_signature_hint_enabled?: boolean;
   gap: (Rule & { code: string; title: string }) | null; rule: Rule;
   submitted_at: string | null; questions: CitedQuestion[];
   sources: Source[]; draft_url: string | null; submitted_revision: number | null; simulation: boolean;
@@ -99,17 +101,20 @@ function PacketView({ packet: initial, root, insurer, refresh }: { packet: Packe
     setView(next);
     navigation.open(trigger);
   }
-  async function save(action: string, payload: Record<string, unknown>) {
+  async function save(action: string, payload: Record<string, unknown> | FormData) {
     if (pending.current || historical || stale) return false;
     pending.current = true; setBusy(true); setError("");
     try {
-      const response = await api(root + "/" + action, { method: "POST", headers: {
-        "Content-Type": "application/json", "If-Match": '"' + packet.revision + '"',
-      }, body: JSON.stringify(payload) });
+      const headers = new Headers({ "If-Match": '"' + packet.revision + '"' });
+      if (!(payload instanceof FormData)) headers.set("Content-Type", "application/json");
+      const response = await api(root + "/" + action, { method: "POST", headers,
+        body: payload instanceof FormData ? payload : JSON.stringify(payload) });
       const next: Packet = await response.json();
       setPacket(next);
-      if (action === "attach-report") {
+      if (action === "attach-report" || action === "reports" || action === "reports/attest") {
+        setCitedSource(null);
         setView("file:report"); setReviewedForm(false);
+        if (action === "reports") navigation.open();
       } else if (action === "review" || action === "submit") setView("draft");
       return true;
     } catch (e) {
@@ -121,6 +126,9 @@ function PacketView({ packet: initial, root, insurer, refresh }: { packet: Packe
   function advance(action: "attach-report" | "review" | "submit") {
     return save(action, { confirmed: true });
   }
+  const canEditReport = !insurer && !historical && !waiting &&
+    (packet.status === "needs_documents" || packet.status === "ready_for_review");
+  const canAttest = canEditReport && packet.report_evidence?.status === "needs_review";
   return <>
     <header className="page-title desk-heading preclaim-heading"><div>
       <p className="section-label">{packet.id} · Inpatient preauthorization {packet.simulation && "· Synthetic case"}</p>
@@ -145,10 +153,12 @@ function PacketView({ packet: initial, root, insurer, refresh }: { packet: Packe
             {packet.gap?.code === "missing_signed_report" && <p>Treating physician signs the replacement. Hospital IPD attaches it for recheck.</p>}
             {packet.gap && <button className="text-action" onClick={e => show("rule", e.currentTarget)}><BookOpen size={15}/> View cited clause</button>}
           </section>
-          {!insurer && !historical && packet.status === "needs_documents" && <div className="preclaim-actions">
+          {canEditReport && !packet.report_evidence && packet.gap?.code === "missing_signed_report" && <div className="preclaim-actions">
             <button className="secondary" onClick={e => show("example", e.currentTarget)}><FileText size={16}/> Preview signed sample</button>
             <button className="primary" disabled={busy || stale} onClick={() => void advance("attach-report")}><Paperclip size={16}/> Attach signed sample report</button>
           </div>}
+          {canAttest && <button type="button" className="secondary" onClick={e => show("file:report", e.currentTarget)}>Inspect uploaded report</button>}
+          {canEditReport && <ReportUpload key={packet.revision} caseId={packet.id} busy={busy || stale} upload={data => save("reports", data)}/>}
           {draftSource && <div className="preclaim-actions">
             <button className="secondary" onClick={e => show("draft", e.currentTarget)}><FileText size={16}/> {waiting ? "View submitted form" : "Review insurer form"}</button>
             {!insurer && !historical && packet.status === "ready_for_review" && <button className="primary" disabled={!reviewedForm || !rule.verified || busy || stale} onClick={() => void advance("review")}><Check size={16}/> Mark draft reviewed</button>}
@@ -170,7 +180,13 @@ function PacketView({ packet: initial, root, insurer, refresh }: { packet: Packe
           </div>
         </div>
       </section>
-      <SourceView key={packet.status + source.url + ":" + source.page} source={source} revision={packet.revision} historical={historical || insurer} navigation={navigation} onReady={view === "draft" ? formReady : undefined} />
+      {source.role === "report" && packet.report_evidence ? <PhysicianReportViewer
+        key={packet.revision + ":" + packet.report_evidence.sha256} evidence={packet.report_evidence}
+        revision={packet.revision} citedPage={source.page} navigation={navigation}
+        caseId={packet.id} patient={packet.patient} member={packet.member} busy={busy || stale}
+        hintPath={canAttest && packet.report_signature_hint_enabled ? root + "/revisions/" + packet.revision + "/report-signature-hint" : undefined}
+        attest={canAttest ? page => save("reports/attest", { confirmed: true, page, identity_confirmed: true }) : undefined}/>
+        : <SourceView key={packet.status + source.url + ":" + source.page} source={source} revision={packet.revision} historical={historical || insurer} navigation={navigation} onReady={view === "draft" ? formReady : undefined} />}
     </div>
   </>;
 }

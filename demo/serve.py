@@ -41,6 +41,12 @@ def main():
             os.environ["DEMO_INSURER_PASSWORD"],
             insurer="Meridian Assist",
         )
+        # The upload regression uses an independent case alongside the recorder's Canal Bridge case.
+        if coordinator := os.environ.get("TEST_LAKESIDE_COORDINATOR"):
+            lakeside = next(h for h in configured_hospitals() if h.slug == "lakeside")
+            staff_access.provision(lakeside.dsn, "upload-coordinator", "Hospital coordinator", coordinator)
+            staff_access.provision(lakeside.dsn, "upload-insurer", "Meridian Assist reviewer",
+                                   os.environ["TEST_LAKESIDE_INSURER"], insurer="Meridian Assist")
         uvicorn.run(
             "app.workspace_server:app",
             host="127.0.0.1",
