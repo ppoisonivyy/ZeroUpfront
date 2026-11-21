@@ -8,9 +8,9 @@ ZeroUpfront helps hospital staff catch missing evidence before an inpatient insu
 
 Amelia Morgan is a fictional patient at Canal Bridge Demo Hospital. Her knee arthroscopy estimate is **THB 128,000**, within her fictional Meridian Assist plan’s **THB 150,000** limit. The hospital still needs a signed medical report before it can submit her request.
 
-**1. Find the missing signature.** On case **ZU-0248**, the hospital coordinator opens the cited policy clause. It says the treating physician must sign the report and specify the indication and planned procedure.
+**1. Find the missing signature.** On case **ZU-0248**, the coordinator opens physical page 12. The highlight marks the words requiring the treating physician’s signature, indication and planned procedure on the original policy.
 
-![Hospital review of Amelia’s request with the original policy clause open](docs/figures/amelia-rule.png)
+![Amelia’s missing report beside the highlighted signature requirement on original policy page 12](docs/figures/amelia-rule.png)
 
 **2. Review the corrected request.** Attaching the signed report creates revision 2. The coordinator previews the insurer form, checks the supporting PDFs and marks that revision reviewed before submitting it.
 
@@ -53,7 +53,7 @@ When a payer asks a question or declines a claim, the coordinator can record the
 
 | Test | Result |
 | --- | --- |
-| Synthetic AIA Thailand, US CMS-1450 and BCBS FEP claims on known form layouts | The first blinded run found **10/11** target issues on the correct page and missed a different named payee. After fixes, the same cases scored **11/11**, with **6/6** exact changed-value citations, **0/45** false alerts on aligned fields and **14/14** unverified cases held. A fresh panel passed **8/8** payee and amount checks. [Holdout](docs/payer-holdout.md) · [Fresh panel](docs/payer-confirmation.md) |
+| Synthetic AIA Thailand, US CMS-1450 and BCBS FEP claims on known form layouts | The current regression located **11/11** target issues on the correct page, with **6/6** exact changed-value citations, **0/45** false alerts on aligned fields and **14/14** unverified cases held. A fresh panel passed **8/8** payee and amount checks. [Holdout](docs/payer-holdout.md) · [Fresh panel](docs/payer-confirmation.md) |
 | 10,000 synthetic inpatient encounters | All **760** timed HTTP requests passed. The restore recovered **11,040** revisions and **47,048** original PDF blobs. Median worklist render time was **0.82 seconds** on the test machine. [Database benchmark](docs/discharge-scale-benchmark.md) · [Browser measurements](docs/ux-redesign.md) |
 
 Actual payer acceptance and hospital staff time savings have yet to be measured. [Scaling benchmarks](docs/scaling.md) · [Deployment](docs/deployment.md) · [Security and encryption](docs/security-and-encryption.md) · [Privacy by jurisdiction](docs/privacy-by-jurisdiction.md)

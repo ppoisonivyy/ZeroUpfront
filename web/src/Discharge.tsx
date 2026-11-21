@@ -107,7 +107,7 @@ function ClaimDetail({
     claim.sources.some(item => item.role === cite.role));
   const citedFile = firstCitation && claim.sources.find(item => item.role === firstCitation.role);
   const source = selection || (firstCitation && citedFile
-    ? { ...citedFile, page: firstCitation.page, quote: firstCitation.quote }
+    ? { ...citedFile, page: firstCitation.page, quote: firstCitation.quote, method: firstCitation.method }
     : claim.sources.find(item => item.role === "bill") || claim.sources[0]);
   const actionable =
     claim.status === "ready_for_review" ||
@@ -350,7 +350,7 @@ function ClaimDetail({
                 <div className="evidence-cites">{check.sources.map((cite, i) => {
                   const file = claim.sources.find(source => source.role === cite.role);
                   if (!file) return null;
-                  return <button key={i} type="button" onClick={() => pick({...file, page: cite.page, quote: cite.quote})}>
+                  return <button key={i} type="button" onClick={() => pick({...file, page: cite.page, quote: cite.quote, method: cite.method})}>
                     {dischargeRoles[cite.role as keyof typeof dischargeRoles]} · p. {cite.page}
                   </button>;
                 })}</div>

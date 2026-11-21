@@ -10,7 +10,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 FPS = 30
-DURATIONS = {1: 3, 2: 2, 3: 2, 4: 4, 5: 3, 6: 2, 61: 1, 70: 1, 7: 2, 8: 2, 9: 5, 10: 3}
+DURATIONS = {1: 3, 2: 1, 3: 1, 4: 4, 5: 3, 6: 2, 61: 2, 62: 2, 70: 1, 7: 2, 8: 1, 9: 5, 10: 3}
 
 
 def ffmpeg_binary():
@@ -101,12 +101,16 @@ def render(metadata, raw, dest, scratch):
             action_time = max(
                 0.15, actual - min(actual * 0.8, 2.5 if scene["id"] != 9 else 4)
             )
+            if scene["id"] in {61, 62}:
+                hold = 1.15
             moving = min(action_time, length - hold)
             ratio = moving / action_time
             vf = (
                 f"setpts=PTS-STARTPTS,setpts='if(lt(T,{action_time:.5f}),PTS*{ratio:.8f},"
                 f"({moving:.5f}+T-{action_time:.5f})/TB)',fps=30,tpad=stop_mode=clone:stop_duration={length}"
             )
+        if frame := scene.get("frame"):
+            vf += ",crop={width}:{height}:{x}:{y},scale=1920:1080:flags=lanczos".format(**frame)
         mask = (
             "drawbox=x=0:y=ih-32:w=48:h=32:color=0x1F4D3F:t=fill"
             if scene["id"] in {1, 10}

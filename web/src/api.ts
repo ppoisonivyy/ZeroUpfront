@@ -27,6 +27,7 @@ export type Source = {
   page: number;
   quote: string;
   recordedSummary?: string;
+  method?: string;
   anchors?: { page: number; quote: string; clause?: string; method?: string }[];
 };
 export type WorkflowAction =

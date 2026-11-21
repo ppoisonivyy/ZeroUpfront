@@ -13,7 +13,25 @@ type Props = {
   onReady?: () => void;
   onPageChange?: (page: number) => void;
   fixedPage?: boolean;
+  quote?: string;
+  method?: string;
 };
+const messages = {
+  matched: "Exact passage highlighted on the original page.",
+  absent: "Page only. The quoted text could not be located exactly on this page.",
+  ambiguous: "Page only. The same passage appears more than once on this page.",
+  unmapped: "Page only. A reliable text location is unavailable.",
+  ocr: "Page only. The OCR transcript has no verified word locations.",
+  "other-page": "This citation refers to a different page.",
+  "no-quote": "Page only. No verbatim passage is attached to this citation.",
+};
+function showPassage(scroll: HTMLDivElement | null) {
+  const mark = scroll?.querySelector(".pdf-quote-mark");
+  if (!scroll || !mark) return;
+  const current = scroll.getBoundingClientRect(), target = mark.getBoundingClientRect();
+  scroll.scrollTop += target.top - current.top - 32;
+  scroll.scrollLeft += target.left - current.left - 22;
+}
 export default function PdfPage(props: Props) {
   return <DocumentPage key={props.url + "#" + (props.page ?? 1)} {...props} />;
 }
@@ -25,11 +43,16 @@ function DocumentPage({
   onReady,
   onPageChange,
   fixedPage = false,
+  quote,
+  method,
 }: Props) {
   const frame = useRef<HTMLDivElement>(null);
   const [width, setWidth] = useState(0);
   const [doc, setDoc] = useState<PDFDocumentProxy | null>(null);
   const [active, setActive] = useState(page);
+  const [zoom, setZoom] = useState(1);
+  const [citation, setCitation] = useState<keyof typeof messages | null>(null);
+  const scroll = useRef<HTMLDivElement>(null);
   const [target, setTarget] = useState(String(page));
   const [status, setStatus] = useState("Loading original page…");
   const error =
@@ -64,47 +87,61 @@ function DocumentPage({
     const host = frame.current;
     if (!doc || !host || !width) return;
     const documentProxy = doc;
-    let stopped = false;
+    const controller = new AbortController();
+    const { signal } = controller;
     let rendering: RenderTask | undefined;
     const canvas = document.createElement("canvas");
+    const surface = document.createElement("div");
+    surface.className = "pdf-surface";
+    setCitation(null);
     setStatus("Loading original page…");
     async function render() {
       const pdfPage = await documentProxy.getPage(active);
-      if (stopped) return;
+      if (signal.aborted) return;
       const base = pdfPage.getViewport({ scale: 1 });
       const dpi = Math.min(window.devicePixelRatio || 1, 2);
-      const viewport = pdfPage.getViewport({
-        scale: (width * dpi) / base.width,
-      });
+      const cssViewport = pdfPage.getViewport({ scale: width * zoom / base.width });
+      const viewport = pdfPage.getViewport({ scale: cssViewport.scale * dpi });
       canvas.width = Math.max(1, Math.ceil(viewport.width));
       canvas.height = Math.max(1, Math.ceil(viewport.height));
       canvas.setAttribute("role", "img");
       canvas.setAttribute("aria-label", label + ", page " + active);
       rendering = pdfPage.render({ canvas, viewport });
       await rendering.promise;
-      if (stopped) return;
-      host!.replaceChildren(canvas);
+      if (signal.aborted) return;
+      surface.style.width = cssViewport.width + "px";
+      surface.style.height = cssViewport.height + "px";
+      surface.append(canvas);
+      host!.replaceChildren(surface);
       setStatus("");
       onReady?.();
-      if (onText) {
-        const content = await pdfPage.getTextContent().catch(() => null);
-        if (!stopped && content)
-          onText(
-            content.items
-              .map((item) => ("str" in item ? item.str : ""))
-              .join(" "),
-          );
+      const isOcr = /ocr/i.test(method || "");
+      const shouldLocate = !!quote?.trim() && active === page && !isOcr;
+      if (quote !== undefined && !shouldLocate) {
+        setCitation(active !== page ? "other-page" : isOcr ? "ocr" : "no-quote");
       }
+      if (!shouldLocate && !onText) return;
+      const content = await pdfPage.getTextContent().catch(() => null);
+      if (signal.aborted) return;
+      if (content && onText) onText(content.items.map(item => "str" in item ? item.str : "").join(" "));
+      if (!shouldLocate) return;
+      if (!content) { setCitation("unmapped"); return; }
+      const { highlightPassage } = await import("./pdfHighlight");
+      if (signal.aborted) return;
+      const result = await highlightPassage(surface, cssViewport, content, quote!, signal).catch(() => "unmapped" as const);
+      if (signal.aborted) return;
+      setCitation(result);
+      if (result === "matched") showPassage(scroll.current);
     }
     render().catch(() => {
-      if (!stopped) setStatus(error);
+      if (!signal.aborted) setStatus(error);
     });
     return () => {
-      stopped = true;
+      controller.abort();
       rendering?.cancel();
-      canvas.remove();
+      surface.remove();
     };
-  }, [doc, active, width, label, onText, onReady]);
+  }, [doc, active, width, label, onText, onReady, quote, method, page, zoom]);
   function selectPage(value: number) {
     if (doc && Number.isInteger(value) && value >= 1 && value <= doc.numPages) {
       setActive(value);
@@ -135,7 +172,7 @@ function DocumentPage({
                 setTarget(e.target.value);
                 const n = Number(e.target.value);
                 if (n >= 1 && n <= doc.numPages && Number.isInteger(n))
-                  setActive(n);
+                  selectPage(n);
               }}
               onBlur={() => setTarget(String(active))}
             />{" "}
@@ -151,7 +188,17 @@ function DocumentPage({
           </button>
         </div>
       )}
-      <div className="pdf-scroll">
+      {quote !== undefined && !status && <div className="pdf-proof-tools">
+        {citation && <p data-citation-status={citation} role="status">{messages[citation]}</p>}
+        <div>
+          {citation === "matched" && <button type="button" className="text-action" onClick={() => showPassage(scroll.current)}>Show passage</button>}
+          {citation === "other-page" && <button type="button" className="text-action" onClick={() => selectPage(page)}>Return to cited page</button>}
+          <button type="button" className="text-action" aria-label="Zoom out" disabled={zoom <= 1} onClick={() => setZoom(z => Math.max(1, z - 0.5))}>−</button>
+          <span aria-label="Page zoom">{zoom * 100}%</span>
+          <button type="button" className="text-action" aria-label="Zoom in" disabled={zoom >= 2.5} onClick={() => setZoom(z => Math.min(2.5, z + 0.5))}>+</button>
+        </div>
+      </div>}
+      <div className="pdf-scroll" ref={scroll}>
         {status && (
           <p className="pdf-message" role="status">
             {status}

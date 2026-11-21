@@ -21,6 +21,8 @@ export function SourceView({
     /* Keep the cited quote visible if the URL is invalid. */
   }
   const page = source.page || 1;
+  const anchor = source.anchors?.find(a => a.page === page && a.quote === source.quote);
+  const method = source.method ?? anchor?.method;
   return (
     <section
       className="panel viewer"
@@ -63,7 +65,7 @@ export function SourceView({
       </div>
       {url ? (
         <Suspense fallback={<p className="loading">Loading viewer…</p>}>
-          <PdfPage url={url} page={page} label={source.label} onReady={onReady} />
+          <PdfPage url={url} page={page} label={source.label} onReady={onReady} quote={source.recordedSummary ? "" : source.quote} method={method} />
         </Suspense>
       ) : (
         <p className="empty-view">The original PDF address is unavailable.</p>
