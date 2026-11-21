@@ -15,7 +15,7 @@ from pydantic import BaseModel, ConfigDict, Field, StringConstraints, field_vali
 from app import workspace_store as store
 from app import discharge_store
 from app.discharge_api import router as discharge_router
-from app.workspace_http_common import INTAKE_BYTES, _actor, _pdf, _read_upload, _revision, ocr_service_error
+from app.workspace_http_common import INTAKE_BYTES, MultipartBodyLimit, _actor, _pdf, _read_upload, _revision, ocr_service_error
 from app.case_workflow import validate_attachment
 from app.staff_access import install_access, initialize_access
 from app.workspace_documents import CASE_INSURERS, evaluate_estimate, packet_bytes, seed_cases
@@ -143,6 +143,8 @@ async def lifespan(app):
 
 
 app = FastAPI(title="ZeroUpfront coordinator API", version="1.1", lifespan=lifespan)
+app.add_middleware(MultipartBodyLimit)
+# Register access last so a request passes authentication before it consumes spool space.
 install_access(app)
 app.include_router(discharge_router)
 

@@ -1,11 +1,80 @@
 """Shared HTTP guards for admission and discharge workspaces."""
 import re
+from tempfile import TemporaryFile
 
 from fastapi import HTTPException, Request, Response
+from fastapi.responses import JSONResponse
+from starlette.concurrency import run_in_threadpool
+from starlette.datastructures import Headers
 from starlette.datastructures import UploadFile as MultipartFile
 from openai import APIConnectionError, APITimeoutError, AuthenticationError, PermissionDeniedError, RateLimitError
 
 INTAKE_BYTES = 24 * 1024 * 1024
+# Four discharge PDFs, plus form fields, filenames and multipart framing.
+MAX_MULTIPART_BYTES = 4 * INTAKE_BYTES + 1024 * 1024
+
+
+class MultipartBodyLimit:
+    """Verify the whole upload before Starlette opens any multipart files."""
+
+    def __init__(self, app, maximum=MAX_MULTIPART_BYTES):
+        self.app = app
+        self.maximum = maximum
+
+    async def __call__(self, scope, receive, send):
+        if scope["type"] != "http":
+            return await self.app(scope, receive, send)
+        headers = Headers(scope=scope)
+        media_type = headers.get("content-type", "").partition(";")[0].strip().lower()
+        if media_type != "multipart/form-data":
+            return await self.app(scope, receive, send)
+
+        too_large = JSONResponse(
+            {"detail": f"All files and form data together must fit within {self.maximum / (1024 * 1024):g} MiB."},
+            status_code=413,
+        )
+        length = headers.get("content-length")
+        if length is not None:
+            try:
+                declared = int(length)
+                if declared < 0:
+                    raise ValueError
+            except ValueError:
+                return await JSONResponse({"detail": "Invalid Content-Length."}, status_code=400)(scope, receive, send)
+            if declared > self.maximum:
+                return await too_large(scope, receive, send)
+
+        # A private temporary file keeps the raw body off the Python heap. The
+        # context also closes it on disconnect, parser errors and cancellation.
+        with await run_in_threadpool(TemporaryFile) as spool:
+            total = 0
+            while True:
+                message = await receive()
+                if message["type"] == "http.disconnect":
+                    return await Response(status_code=400)(scope, receive, send)
+                chunk = message.get("body", b"")
+                total += len(chunk)
+                if total > self.maximum:
+                    return await too_large(scope, receive, send)
+                if chunk:
+                    await run_in_threadpool(spool.write, chunk)
+                if not message.get("more_body", False):
+                    break
+            del message, chunk
+            await run_in_threadpool(spool.seek, 0)
+            remaining = total
+
+            async def replay():
+                nonlocal remaining
+                if spool.closed:
+                    return await receive()
+                block = await run_in_threadpool(spool.read, min(remaining, 64 * 1024))
+                remaining -= len(block)
+                if remaining == 0:
+                    await run_in_threadpool(spool.close)
+                return {"type": "http.request", "body": block, "more_body": remaining > 0}
+
+            return await self.app(scope, replay, send)
 
 
 def ocr_service_error(exc):
