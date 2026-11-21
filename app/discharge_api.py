@@ -53,6 +53,21 @@ class Summary(BaseModel):
     bill_total_minor: int | None = None
 
 
+class WorklistCounts(BaseModel):
+    all: int
+    needs: int
+    ready: int
+    payer: int
+
+
+class WorklistPage(BaseModel):
+    items: list[Summary]
+    counts: WorklistCounts
+    total: int
+    page: int
+    page_size: int
+
+
 class Detail(Summary):
     ai_review_enabled: bool = Field(default_factory=ai_reader.enabled)
     facility: str | None = None
@@ -114,6 +129,17 @@ def _files(uploads):
 @router.get("", response_model=list[Summary])
 def queue(request: Request):
     return store.summaries(request.app.state.dsn)
+
+
+@router.get("/worklist", response_model=WorklistPage)
+def worklist(
+    request: Request,
+    page: Annotated[int, Query(ge=1, le=2_147_483_647)] = 1,
+    page_size: Annotated[int, Query(ge=1, le=100)] = 25,
+    queue: Literal["all", "needs", "ready", "payer"] = "all",
+    search: Annotated[str, Query(max_length=250)] = "",
+):
+    return store.worklist(request.app.state.dsn, queue, search.strip(), page, page_size)
 
 
 @router.post("", response_model=Detail, status_code=201, dependencies=[Depends(accept_files("bill", "summary", "letter", "records"))])

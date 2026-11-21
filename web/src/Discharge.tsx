@@ -570,15 +570,15 @@ export function Discharge({
   const [epoch, setEpoch] = useState(0);
   const [loaded, setLoaded] = useState<{
     key: string;
-    data?: DischargeClaim | DischargeClaim[];
+    data?: DischargeClaim;
     error?: string;
   }>({ key: "" });
   const url = id
       ? claimPath(id) + (revision ? "?revision=" + revision : "")
-      : "/api/discharge",
+      : "",
     key = url + ":" + epoch;
   useEffect(() => {
-    if (id === "new") return;
+    if (!id || id === "new") return;
     const abort = new AbortController();
     api(url, { signal: abort.signal })
       .then((res) => res.json())
@@ -596,6 +596,7 @@ export function Discharge({
     return () => abort.abort();
   }, [url, key, id]);
   const reload = () => setEpoch((n) => n + 1);
+  if (!id) return <DischargeList prior={prior} />;
   if (id === "new")
     return (
       <ClaimUpload
@@ -626,9 +627,7 @@ export function Discharge({
         )}
       </div>
     );
-  return Array.isArray(loaded.data) ? (
-    <DischargeList rows={loaded.data} prior={prior} />
-  ) : (
+  return (
     <ClaimDetail
       key={key}
       claim={loaded.data}

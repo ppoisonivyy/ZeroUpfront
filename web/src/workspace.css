@@ -92,6 +92,8 @@
 .claim-pill.state-needs_review { color: #815010; background: #fff0d2; }
 .claim-pill.state-staff_reviewed { color: #1f6253; background: #e4f2ec; }
 .queue-empty { display: grid; justify-items: center; padding: 28px 16px; text-align: center; gap: 5px; }
+.claim-pages { display: flex; align-items: center; justify-content: flex-end; gap: 8px; flex-wrap: wrap; padding: 12px 18px; border-top: 1px solid var(--line); }
+.claim-pages span { margin-right: auto; color: var(--muted); font-size: .82rem; }
 .empty-symbol { width: 43px; height: 43px; background: #eaf0e8; color: #516959; border-radius: 13px; margin-bottom: 3px; }
 .queue-empty h3 { font-size: 1rem; }
 .queue-empty p { color: var(--muted); font-size: .83rem; max-width: 370px; }
