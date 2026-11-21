@@ -1,50 +1,16 @@
 # ZeroUpfront
 
-ZeroUpfront helps hospital coordinators prepare preauthorization requests and check discharge claims. Discharge is the main worklist. A coordinator compares the final bill, discharge summary, written payer letter and supporting records, opens the cited page, and signs off the reviewed revision. Staff can then export the packet and record an external submission, a payer decision and actual payments separately. Pre-arrival stays accessible in the same workspace.
+ZeroUpfront helps hospital billing coordinators catch problems in an inpatient insurance claim before they send it to the payer. At discharge, someone has to reconcile what the hospital billed, what the clinical record supports, what the insurer authorized and who should receive payment. A repeated pharmacy charge or a payment assignment naming a different hospital can send staff back through the whole packet.
 
-## What the discharge tests found
+The workspace puts each discrepancy beside the original PDF page. A coordinator can inspect the evidence, request a correction, review the new revision and export the packet with its original attachments. Staff record external submission, the insurer’s written decision and actual payment separately. The insurer decides what it will pay. [Watch the 18-second discharge walkthrough](docs/figures/discharge-walkthrough.gif) · [Follow the case through a simulated payment](docs/demo.md)
 
-We ran **16 synthetic packets on four official form editions** from AIA Thailand, CMS and FEP. The original checker held every packet and explained only 1 of 12 targeted changes. The new edition-specific readers explained all 12 on those same inputs. On the first separate, frozen challenge they identified 10 of 11 expected outcomes. A subsequent fix for a different named provider and a missing cents citation brought the same challenge to 11 of 11. A new panel then passed all five payee decisions and three amount comparisons on the first run. Every unverified real-form packet remained held. [Fresh confirmation cases](docs/payer-confirmation.md) · [Independent holdout and residual gaps](docs/payer-holdout.md) · [Thai field checks](docs/thai-form-accuracy.md) · [US field checks](docs/us-form-accuracy.md)
+[![ZeroUpfront discharge review with a repeated pharmacy charge beside page 2 of the original synthetic bill](docs/figures/discharge-review.png)](docs/figures/discharge-review.png)
 
-We also compared a single multimodal read with a model-directed page inspection on **35 synthetic packets**. Both methods matched the 120 prespecified state and page checks. Single-pass median latency was 7.3 seconds and the agent took 12.0 seconds. Both raw reviews omitted the independent invoice on a CMS member mismatch. The app now links both sides using the originals for that revision. All six saved responses in the targeted citation replay carried both supporting pages after verification. The benchmark measures selected fields. Actual payer acceptance and accuracy on real patient encounters require independent validation. [Experiment, design and reproduction](docs/payer-review-design.md) · [PDF versus agent text search](docs/payer-text-lookup.md)
-
-The supported-format control shows the rest of the flow. A corrected packet can reach staff approval, a reviewed export with four clickable originals, a recorded payer query and decision, and two simulated remittances. All transmissions and receipts in the rehearsal were simulated. [Thailand cases and live OCR](docs/thai-payer-forms.md) · [US cases and live OCR](docs/us-payer-forms.md) · [Interface design and browser checks](docs/ux-redesign.md)
-
-![Discharge review showing the repeated pharmacy charge and page 2 of the original fictional bill](docs/figures/discharge-review.png)
-
-## Start here
-
-- [Run the coordinator workspace](#coordinator-workspace) or [build the release image](docs/deployment.md).
-- [Third-party software, services, fonts, form sources and design references](THIRD_PARTY.md) · [Locked versions and licenses](docs/third-party-packages.md) · [Release image components](docs/release-components.md).
-
-- [Discharge claim workflow and comparison with preauthorization](docs/discharge-workflow.md)
-- [Discharge screening and settlement test results](docs/discharge-journey-results.md) and [live OpenAI OCR on the scanned discharge summary](docs/discharge-ocr.md)
-- [Pre-admission claim-failure scenarios and coordinator actions](docs/claim-journey-results.md)
-- [Build, verify and operate the staff release](docs/deployment.md)
-- [Color preference research and worklist palette](docs/workspace-colors.md)
-
-- [US policy accuracy and field-specific verification](docs/us-hybrid-decision.md)
-- [Coordinator pilot, staff time and cost per verified question](docs/coordinator-pilot.md)
-- [Same-case replacement during a live OCR request](docs/same-case-revision.md) and [encounter, lease and export trials](docs/case-revision-guards.md)
-- [Benchmark comparison and preprocessing recommendation](docs/benchmark-comparison.md)
-- [Context sizing and token counts](docs/context-budget.md)
-- [Coordinator application design, revision contracts and three-person build plan](docs/application-design.md)
-- [Coordinator screen walkthrough and product design references](docs/coordinator-ux.md)
-- [Team journey compared with Thai hospital and insurer workflows](docs/planned-admission-flow.md)
-- [Stack, architecture and product research](docs/architecture.md)
-- [Original PDFs, reviewed JSON rules and source citations](docs/policy-representation.md)
-- [OpenAI hosting, retrieval and credit scope](docs/cloud-rag.md)
-- [Thai and English embedding comparison](docs/embedding-eval.md)
-- [Decisions API fit and Codex Security for the tech lead](docs/decisions.md)
-- [Synthetic policy and treatment packets](fixtures/README.md)
-- [Performance measurements and reproduction commands](docs/performance.md)
-- [Demo script](docs/demo.md)
+<a id="coordinator-workspace"></a>
 
 ## Run the demo
 
-### Coordinator workspace
-
-Use Python 3.12, uv, Node 24 with npm, and PostgreSQL with `initdb` and `pg_ctl` on PATH. From a checkout containing the coordinator app, run the following as a regular user.
+The local rehearsal uses fictional patient and billing data and works without an API key. From the repository root, with Python 3.12, uv, Node 24 with npm, and PostgreSQL’s `initdb` and `pg_ctl` on your PATH, run the following as a regular user.
 
 ```sh
 npm --prefix web ci
@@ -52,99 +18,16 @@ npm --prefix web run build
 uv run --locked python app/run_workspace.py
 ```
 
-Open [the local workspace](http://127.0.0.1:8038/). On the discharge worklist, choose **Try duplicate bill example**. Inspect the repeated pharmacy charge on page 2, choose **Try corrected bill**, and save the corrected revision. Review its attachments, mark the packet reviewed, then open **Claim and attachments** to preview each original or download the export. **Version history** keeps the original bill accessible.
+1. Open the [local discharge worklist](http://127.0.0.1:8038/) and choose **Try duplicate bill example**.
+2. Open the finding. Page 2 shows the same pharmacy item twice. Choose **Try corrected bill**, inspect the replacement, confirm it belongs to the encounter and select **Save corrected packet**.
+3. Choose **Review discharge packet**, review the attachments and select **Mark packet reviewed**. Open **Claim and attachments** to preview the originals or download the reviewed PDF. **Version history** still opens the first bill.
 
-Choose **Try a case** on the pre-arrival worklist to start a fresh synthetic example. Choose **Partial guarantee** to compare the written letter with actual admission charges, or open Z002 to replace an unitemized estimate. Select an attachment to preview the exact original before downloading the reviewed packet.
+## Where OpenAI fits
 
-The launcher saves case history in a dedicated PostgreSQL cluster under `.local/workspace/`. Use `--data-dir .local/rehearsal/postgres --port 8040` to start an isolated rehearsal. A networked installation uses staff accounts and a dedicated `DATABASE_URL`. Staff record transmissions made through their hospital's existing payer channel. [Staff deployment guide](docs/deployment.md)
+For supported scans, OpenAI transcribes the page so staff can compare the text with the original. An optional multimodal second read inspects Thai and US payer forms and returns observations with page citations. Python checks identifiers and amounts with explicit rules. The FastAPI service stores revisions in PostgreSQL, and the React workspace uses PDF.js to show the original page. Staff sign off on a specific revision. The second read cannot approve a claim or assign a payable amount. [Model evaluation and design](docs/payer-review-design.md)
 
-Digital processing works offline. For supported scanned pre-arrival and discharge exhibits, configure a funded server-side `OPENAI_API_KEY` and `WORKSPACE_ENABLE_OCR=1` in `.env`, then run `uv run --locked --env-file .env python app/run_workspace.py`. When the only remaining discharge finding concerns OCR, **Verify scanned pages** lets staff compare each original page with its transcript and record the verification. The new revision then goes through ordinary staff review. The long-policy evaluation commands below run separately. [Measured workspace performance](docs/workspace-performance.md)
+## What we verified
 
-### Rehearse official Thai and US forms
+The supported-format rehearsal runs from correction through review, export and simulated settlement. Separately, we filled published AIA Thailand, US CMS-1450 and Blue Cross Blue Shield Federal Employee Program forms with synthetic cases to test where screening should stop. On the **first blinded holdout**, the field readers identified **10 of 11** expected outcomes on the correct page. They missed a different named payee. After fixing that and a cents citation, a **fresh panel passed 8 of 8** payee and amount checks on its first run. All eight unverified claims stayed on hold. Actual payer acceptance and staff time savings remain unmeasured. [Blinded results](docs/payer-holdout.md) · [Fresh confirmation](docs/payer-confirmation.md)
 
-With the coordinator prerequisites installed, run both countries in parallel. Each uses its own temporary database. The first run downloads the official blank forms and checks their fingerprints. The reports and filled fictional PDFs stay under `.local/th-payer/` and `.local/us-payer/`.
-
-```sh
-uv run --locked python bench/payer_forms.py
-uv run --locked --env-file .env python bench/payer_forms.py --live
-```
-
-The second command sends synthetic pages to OpenAI for OCR and uses API credit. [Expected results and Thai fixtures](docs/thai-payer-forms.md) · [US fixtures, form purposes and failure cases](docs/us-payer-forms.md)
-
-### Hospital setup and staff access
-
-Use the same release across hospitals, with a separate workspace, staff accounts and PostgreSQL database for each. Set `WORKSPACE_HOSPITAL_NAME` for the name shown at sign-in and in the workspace header. The local loopback demo opens directly on the claim worklist. A networked workspace uses the built-in username and password sign-in over HTTPS. For a shared hackathon presentation, sign in before showing the case. [Account setup and deployment guide](docs/deployment.md)
-
-### Research tools
-
-Clone the repository and use Python 3.12 and [uv](https://docs.astral.sh/uv/getting-started/installation/). Create the local key file and enter your project key. The private file is Git-ignored.
-
-```sh
-git clone https://github.com/aowngong/ZeroUpfront.git
-cd ZeroUpfront
-uv sync --locked --python 3.12
-test -e .env || (umask 077 && cp .env.example .env)
-```
-
-**Original packet checks.** The first command runs four digital checks locally. The second adds two scan variants, transcribes scan pages with Astra and extracts structured fields from the resulting evidence.
-
-```sh
-uv run --locked python app/check_fixtures.py
-uv run --locked --env-file .env python app/check_fixtures.py --live
-```
-
-**Policy and case review.** The live CLI reads the complete selected edition for the two eight-page demo policies. These editions fit comfortably in the model request, and complete context performed better on the evidence benchmark. The Thai example combines a five-page case packet with an eight-page policy and an active rider. The US packet exercises overseas notification and a missing supplier schedule.
-
-```sh
-uv run --locked --env-file .env python app/policy_rag.py th "How do the Gold room limit, active rider and companion bed affect the draft amount?" --scanned-case --live
-uv run --locked --env-file .env python app/policy_rag.py us "Was the overseas accident notice on time under the active rider?" --live
-```
-
-For the hosted search comparison, set up the expiring policy index and select the search mode. Setup creates or reuses an index in the same OpenAI project. Repeat it after seven days of inactivity if the store expires.
-
-```sh
-uv run --locked --env-file .env python app/cloud_policy.py
-uv run --locked --env-file .env python app/policy_rag.py us "How does the overseas notification rider apply?" --policy-context search --live
-```
-
-Both modes submit the selected evidence and current synthetic case to Astra. The program checks quoted text, physical pages and the proposed amount before displaying a draft. Only synthetic policy passages enter the shared index. The source PDFs and the private key file stay in the checkout. Without `--live`, the policy CLI previews lexical search locally. [Model settings](.env.example) · [Hosting and credit scope](docs/cloud-rag.md)
-
-**Evaluation.** Page relevance judgments and financial answers for the complex cases live outside the model input. The supplied JSONL corpus remains a separate text-extraction evaluation.
-
-```sh
-uv run --locked python -m unittest discover -s tests
-uv run --locked python app/finance_eval.py
-uv run --locked python app/eval_documents.py --require-complete
-uv run --locked python app/eval_documents.py --samples ZeroUpfront-training-samples
-uv run --locked --env-file .env python bench/hosted_recall.py --compare
-```
-
-GitHub Actions runs the offline checks on pushes and pull requests. The last command uses your API key and prepared index to compare the live retrieval methods. Use `--live` with the samples evaluator to score model output on the seven held-out text conversations. [Source register and research findings](docs/document-research.md) · [Complex case guide](fixtures/complex/README.md)
-
-## Team ownership
-
-| Role | First responsibility |
-| --- | --- |
-| Tech lead | Own shared interfaces, integration, performance and the release build. |
-| Teammate 1 | Own the main user experience and the on-screen demo flow. |
-| Teammate 2 | Own the data, integrations, and demo fixtures. |
-
-Agree on the one flow you want judges to see. Build a minimal version that runs end to end, then polish it. Use GitHub Issues for work that needs coordination and assign each issue one owner.
-
-## Git workflow
-
-Share the public repository link for read access. As repo owner, invite both teammates through **Settings → Collaborators** to let them push feature branches directly to this repository. Invite teammates who run live checks to the funded OpenAI API project so each can create their own key.
-
-1. Branch from `main` for each task, using a short name such as `feat/demo-flow`.
-2. Open a small pull request with a summary and a quick way to verify it. Request review from the tech lead for changes to shared interfaces, setup, or deployment. For other changes, any teammate can review.
-3. Squash-merge once the change is verified. Keep `main` in a state the team can demo.
-
-Before submission, run through the demo from a fresh clone and tag the commit you submit.
-
-## Inspect one scanned or digital PDF page
-
-```sh
-uv run --locked --env-file .env python app/document_text.py fixtures/complex/th-case-mixed.pdf --page 4 --live
-```
-
-Native pages are read locally. For a broken text layer, select a single page and add `--force-vision`. Astra receives that physical page as a one-page PDF. The included scan PDFs are ready to use without local OCR software.
+[Setup and contributor runbook](CONTRIBUTING.md) · [Staff deployment](docs/deployment.md) · [Open-source components, licenses, services and form sources](THIRD_PARTY.md)
