@@ -6,13 +6,13 @@ import os
 from typing import Annotated, Literal
 from uuid import uuid4
 
-from fastapi import APIRouter, File, Form, Header, HTTPException, Query, Request, Response, UploadFile
+from fastapi import APIRouter, Depends, File, Form, Header, HTTPException, Query, Request, Response, UploadFile
 from openai import APIError, OpenAI
 from pydantic import BaseModel, ConfigDict, Field
 
 from app import discharge_store as store
 from app.case_workflow import validate_attachment
-from app.workspace_http_common import _actor, _pdf, _read_upload, _revision, ocr_service_error
+from app.workspace_http_common import _actor, _pdf, _read_upload, _revision, accept_files, ocr_service_error
 
 
 router = APIRouter(prefix="/api/discharge", tags=["Discharge"])
@@ -113,7 +113,7 @@ def queue(request: Request):
     return store.summaries(request.app.state.dsn)
 
 
-@router.post("", response_model=Detail, status_code=201)
+@router.post("", response_model=Detail, status_code=201, dependencies=[Depends(accept_files("bill", "summary", "letter", "records"))])
 def intake(
     request: Request,
     member: Annotated[str, Form(min_length=1, max_length=150)],
@@ -200,7 +200,7 @@ def sample_bill(request: Request, ident: str):
     return _pdf(raw, f"{ident}-corrected-bill.pdf")
 
 
-@router.post("/{ident}/documents", response_model=Detail)
+@router.post("/{ident}/documents", response_model=Detail, dependencies=[Depends(accept_files("bill", "summary", "letter", "records", "file"))])
 def documents(
     request: Request,
     ident: str,
@@ -350,7 +350,7 @@ class Workflow(BaseModel):
     file: UploadFile | None = None
 
 
-@router.post("/{ident}/workflow", response_model=Detail)
+@router.post("/{ident}/workflow", response_model=Detail, dependencies=[Depends(accept_files("file"))])
 def workflow(
     request: Request,
     ident: str,

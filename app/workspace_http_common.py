@@ -1,7 +1,8 @@
 """Shared HTTP guards for admission and discharge workspaces."""
 import re
 
-from fastapi import HTTPException, Response
+from fastapi import HTTPException, Request, Response
+from starlette.datastructures import UploadFile as MultipartFile
 from openai import APIConnectionError, APITimeoutError, AuthenticationError, PermissionDeniedError, RateLimitError
 
 INTAKE_BYTES = 24 * 1024 * 1024
@@ -17,6 +18,23 @@ def ocr_service_error(exc):
     if isinstance(exc, (APIConnectionError, APITimeoutError)) or (getattr(exc, "status_code", None) or 0) >= 500:
         return HTTPException(503, "The cloud OCR provider timed out or is temporarily unavailable. Retry later.")
     return HTTPException(502, "The cloud OCR provider rejected this request. Check the model and document settings.")
+
+
+def accept_files(*allowed: str):
+    """Check the original multipart list before FastAPI selects one value per named role."""
+    async def validate(request: Request):
+        form = await request.form()
+        seen = set()
+        for field, value in form.multi_items():
+            if isinstance(value, MultipartFile) and field not in allowed:
+                raise HTTPException(422, f"Unsupported attachment field '{field}'. Accepted file fields: {', '.join(allowed)}.")
+            if field not in allowed:
+                continue
+            if field in seen:
+                raise HTTPException(422, f"More than one value was supplied for '{field}'. Send one PDF per role.")
+            seen.add(field)
+
+    return validate
 
 
 def _revision(if_match):
