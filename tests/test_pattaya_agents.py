@@ -67,6 +67,37 @@ class PattayaAgentTests(unittest.TestCase):
                 self.assertEqual(settled["next_action"], "complete")
                 self.assertIsNone(settled["shortfall_owner"])
 
+    def test_saved_tickets_and_legacy_tickets_keep_their_executed_price(self):
+        original = agents.quotes()["forward"]
+        original_schema = {"instrument", "rate_thb_per_usd", "trade_date", "value_date", "hospital_due_date", "usd_minor"}
+        for legacy in (False, True):
+            with self.subTest(legacy=legacy):
+                case = claim("forward", 23870000)
+                if legacy:
+                    case["events"][1]["data"] = {key: original[key] for key in original_schema}
+                with patch.dict(agents.BANK_TERMS, forward=("35.00", "2026-11-27")):
+                    report = agents.review(case)
+                self.assertEqual(report["booked_quote"], original)
+                self.assertEqual(report["booked_quote"]["usd_minor"], 686782)
+                current = next(q for q in report["quotes"] if q["instrument"] == "forward")
+                self.assertEqual(current["usd_minor"], 682857)
+                self.assertNotEqual(current["quote_id"], report["booked_quote"]["quote_id"])
+                self.assertIn("2026-11-30", report["trace"][1]["summary"])
+                self.assertEqual(report["next_action"], "top_up")
+                self.assertEqual((report["outstanding_minor"], report["shortfall_owner"]), (30000, "insurer"))
+
+    def test_inconsistent_trade_ticket_requires_review(self):
+        for key, invalid in [("instrument", "swap"), ("trade_date", None), ("value_date", "2026-11-18"),
+                             ("rate_thb_per_usd", "NaN"), ("usd_minor", True), ("thb_minor", 239000),
+                             ("sell_currency", "EUR"), ("buy_currency", "USD"), ("quote_id", "wrong")]:
+            with self.subTest(key=key):
+                case = claim("forward", 23870000)
+                case["events"][1]["data"][key] = invalid
+                report = agents.review(case)
+                self.assertEqual(report["next_action"], "review")
+                self.assertIsNone(report["booked_quote"])
+                self.assertEqual(report["outstanding_minor"], 30000)
+
     def test_unexpected_evidence_needs_finance_review(self):
         examples = []
         duplicate = claim("spot")

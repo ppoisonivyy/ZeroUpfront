@@ -1,5 +1,7 @@
 """Local rehearsal transactions. The example has no bank, venue or payments connection."""
 
+from decimal import Decimal
+
 import psycopg
 
 from app import discharge_store as store
@@ -31,7 +33,7 @@ def require_case(case):
         raise WorkspaceError(404, "Pattaya practice revision not found.")
 
 
-def apply(dsn, ident, revision, action, version):
+def apply(dsn, ident, revision, action, version, *, quote_id=None, bank_document=None):
     from app import pattaya_agents
 
     required_step = {"book_spot": "book", "book_forward": "book", "record_short_credit": "record_short", "record_topup": "top_up"}
@@ -40,7 +42,12 @@ def apply(dsn, ident, revision, action, version):
         case = store._detail(db, ident, revision)
         require_case(case)
         reference = f"SIM-{ident}-{action.upper()}"
-        if any(event["data"].get("reference") == reference for event in case["events"]):
+        if action in pattaya_case.CREDIT_DOCUMENTS and bank_document != pattaya_case.CREDIT_DOCUMENTS[action]:
+            raise WorkspaceError(422, "Select the receiving-bank credit advice for this payment.")
+        previous = next((event for event in case["events"] if event["data"].get("reference") == reference), None)
+        if previous:
+            if previous["kind"] == "fx_booking" and previous["data"].get("quote_id") != quote_id:
+                raise WorkspaceError(409, "A different bank quote was already booked. Reload the saved ticket.")
             return case
         if case["workflow_version"] != version:
             raise WorkspaceError(409, "The ledger changed. Refresh the case to review the next step.")
@@ -49,13 +56,45 @@ def apply(dsn, ident, revision, action, version):
         if action in {"book_spot", "book_forward"}:
             instrument = "spot" if action == "book_spot" else "forward"
             quote = pattaya_agents.quotes()[instrument]
+            if quote_id != quote["quote_id"]:
+                raise WorkspaceError(409, "The bank quote changed or was not supplied. Refresh and confirm the displayed quote.")
             data = dict(quote, reference=reference, counterparty="Simulated partner bank")
             store.append_event(db, case, "fx_booking", data, "Practice treasury desk")
             return store._detail(db, ident, revision)
-        first_credit = action == "record_short_credit"
-        return store.record(db, ident, revision, {
-            "action": "payment", "workflow_version": version, "reference": reference, "currency": "THB",
-            "amount": "238700.00" if first_credit else "300.00",
-            "notes": ("Simulated beneficiary credit. THB 300 remains due from the insurer."
-                      if first_credit else "Simulated insurer-funded top-up credited to the hospital."),
-        }, "Practice hospital finance", None, None, None, pattaya_rehearsal=True)
+        advice = pattaya_case.bank_message(ident, bank_document)
+        return _post_advice(db, case, action, advice, reference)
+
+
+def _post_advice(db, case, action, advice, reference):
+    decision = case["payer_decision"]
+    due = decision["amount_minor"] - case["paid_by_currency"].get("THB", 0)
+    if (advice.kind != pattaya_case.CREDIT_DOCUMENTS[action] or advice.case_id != case["id"]
+            or advice.encounter != case["encounter"] or advice.beneficiary != case["facility"]
+            or not advice.bank_reference.strip() or advice.currency != decision["currency"] or advice.gross_minor != due
+            or advice.net_minor is None or not 0 < advice.net_minor <= due
+            or (advice.fee_minor is not None and advice.gross_minor - advice.net_minor != advice.fee_minor)):
+        raise WorkspaceError(422, "The receiving-bank advice does not match this claim and outstanding amount.")
+    if any(e["data"].get("bank_reference") == advice.bank_reference for e in case["events"] if e["kind"] == "payment"):
+        raise WorkspaceError(409, "The receiving-bank reference is already recorded.")
+    if advice.fee_minor is None:
+        notes = "The receiving bank confirmed the net credit. The cause of any difference is unverified."
+    elif advice.fee_minor:
+        notes = f"Receiving-bank advice documents a THB {Decimal(advice.fee_minor) / 100:,.2f} deduction. The insurer covers it."
+    else:
+        notes = "Insurer-funded top-up. The receiving bank confirms the full credit with zero deduction."
+    return store.record(db, case["id"], case["revision"], {
+        "action": "payment", "workflow_version": case["workflow_version"], "reference": reference,
+        "currency": advice.currency, "amount": str(Decimal(advice.net_minor) / 100), "notes": notes,
+        "bank_advice": {"bank_reference": advice.bank_reference, "value_date": advice.value_date,
+                        "beneficiary": advice.beneficiary, "gross_minor": advice.gross_minor, "fee_minor": advice.fee_minor},
+    }, "Practice hospital finance", None, advice.document(), f"pattaya-{advice.kind}-advice.pdf", pattaya_rehearsal=True)
+
+
+def preview_bank_document(case, kind):
+    from app import pattaya_agents
+
+    next_step = pattaya_agents.review(case)["next_action"]
+    visible = {"record_short": ("instruction", "initial_credit"), "top_up": ("topup_credit",)}
+    if kind not in visible.get(next_step, ()):
+        raise WorkspaceError(404, "No pending bank document of this kind. Recorded receipts have their own sources.")
+    return pattaya_case.bank_message(case["id"], kind).document()
