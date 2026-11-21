@@ -46,9 +46,9 @@ export function SourceView({
         <div className="cite-label">
           {source.label} <span>· Page {page}</span>
         </div>
-        <blockquote>
-          {source.quote || "No verified excerpt is available for this source."}
-        </blockquote>
+        {source.recordedSummary ? <p className="recorded-summary">
+          <strong>Recorded summary</strong> {source.recordedSummary}
+        </p> : <blockquote>{source.quote || "No verified excerpt is available for this source."}</blockquote>}
       </div>
       <div className="viewer-meta">
         <span>

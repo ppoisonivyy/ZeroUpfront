@@ -1,5 +1,6 @@
 """Read-only agents for the fictional Pattaya THB guarantee and treasury rehearsal."""
 
+import hashlib
 import json
 import os
 import re
@@ -18,23 +19,20 @@ HOSPITAL_DUE_DATE = "2026-11-30"
 BANK_TERMS = {"spot": ("34.00", "2026-11-23"), "forward": ("34.80", HOSPITAL_DUE_DATE)}
 
 
-def _usd_minor(rate):
-    return int((GUARANTEE_MINOR / Decimal(rate)).quantize(Decimal("1"), rounding=ROUND_HALF_UP))
+def _quote(instrument, rate, trade_date, value_date, due_date):
+    terms = dict(instrument=instrument, rate_thb_per_usd=rate, trade_date=trade_date,
+                 value_date=value_date, hospital_due_date=due_date, buy_currency="THB",
+                 thb_minor=GUARANTEE_MINOR, sell_currency="USD",
+                 usd_minor=int((GUARANTEE_MINOR / Decimal(rate)).quantize(Decimal("1"), rounding=ROUND_HALF_UP)))
+    payload = json.dumps(terms, sort_keys=True, separators=(",", ":")).encode()
+    terms["quote_id"] = "v1-" + hashlib.sha256(payload).hexdigest()
+    return terms
 
 
 def quotes():
-    """Simulated bank prices in THB per USD, buying the guaranteed baht amount."""
-    return {
-        instrument: {
-            "instrument": instrument,
-            "rate_thb_per_usd": rate,
-            "trade_date": TRADE_DATE,
-            "value_date": value_date,
-            "hospital_due_date": HOSPITAL_DUE_DATE,
-            "usd_minor": _usd_minor(rate),
-        }
-        for instrument, (rate, value_date) in BANK_TERMS.items()
-    }
+    """The simulator accepts only the ID of a quote on its current sheet."""
+    return {instrument: _quote(instrument, rate, TRADE_DATE, value_date, HOSPITAL_DUE_DATE)
+            for instrument, (rate, value_date) in BANK_TERMS.items()}
 
 
 def model_enabled():
@@ -55,30 +53,36 @@ def _guarantee(case):
 
 
 def _funding(case):
-    """Validate the stored terms of the accepted booking independently of later offers."""
+    """Read the saved ticket. A later quote sheet cannot reprice an existing booking."""
     bookings = [event["data"] for event in case["events"] if event["kind"] == "fx_booking"]
     if not bookings:
         return None, True
     if len(bookings) != 1:
         return None, False
-    data = bookings[0]
-    instrument = data.get("instrument")
-    rate = data.get("rate_thb_per_usd")
-    if instrument not in ("spot", "forward"):
+    saved = bookings[0]
+    if not isinstance(saved, dict):
         return None, False
-    if not isinstance(rate, str) or not re.fullmatch(r"[0-9]{1,6}(?:\.[0-9]{1,12})?", rate):
+    instrument, rate = saved.get("instrument"), saved.get("rate_thb_per_usd")
+    if (instrument not in ("spot", "forward") or not isinstance(rate, str)
+            or not re.fullmatch(r"[0-9]{1,10}(?:\.[0-9]{1,10})?", rate) or Decimal(rate) <= 0):
         return None, False
     try:
-        delivery = date.fromisoformat(data["value_date"])
+        trade, value, due = (date.fromisoformat(saved[key]) for key in ("trade_date", "value_date", "hospital_due_date"))
     except (KeyError, TypeError, ValueError):
         return None, False
-    if (data.get("trade_date") != TRADE_DATE or data.get("hospital_due_date") != HOSPITAL_DUE_DATE
-            or not (TRADE_DATE <= delivery.isoformat() <= HOSPITAL_DUE_DATE)
-            or Decimal(rate) <= 0 or type(data.get("usd_minor")) is not int
-            or data["usd_minor"] != _usd_minor(rate)):
+    if (trade.isoformat() != TRADE_DATE or due.isoformat() != HOSPITAL_DUE_DATE
+            or not trade <= value <= due or (instrument == "forward" and trade == value)):
         return None, False
-    fields = ("instrument", "rate_thb_per_usd", "trade_date", "value_date", "hospital_due_date", "usd_minor")
-    return {key: data[key] for key in fields}, True
+    ticket = _quote(instrument, rate, trade.isoformat(), value.isoformat(), due.isoformat())
+    # Original tickets had an implicit buy-THB / sell-USD direction and THB 239,000 notional.
+    versioned = {"quote_id", "buy_currency", "sell_currency", "thb_minor"}
+    has_version = bool(versioned.intersection(saved))
+    if has_version and type(saved.get("thb_minor")) is not int:
+        return None, False
+    fields = ticket if has_version else ticket.keys() - versioned
+    if type(saved.get("usd_minor")) is not int or any(saved.get(key) != ticket[key] for key in fields):
+        return None, False
+    return ticket, True
 
 
 def _latest_event(case, kind, label):
@@ -200,11 +204,7 @@ def review(case, *, use_model=False):
     patient_fx_minor = 0 if fees_verified else None
     booking, valid_booking = _funding(case)
     booked = booking["instrument"] if booking else None
-    prices = []
-    if booking:
-        prices.append(booking)
-    elif valid_booking:
-        prices.extend(quotes().values())
+    prices = list(quotes().values())
     amounts = case["paid_by_currency"]
     paid = amounts.get("THB", 0)
     valid_currency = set(amounts) <= {"THB"}
@@ -223,7 +223,8 @@ def review(case, *, use_model=False):
              summary=("The recorded booking terms are inconsistent. Review the funding record."
                       if not valid_booking else f"The simulated {booked} trade delivers THB 239,000 on {booking['value_date']}."
                       if booked else "Compare the two simulated USD-to-THB quotes before recording a booking."),
-             evidence=f"Simulated bank prices for {TRADE_DATE} · {_latest_event(case, 'fx_booking', 'Funding booking')}"),
+             evidence=(_latest_event(case, "fx_booking", "Funding booking") if booked
+                       else f"Simulated bank prices for {TRADE_DATE}")),
         dict(agent="Hospital receipts", status=action,
              summary=(f"Hospital credits total {_thb(paid)}. " + (
                  "Finance review is required before another settlement step." if action == "review"
@@ -235,7 +236,7 @@ def review(case, *, use_model=False):
     if use_model:
         facts = {
             "read_guarantee": dict(verified=fees_verified, amount_minor=due, currency="THB", patient_fx_minor=patient_fx_minor),
-            "compare_funding": dict(quotes=prices, booking=booked, valid_booking=valid_booking),
+            "compare_funding": dict(quotes=prices, booking=booked, booked_quote=booking, valid_booking=valid_booking),
             "reconcile_credits": dict(paid_minor=paid, outstanding_minor=outstanding, currency="THB",
                                      valid_currency=valid_currency, shortfall_owner=owner,
                                      expected_first_credit_minor=SHORT_CREDIT_MINOR),
@@ -243,5 +244,5 @@ def review(case, *, use_model=False):
         model_review = _model_assessment(facts, action)
     return dict(revision=case["revision"], workflow_version=case["workflow_version"], hospital_due_date=HOSPITAL_DUE_DATE,
                 guaranteed_minor=due, paid_minor=paid, outstanding_minor=outstanding, patient_fx_minor=patient_fx_minor,
-                shortfall_owner=owner, booking=booked, quotes=prices, short_credit_minor=SHORT_CREDIT_MINOR,
+                shortfall_owner=owner, booking=booked, booked_quote=booking, quotes=prices, short_credit_minor=SHORT_CREDIT_MINOR,
                 next_action=action, trace=trace, model_enabled=model_enabled(), model_review=model_review)

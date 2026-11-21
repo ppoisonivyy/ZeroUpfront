@@ -63,9 +63,15 @@ export type DischargeClaim = {
   events: (Omit<WorkflowEvent, "kind"> & { kind: string })[];
 };
 export type DischargeQueue = "all" | "needs" | "ready" | "payer";
+export type PattayaSettlementSummary = {
+  status: "unpaid" | "partially_paid" | "paid" | "reconciliation_required";
+  outstanding_minor: number | null;
+};
 export type DischargeWorklist = {
-  items: Pick<DischargeClaim, "id" | "encounter" | "member" | "procedure" | "insurer" |
-    "discharge_date" | "insurer_status" | "bill_total_minor" | "currency" | "status">[];
+  items: (Pick<DischargeClaim, "id" | "encounter" | "member" | "procedure" | "insurer" |
+    "discharge_date" | "insurer_status" | "bill_total_minor" | "currency" | "status"> & {
+    pattaya_settlement?: PattayaSettlementSummary | null;
+  })[];
   counts: Record<DischargeQueue, number>;
   total: number;
   page: number;

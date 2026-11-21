@@ -1,12 +1,13 @@
 import { useEffect, useState } from "react";
 import { ArrowRight, ExternalLink, FileText, Landmark } from "lucide-react";
-import { api, displayDate, RequestError, type Source } from "./api";
+import { api, displayDate, RequestError, sameOriginSource, type Source } from "./api";
 import { claimPath, minorMoney, type DischargeClaim } from "./dischargeApi";
 import { GuaranteeFees } from "./GuaranteeFees";
 import "./pattaya.css";
 
 type Instrument = "spot" | "forward";
 type BookingAction = "book_spot" | "book_forward" | "record_short_credit" | "record_topup";
+type FundingTerms = { instrument: Instrument; rate_thb_per_usd: string; usd_minor: number; trade_date: string; value_date: string };
 type Review = {
   revision: number;
   workflow_version: number;
@@ -17,8 +18,8 @@ type Review = {
   patient_fx_minor: number | null;
   short_credit_minor: number;
   shortfall_owner: "insurer" | null;
-  booking: Instrument | null;
-  quotes: { instrument: Instrument; rate_thb_per_usd: string; usd_minor: number; trade_date: string; value_date: string }[];
+  booked_quote: FundingTerms | null;
+  quotes: (FundingTerms & { quote_id: string })[];
   next_action: "book" | "record_short" | "top_up" | "complete" | "review";
   trace: { agent: string; summary: string; evidence: string }[];
 };
@@ -61,26 +62,30 @@ function MarketReference({ path, amount }: { path: string; amount: number }) {
   </section>;
 }
 
-export function PattayaSettlement({ claim, onUpdated, reload, openLetter }: {
+export function PattayaSettlement({ claim, onUpdated, reload, openSource }: {
   claim: DischargeClaim;
   onUpdated: (next: DischargeClaim) => void;
   reload: () => void;
-  openLetter: (source: Source) => void;
+  openSource: (source: Source) => void;
 }) {
   const base = claimPath(claim.id) + "/pattaya";
   const [review, setReview] = useState<Review>();
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<Error>();
-  const [choice, setChoice] = useState<Instrument>();
+  const [selectedQuoteId, setSelectedQuoteId] = useState<string>();
   const [attempt, setAttempt] = useState(0);
   const guarantee = claim.events.find(event => event.kind === "reply" && event.data.outcome === "confirmed" && event.source_url);
   const guaranteeSource = guarantee?.source_url ? {
     role: "payer_decision", label: "Final insurer guarantee", url: guarantee.source_url, page: 1,
-    quote: typeof guarantee.data.terms === "string" ? guarantee.data.terms : "",
+    quote: "", recordedSummary: typeof guarantee.data.terms === "string" ? guarantee.data.terms : undefined,
   } : null;
   const revision = claim.revision, workflowVersion = claim.workflow_version;
   const current = review?.revision === revision && review.workflow_version === workflowVersion ? review : undefined;
-  const bookedQuote = current?.quotes.find(quote => quote.instrument === current.booking);
+  const bookedQuote = current?.booked_quote;
+  const selectedQuote = current?.quotes.find(quote => quote.quote_id === selectedQuoteId);
+  const receipts = claim.events.filter(event => event.kind === "payment");
+  const preview = (kind: "instruction" | "initial_credit" | "topup_credit") =>
+    sameOriginSource(base + "/bank-documents/" + kind + "?revision=" + revision);
   useEffect(() => {
     const controller = new AbortController();
     setError(undefined);
@@ -98,17 +103,24 @@ export function PattayaSettlement({ claim, onUpdated, reload, openLetter }: {
 
   async function confirm(action: BookingAction) {
     if (pending || !current) return;
+    const booking = action === "book_spot" || action === "book_forward";
+    if (booking && !selectedQuote) return;
+    const bankDocument = action === "record_short_credit" ? "initial_credit" : action === "record_topup" ? "topup_credit" : undefined;
     setPending(true);
     setError(undefined);
     try {
       const response = await api(base + "/actions", {
         method: "POST", headers: { "Content-Type": "application/json", "If-Match": '"' + revision + '"' },
-        body: JSON.stringify({ action, confirmed: true, workflow_version: workflowVersion }),
+        body: JSON.stringify({
+          action, confirmed: true, workflow_version: workflowVersion,
+          quote_id: booking ? selectedQuote?.quote_id : undefined, bank_document: bankDocument,
+        }),
       });
       const next: DischargeClaim = await response.json();
       if (next.id !== claim.id || next.revision !== revision) throw new Error("The returned claim changed. Reload before continuing.");
       onUpdated(next);
     } catch (failure) {
+      if (failure instanceof RequestError && [409, 412].includes(failure.status)) setReview(undefined);
       setError(failure instanceof Error ? failure : new Error("The simulation request could not be completed."));
     } finally { setPending(false); }
   }
@@ -126,7 +138,7 @@ export function PattayaSettlement({ claim, onUpdated, reload, openLetter }: {
       {current && <>
         <dl className="pattaya-balances">
           <div><dt>Insurer guarantee</dt><dd>{minorMoney(current.guaranteed_minor, "THB")}</dd>
-            {guaranteeSource && <button type="button" className="text-action" onClick={() => openLetter(guaranteeSource)}><FileText size={13} />View final guarantee</button>}</div>
+            {guaranteeSource && <button type="button" className="text-action" onClick={() => openSource(guaranteeSource)}><FileText size={13} />View final guarantee</button>}</div>
           <div><dt>Hospital credited</dt><dd>{minorMoney(current.paid_minor, "THB")}</dd></div>
           <div><dt>Outstanding hospital balance</dt><dd>{minorMoney(current.outstanding_minor, "THB")}</dd></div>
           <div><dt>Patient FX charge</dt><dd>{current.patient_fx_minor === null ? "Needs review" : minorMoney(current.patient_fx_minor, "THB")}</dd></div>
@@ -138,20 +150,25 @@ export function PattayaSettlement({ claim, onUpdated, reload, openLetter }: {
               <MarketReference key={base + revision} path={base + "/reference-rate?revision=" + revision} amount={current.guaranteed_minor} />
               <fieldset className="pattaya-quotes" disabled={pending}><legend>Simulated bank quotes · {displayDate(current.quotes[0]?.trade_date || "")}</legend>
                 {current.quotes.map(quote => <label key={quote.instrument}>
-                  <input type="radio" name="pattaya-quote" value={quote.instrument} checked={choice === quote.instrument} onChange={() => setChoice(quote.instrument)} />
+                  <input type="radio" name="pattaya-quote" value={quote.instrument} checked={selectedQuoteId === quote.quote_id} onChange={() => setSelectedQuoteId(quote.quote_id)} />
                   <span><strong>{instrumentNames[quote.instrument]}</strong><small>Delivery {displayDate(quote.value_date)}</small></span>
                   <span className="pattaya-price"><strong>{minorMoney(quote.usd_minor, "USD")}</strong><small>{quote.rate_thb_per_usd} THB / USD</small></span>
                 </label>)}
               </fieldset>
-              <button className="primary" disabled={pending || !choice} onClick={() => choice && void confirm(choice === "spot" ? "book_spot" : "book_forward")}>{choice ? "Confirm simulated " + choice + " booking" : "Select a funding option"} <ArrowRight size={14} /></button>
+              <button className="primary" disabled={pending || !selectedQuote} onClick={() => selectedQuote && void confirm(selectedQuote.instrument === "spot" ? "book_spot" : "book_forward")}>{selectedQuote ? "Confirm simulated " + selectedQuote.instrument + " booking" : "Select a funding option"} <ArrowRight size={14} /></button>
             </>}
             {bookedQuote && <p className="pattaya-deal">{instrumentNames[bookedQuote.instrument]} booked {displayDate(bookedQuote.trade_date)} · {minorMoney(bookedQuote.usd_minor, "USD")} at {bookedQuote.rate_thb_per_usd} THB / USD · THB delivery {displayDate(bookedQuote.value_date)}.</p>}
             {current.next_action === "record_short" && <>
-              <p>The simulated bank advice shows a hospital credit of {minorMoney(current.short_credit_minor, "THB")}. Confirm the receipt to update the outstanding balance.</p>
+              <p>The payer instructed a transfer. The receiving bank reports {minorMoney(current.short_credit_minor, "THB")} credited to the hospital.</p>
+              <div className="pattaya-document-links">
+                <a className="text-action" href={preview("instruction")} target="_blank" rel="noreferrer"><FileText size={14} />Transfer instruction</a>
+                <a className="text-action" href={preview("initial_credit")} target="_blank" rel="noreferrer"><FileText size={14} />Beneficiary credit advice</a>
+              </div>
               <button className="primary" disabled={pending} onClick={() => void confirm("record_short_credit")}>Record simulated short payment</button>
             </>}
             {current.next_action === "top_up" && current.shortfall_owner === "insurer" && <>
-              <p><strong>The insurer owes {minorMoney(current.outstanding_minor, "THB")}.</strong> Its guarantee covers the shortfall. Record the separate credit when the top-up arrives.</p>
+              <p><strong>The insurer owes {minorMoney(current.outstanding_minor, "THB")}.</strong> Its baht guarantee covers the shortfall. Record the separate credit when the top-up arrives.</p>
+              <div className="pattaya-document-links"><a className="text-action" href={preview("topup_credit")} target="_blank" rel="noreferrer"><FileText size={14} />Insurer top-up credit advice</a></div>
               <button className="primary" disabled={pending} onClick={() => void confirm("record_topup")}>Record simulated insurer top-up</button>
             </>}
             {current.next_action === "complete" && <p>The recorded hospital receipts cover the guarantee in full.</p>}
@@ -159,9 +176,23 @@ export function PattayaSettlement({ claim, onUpdated, reload, openLetter }: {
           </div>
           <div className="pattaya-reviews"><h3>Settlement evidence</h3>
             <ul>{current.trace.map(step => <li key={step.agent}><strong>{step.agent}</strong><p>{step.summary}</p><small>{step.evidence}</small></li>)}</ul>
-            <GuaranteeFees claim={claim} openLetter={openLetter} />
+            <GuaranteeFees claim={claim} openLetter={openSource} />
           </div>
         </div>
+        {receipts.length > 0 && <div className="pattaya-receipts"><h3>Hospital credit receipts</h3>
+          <ul>{receipts.map(receipt => <li key={receipt.id}>
+            <div><strong>{minorMoney(typeof receipt.data.amount_minor === "number" ? receipt.data.amount_minor : null, "THB")}</strong>
+              {typeof receipt.data.value_date === "string" && <span> · {displayDate(receipt.data.value_date)}</span>}
+              {receipt.source_url && typeof receipt.data.fee_minor === "number" &&
+                <small>Documented bank deduction · {minorMoney(receipt.data.fee_minor, "THB")}</small>}
+              {typeof receipt.data.bank_reference === "string" && <small>Bank reference · {receipt.data.bank_reference}</small>}
+            </div>
+            {receipt.source_url
+              ? <button className="text-action" onClick={() => openSource({ role: "bank_credit", label: "Recorded beneficiary credit advice",
+                url: receipt.source_url!, page: 1, quote: "" })}><FileText size={14} />View recorded advice</button>
+              : <small>No bank advice attached. The reason for any difference is unverified.</small>}
+          </li>)}</ul>
+        </div>}
       </>}
     </div>
   </section>;

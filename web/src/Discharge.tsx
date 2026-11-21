@@ -289,7 +289,7 @@ function ClaimDetail({
       )}
       {!pinned && !superseded && !pattayaExample && <GuaranteeFees claim={claim} openLetter={openLetter} />}
       {showPattaya ? (
-        <PattayaSettlement claim={claim} onUpdated={onUpdated} reload={reload} openLetter={openLetter} />
+        <PattayaSettlement claim={claim} onUpdated={onUpdated} reload={reload} openSource={openLetter} />
       ) : <dl className="facts claim-facts">
         <div>
           <dt>Final bill total</dt>
@@ -518,6 +518,19 @@ function ClaimDetail({
                 if (event.kind === "fx_booking" && typeof data.usd_minor === "number") {
                   data.funding_cost = minorMoney(data.usd_minor, "USD");
                   delete data.usd_minor;
+                  if (typeof data.thb_minor === "number") {
+                    data.thb_purchased = minorMoney(data.thb_minor, "THB");
+                    delete data.thb_minor;
+                  }
+                  delete data.quote_id;
+                }
+                if (pattayaExample && event.kind === "payment" && data.bank_reference) {
+                  const currency = String(event.data.currency);
+                  if (typeof data.gross_minor === "number") data.gross_remittance = minorMoney(data.gross_minor, currency);
+                  if (typeof data.fee_minor === "number") data.bank_fee = minorMoney(data.fee_minor, currency);
+                  delete data.gross_minor;
+                  delete data.fee_minor;
+                  delete data.reference;
                 }
                 return <RecordedEvent key={event.id} event={{ ...event, data }} index={i} />;
               })}

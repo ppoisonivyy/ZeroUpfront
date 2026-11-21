@@ -68,16 +68,36 @@ class PattayaAgentTests(unittest.TestCase):
                 self.assertEqual(settled["next_action"], "complete")
                 self.assertIsNone(settled["shortfall_owner"])
 
-    def test_booking_uses_its_saved_offer_across_market_updates(self):
-        case = claim("spot", 23870000)
-        original = agents.quotes()["spot"]
-        case["events"][1]["data"]["reference"] = "SIM-booking-for-this-case"
-        with patch.dict(agents.BANK_TERMS, spot=("34.05", "2026-11-24")):
-            self.assertNotEqual(agents.quotes()["spot"], original)
-            result = agents.review(case)
-        self.assertEqual(result["booking"], "spot")
-        self.assertEqual(result["quotes"], [original])
-        self.assertEqual(result["next_action"], "top_up")
+    def test_saved_tickets_and_legacy_tickets_keep_their_executed_price(self):
+        original = agents.quotes()["forward"]
+        original_schema = {"instrument", "rate_thb_per_usd", "trade_date", "value_date", "hospital_due_date", "usd_minor"}
+        for legacy in (False, True):
+            with self.subTest(legacy=legacy):
+                case = claim("forward", 23870000)
+                if legacy:
+                    case["events"][1]["data"] = {key: original[key] for key in original_schema}
+                with patch.dict(agents.BANK_TERMS, forward=("35.00", "2026-11-27")):
+                    report = agents.review(case)
+                self.assertEqual(report["booked_quote"], original)
+                self.assertEqual(report["booked_quote"]["usd_minor"], 686782)
+                current = next(q for q in report["quotes"] if q["instrument"] == "forward")
+                self.assertEqual(current["usd_minor"], 682857)
+                self.assertNotEqual(current["quote_id"], report["booked_quote"]["quote_id"])
+                self.assertIn("2026-11-30", report["trace"][1]["summary"])
+                self.assertEqual(report["next_action"], "top_up")
+                self.assertEqual((report["outstanding_minor"], report["shortfall_owner"]), (30000, "insurer"))
+
+    def test_inconsistent_trade_ticket_requires_review(self):
+        for key, invalid in [("instrument", "swap"), ("trade_date", None), ("value_date", "2026-11-18"),
+                             ("rate_thb_per_usd", "NaN"), ("usd_minor", True), ("thb_minor", 239000),
+                             ("sell_currency", "EUR"), ("buy_currency", "USD"), ("quote_id", "wrong")]:
+            with self.subTest(key=key):
+                case = claim("forward", 23870000)
+                case["events"][1]["data"][key] = invalid
+                report = agents.review(case)
+                self.assertEqual(report["next_action"], "review")
+                self.assertIsNone(report["booked_quote"])
+                self.assertEqual(report["outstanding_minor"], 30000)
 
     def test_unconfirmed_fee_terms_preserve_numeric_balance_and_withhold_liability(self):
         for terms in (None, "Fee allocation will be agreed separately.", pattaya_case.TERMS + " Subject to amendment."):

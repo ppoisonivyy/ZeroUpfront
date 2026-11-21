@@ -516,6 +516,8 @@ main:focus:not(:focus-visible) {
   color: var(--muted);
   font-weight: 500;
 }
+.citation .recorded-summary { margin: 6px 0 0; font-size: .91rem; line-height: 1.48; }
+.citation .recorded-summary strong { display: block; font-weight: 650; }
 .citation blockquote {
   border-left: 2px solid #82bda8;
   padding-left: 10px;

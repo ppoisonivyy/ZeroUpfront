@@ -89,14 +89,29 @@ class HospitalDemoTests(unittest.TestCase):
                                          headers={"If-Match":'"1"'}).status_code, 404)
 
             version = case["workflow_version"]
-            for action in ("book_forward", "record_short_credit", "record_topup"):
+            desk = client.get(case_url + "/pattaya?revision=1").json()
+            quote_id = next(q["quote_id"] for q in desk["quotes"] if q["instrument"] == "forward")
+            for action, details in (("book_forward", {"quote_id": quote_id}),
+                                    ("record_short_credit", {"bank_document": "initial_credit"}),
+                                    ("record_topup", {"bank_document": "topup_credit"})):
+                if "bank_document" in details:
+                    path = case_url + "/pattaya/bank-documents/" + details["bank_document"]
+                    advice = client.get(path, params={"revision": 1})
+                    self.assertEqual(advice.status_code, 200)
+                    text = PdfReader(BytesIO(advice.content)).pages[0].extract_text()
+                    self.assertIn("Beneficiary: Canal Bridge Demo Hospital", text)
+                    self.assertIn("Encounter: VISIT-CB-FX", text)
                 response = client.post(case_url + "/pattaya/actions", headers={"If-Match":'"1"'},
-                                       json={"action":action,"confirmed":True,"workflow_version":version})
+                                       json={"action":action, "confirmed":True, "workflow_version":version, **details})
                 self.assertEqual(response.status_code, 200, response.text)
                 saved = response.json()
                 version = saved["workflow_version"]
                 self.assertEqual(saved["events"][-1]["username"], "judge")
                 self.assertEqual(saved["events"][-1]["actor"], "CB coordinator")
+                if "bank_document" in details:
+                    saved_source = saved["events"][-1]["source_url"]
+                    self.assertTrue(saved_source.startswith(base))
+                    self.assertEqual(client.get(saved_source).content, advice.content)
             hospital_demo.seed(hospitals["canal-bridge"])
             self.assertEqual(client.get(case_url + "/pattaya?revision=1").json()["next_action"], "complete")
             self.assertEqual(client.get(south_case + "/pattaya?revision=1").json()["next_action"], "book")

@@ -5,7 +5,7 @@ import {
 } from "lucide-react";
 import { useStaffSession } from "./Auth";
 import { api, displayDate } from "./api";
-import { claimHref, claimPayerStatus, claimStatus, minorMoney, type DischargeClaim, type DischargeQueue, type DischargeWorklist } from "./dischargeApi";
+import { claimHref, claimPayerStatus, claimStatus, minorMoney, type DischargeClaim, type DischargeQueue, type DischargeWorklist, type PattayaSettlementSummary } from "./dischargeApi";
 
 const examples = {
   duplicate_line: "Duplicate bill line", aligned: "Aligned discharge packet",
@@ -24,6 +24,14 @@ const queues = [
 export function ClaimPill({ status }: { status: string }) {
   const Icon = status === "needs_review" ? CircleAlert : status === "staff_reviewed" ? BadgeCheck : ClipboardList;
   return <span className={"claim-pill state-" + status}><Icon size={13} />{claimStatus(status)}</span>;
+}
+
+function settlementLabel(settlement: PattayaSettlementSummary) {
+  if (settlement.status === "paid") return "Paid in full";
+  if (settlement.status === "reconciliation_required" || settlement.outstanding_minor === null)
+    return "Finance reconciliation required";
+  const stage = settlement.status === "partially_paid" ? "Awaiting insurer top-up" : "Awaiting hospital credit";
+  return stage + " · " + minorMoney(settlement.outstanding_minor, "THB");
 }
 
 export function DischargeList({ prior }: { prior?: string }) {
@@ -117,7 +125,7 @@ export function DischargeList({ prior }: { prior?: string }) {
           <span className="entry-subject"><span className="entry-icon"><ReceiptText size={18} /></span>
             <span><strong>{c.procedure}</strong><small>{c.encounter || c.member} · {displayDate(c.discharge_date)}</small></span></span>
           <span className="entry-payer"><strong>{c.insurer || "Unrecorded payer"}</strong>
-            <small>{claimPayerStatus(c.insurer_status || "not_sent")}</small></span>
+            <small>{c.pattaya_settlement ? settlementLabel(c.pattaya_settlement) : claimPayerStatus(c.insurer_status || "not_sent")}</small></span>
           <span className="entry-amount">{minorMoney(c.bill_total_minor, c.currency)}</span>
           <ClaimPill status={c.status} /><ArrowRight className="entry-arrow" size={15} />
         </a></div>)}
