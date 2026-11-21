@@ -304,7 +304,7 @@ def _financial(fields, meta, review):
 
 
 def evaluate_discharge(metadata: dict, originals: dict[str, bytes], filenames: dict[str, str], *, ocr_client=None,
-                       _saved_ocr=None) -> dict:
+                       _saved_ocr=None, _pattaya_fixture=False) -> dict:
     """Screen original exhibits. An aligned packet is only ready for coordinator review."""
     meta = _meta(metadata)
     if not set(originals) <= set(ROLE_ORDER) or set(originals) != set(filenames):
@@ -400,6 +400,9 @@ def evaluate_discharge(metadata: dict, originals: dict[str, bytes], filenames: d
     # its neutral narrative statements can clear automatic screening.
     neutral = {"Attending service": "Orthopaedics", "Hospital course": "The patient received operative care following a wrist fracture.",
                "Disposition": "Discharged home", "Follow-up": "Outpatient clinic in one week."}
+    # The Pattaya practice packet has its own narrowly scoped, supported narrative.
+    if _pattaya_fixture:
+        neutral.update({"Attending service": "Ophthalmology", "Hospital course": "The patient received bilateral lens replacement."})
     if fields["summary"]:
         for key, expected in neutral.items():
             value = _single(fields, "summary", key, review)
@@ -521,7 +524,8 @@ def discharge_packet_bytes(case: dict, originals: dict[str, bytes]) -> bytes:
     if any(hashlib.sha256(originals[role]).hexdigest() != source_by_role[role]["sha256"] for role in ROLE_ORDER):
         raise ValueError("The saved PDF does not match this discharge revision.")
     names = {role: source_by_role[role]["label"] for role in ROLE_ORDER}
-    result = evaluate_discharge(case, originals, names, _saved_ocr=case.get("ocr_pages"))
+    result = evaluate_discharge(case, originals, names, _saved_ocr=case.get("ocr_pages"),
+                                _pattaya_fixture=case.get("example_scenario") == "pattaya_fx")
     attestation = case.get("ocr_attestation")
     if attestation:
         source_revision = attestation.get("source_revision")

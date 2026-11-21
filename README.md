@@ -25,6 +25,8 @@ uv run --locked python app/run_workspace.py
 2. Open the finding. Page 2 shows the same pharmacy item twice. Choose **Try corrected bill**, inspect the replacement, confirm it belongs to the encounter and select **Save corrected packet**.
 3. Choose **Review discharge packet**, review the attachments and select **Mark packet reviewed**. Open **Claim and attachments** to preview the originals or download the reviewed PDF. **Version history** still opens the first bill.
 
+For the **Pattaya FX rehearsal**, open the Pattaya practice case from the discharge worklist. Inspect the insurer’s THB 239,000 guarantee, compare a simulated bank spot and forward, and reconcile the hospital’s THB 238,700 credit. The settlement agents show who owes the THB 300 balance and the evidence for closing it. [Rehearse the Pattaya case](docs/demo.md#pattaya-fx-rehearsal)
+
 The hospital app uses the team’s forest-green workspace design. On desktop the original PDF and review action appear side by side. On a phone, tap a citation to jump to the page. The separate insurer handoff prototype uses fictional records saved in the browser. [Hospital and insurer design guide](docs/workspace-review/README.md)
 
 ## Where OpenAI fits

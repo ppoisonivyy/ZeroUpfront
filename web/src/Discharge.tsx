@@ -16,6 +16,8 @@ import { SourceView } from "./SourceView";
 import { RecordedEvent } from "./CaseWorkflow";
 import { ClaimMutation, ClaimUpload } from "./DischargeForms";
 import DischargeOcr from "./DischargeOcr";
+import { PattayaSettlement } from "./PattayaSettlement";
+import { useStaffSession } from "./Auth";
 import { PayerSecondRead } from "./PayerSecondRead";
 import {
   claimPath,
@@ -40,13 +42,16 @@ function ClaimDetail({
   claim,
   pinned,
   reload,
-  onRechecked,
+  onUpdated,
 }: {
   claim: DischargeClaim;
   pinned: boolean;
   reload: () => void;
-  onRechecked: (next: DischargeClaim) => void;
+  onUpdated: (next: DischargeClaim) => void;
 }) {
+  const { mode } = useStaffSession();
+  const pattayaExample = claim.example_scenario === "pattaya_fx";
+  const showPattaya = mode === "local" && !pinned && pattayaExample;
   const [panel, setPanel] = useState<Panel>("overview"),
     [selection, setSelection] = useState<Source | null>(null),
     [error, setError] = useState(""),
@@ -80,7 +85,7 @@ function ClaimDetail({
       });
       const next: DischargeClaim = await response.json();
       setSelection(null);
-      onRechecked(next);
+      onUpdated(next);
       setRecheckMessage(next.revision === claim.revision
         ? `Rechecked the originals. Findings and checks are unchanged in R${next.revision}.`
         : `Rechecked the originals. Updated findings and checks are saved in R${next.revision}.`);
@@ -121,7 +126,7 @@ function ClaimDetail({
   };
   if (panel === "ocr" && canVerifyOcr)
     return <DischargeOcr claim={claim} onSaved={saved} onBack={overview} />;
-  if ((panel === "correct" || panel === "sample") && !pinned)
+  if ((panel === "correct" || panel === "sample") && !pinned && !pattayaExample)
     return (
       <ClaimUpload
         claim={claim}
@@ -275,7 +280,14 @@ function ClaimDetail({
           <a href={claimHref(claim.id)}>Open current claim</a>
         </p>
       )}
-      <dl className="facts claim-facts">
+      {showPattaya ? (
+        <PattayaSettlement claim={claim} onUpdated={onUpdated} reload={reload} openLetter={source => {
+          setSelection(source);
+          const viewer = document.getElementById("source-view");
+          viewer?.focus({ preventScroll: true });
+          viewer?.scrollIntoView({ block: "start" });
+        }} />
+      ) : <dl className="facts claim-facts">
         <div>
           <dt>Final bill total</dt>
           <dd>{minorMoney(claim.bill_total_minor, claim.currency)}</dd>
@@ -297,7 +309,7 @@ function ClaimDetail({
           <dt>Insurer disposition</dt>
           <dd>{claimPayerStatus(claim.insurer_status || "not_sent")}</dd>
         </div>
-      </dl>
+      </dl>}
       <div className="workspace-grid discharge-layout">
         <section className="panel">
           <div className="panel-heading">
@@ -356,7 +368,7 @@ function ClaimDetail({
                   Claim and attachments
                 </button>
               )}
-              {!pinned && (
+              {!pinned && !pattayaExample && (
                 <button
                   className={
                     claim.status === "needs_review" && !claim.sample_bill_available && !canVerifyOcr ? "primary" : "secondary"
@@ -493,34 +505,19 @@ function ClaimDetail({
           ) : null}
           {claim.events.length ? (
             <ol className="timeline-list">
-              {claim.events.map((event, i) => (
-                <RecordedEvent
-                  key={event.id}
-                  event={
-                    typeof event.data.amount_minor === "number"
-                      ? {
-                          ...event,
-                          data: Object.fromEntries(
-                            Object.entries(event.data)
-                              .filter(([k]) => k !== "currency")
-                              .map(([k, v]) =>
-                                k === "amount_minor"
-                                  ? [
-                                      "amount",
-                                      minorMoney(
-                                        Number(v),
-                                        String(event.data.currency),
-                                      ),
-                                    ]
-                                  : [k, v],
-                              ),
-                          ),
-                        }
-                      : event
-                  }
-                  index={i}
-                />
-              ))}
+              {claim.events.map((event, i) => {
+                const data = { ...event.data };
+                if (typeof data.amount_minor === "number") {
+                  data.amount = minorMoney(data.amount_minor, String(data.currency));
+                  delete data.amount_minor;
+                  delete data.currency;
+                }
+                if (event.kind === "fx_booking" && typeof data.usd_minor === "number") {
+                  data.funding_cost = minorMoney(data.usd_minor, "USD");
+                  delete data.usd_minor;
+                }
+                return <RecordedEvent key={event.id} event={{ ...event, data }} index={i} />;
+              })}
             </ol>
           ) : (
             <p className="hint">
@@ -528,7 +525,7 @@ function ClaimDetail({
               response and an actual payment are separate records.
             </p>
           )}
-          {claim.allowed_actions.some(canRecord) && (
+          {!pattayaExample && claim.allowed_actions.some(canRecord) && (
             <div className="actions">
               {claim.allowed_actions
                 .filter(
@@ -631,7 +628,7 @@ export function Discharge({
     <ClaimDetail
       key={key}
       claim={loaded.data}
-      onRechecked={(next) => setLoaded((current) => current.key === key ? { key, data: next } : current)}
+      onUpdated={(next) => setLoaded((current) => current.key === key ? { key, data: next } : current)}
       reload={reload}
       pinned={!!revision}
     />

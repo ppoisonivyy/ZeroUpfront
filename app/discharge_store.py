@@ -384,7 +384,7 @@ def replace(dsn, ident, base, evidence, raw, names, *, attested=False, recheck=F
 
 
 def approve(dsn, ident, base, actor, username):
-    with psycopg.connect(dsn) as db:
+    with _writing(dsn) as db:
         _head(db, ident, base)
         case = _detail(db, ident)
         if case["status"] == "staff_reviewed" and (case["reviewer"], case["reviewer_username"]) == (
@@ -422,12 +422,25 @@ def _amount(fields):
     return dict(amount_minor=int(amount * 100), currency=currency)
 
 
-def record(dsn, ident, base, fields, actor, username, raw, name, submitted_packet=None):
-    with psycopg.connect(dsn) as db:
+def append_event(db, case, action, data, actor, username=None, raw=None, name=None):
+    """Append while the caller owns the case row lock in this transaction."""
+    digest = _save_document(db, raw) if raw else None
+    db.execute(
+        """INSERT INTO zeroupfront_demo.discharge_events
+              (case_id,revision,version,kind,actor,username,data,document,filename)
+              VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s)""",
+        (case["id"], case["revision"], case["workflow_version"] + 1, action, actor, username, Jsonb(data), digest, name),
+    )
+
+
+def record(dsn, ident, base, fields, actor, username, raw, name, submitted_packet=None, *, pattaya_rehearsal=False):
+    with _writing(dsn) as db:
         _head(db, ident, base)
         target = fields.get("target_revision") or base
         action = fields["action"]
         case = _detail(db, ident, target)
+        if case.get("example_scenario") == "pattaya_fx" and not pattaya_rehearsal:
+            raise WorkspaceError(409, "Use the simulated bank actions for the Pattaya practice revision.")
         if (target != base and action == "submission") or fields["workflow_version"] != case["workflow_version"]:
             raise WorkspaceError(409, "Reload the specific submitted revision and its latest timeline.")
         if action not in case["allowed_actions"]:
@@ -463,13 +476,7 @@ def record(dsn, ident, base, fields, actor, username, raw, name, submitted_packe
                 (ident, data["reference"]),
             ).fetchone():
                 raise WorkspaceError(409, "This payment reference was already recorded for this case.")
-        digest = _save_document(db, raw) if raw else None
-        db.execute(
-            """INSERT INTO zeroupfront_demo.discharge_events
-                      (case_id,revision,version,kind,actor,username,data,document,filename)
-                      VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s)""",
-            (ident, target, case["workflow_version"] + 1, action, actor, username, Jsonb(data), digest, name),
-        )
+        append_event(db, case, action, data, actor, username, raw, name)
         return _detail(db, ident, target)
 
 

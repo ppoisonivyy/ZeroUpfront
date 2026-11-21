@@ -93,16 +93,19 @@ class Detail(Summary):
     paid_by_currency: dict[str, int]
     case_paid_by_currency: dict[str, int]
     sample_bill_available: bool = False
+    example_scenario: Literal["pattaya_fx"] | None = None
     letter_kind: str | None = None
     ocr_review_available: bool = False
     ocr_page_count: int = 0
     ocr_attestation: AttestationSummary | None = None
 
 
-def _evaluate(meta, raw, names, ocr, saved_ocr=None):
+def _evaluate(meta, raw, names, ocr, saved_ocr=None, *, pattaya_fixture=False):
     from app.discharge_claim import evaluate_discharge
 
     options = {"_saved_ocr": saved_ocr} if saved_ocr else {}
+    if pattaya_fixture:
+        options["_pattaya_fixture"] = True
     if mode() != "local" and meta.get("as_of", "") > date.today().isoformat():
         raise HTTPException(422, "The review date cannot be in the future.")
 
@@ -211,12 +214,23 @@ def intake(
         return store.create(db, ident, result, raw, names, prior_case_id or None, key)
 
 
+def _require_practice_mode():
+    if mode() != "local":
+        raise HTTPException(404, "Local discharge example not found.")
+
+
 @router.post("/examples/{scenario}", response_model=Detail, status_code=201)
 def example(request: Request, scenario: str):
     from app.discharge_claim import load_discharge_fixture
 
-    if mode() != "local":
-        raise HTTPException(404, "Local discharge example not found.")
+    _require_practice_mode()
+    if scenario == "pattaya_fx":
+        from app import pattaya_case, pattaya_workflow
+
+        ident = "D" + uuid4().hex
+        meta, raw, names = pattaya_case.exhibits()
+        evaluated = _evaluate(dict(meta, id=ident), raw, names, False, pattaya_fixture=True)
+        return pattaya_workflow.seed(request.app.state.dsn, ident, evaluated, raw, names)
     try:
         meta, raw, names = load_discharge_fixture(scenario)
     except (ValueError, KeyError) as exc:
@@ -230,6 +244,58 @@ def example(request: Request, scenario: str):
 @router.get("/{ident}", response_model=Detail)
 def detail(request: Request, ident: str, revision: Annotated[int | None, Query(ge=1)] = None):
     return store.detail(request.app.state.dsn, ident, revision)
+
+
+class PracticeConfirmation(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    confirmed: Literal[True]
+
+
+class PracticeAction(PracticeConfirmation):
+    action: Literal["book_spot", "book_forward", "record_short_credit", "record_topup"]
+    workflow_version: int = Field(strict=True, ge=0)
+
+
+def _pattaya_case(dsn, ident, revision):
+    from app import pattaya_workflow
+
+    _require_practice_mode()
+    case = store.detail(dsn, ident)
+    pattaya_workflow.require_case(case)
+    if case["revision"] != revision:
+        raise HTTPException(412, "Open the current Pattaya practice revision.")
+    return case
+
+
+@router.get("/{ident}/pattaya")
+def pattaya_review(request: Request, response: Response, ident: str, revision: Annotated[int, Query(ge=1)]):
+    from app import pattaya_agents
+
+    case = _pattaya_case(request.app.state.dsn, ident, revision)
+    response.headers["Cache-Control"] = "private, no-store"
+    return pattaya_agents.review(case)
+
+
+@router.post("/{ident}/pattaya/agent-review")
+def pattaya_model_review(request: Request, response: Response, ident: str, options: PracticeConfirmation, if_match: Match = None):
+    from app import pattaya_agents
+
+    revision = _revision(if_match)
+    case = _pattaya_case(request.app.state.dsn, ident, revision)
+    result = pattaya_agents.review(case, use_model=True)
+    current = _pattaya_case(request.app.state.dsn, ident, revision)
+    if current["workflow_version"] != case["workflow_version"]:
+        raise HTTPException(409, "The settlement ledger changed during review. Refresh the case.")
+    response.headers["Cache-Control"] = "private, no-store"
+    return result
+
+
+@router.post("/{ident}/pattaya/actions", response_model=Detail)
+def pattaya_action(request: Request, ident: str, command: PracticeAction, if_match: Match = None):
+    from app import pattaya_workflow
+
+    _require_practice_mode()
+    return pattaya_workflow.apply(request.app.state.dsn, ident, _revision(if_match), command.action, command.workflow_version)
 
 
 def _sample_bill(dsn, case):
@@ -292,6 +358,8 @@ def documents(
         uploads = {role: file}
     dsn, base = request.app.state.dsn, _revision(if_match)
     case, raw, names = store.snapshot(dsn, ident, base)
+    if case.get("example_scenario") == "pattaya_fx":
+        raise HTTPException(409, "This settlement rehearsal uses fixed originals. Open a new case for different documents.")
     if sample_bill:
         if any(uploads.values()):
             raise HTTPException(422, "Choose a local corrected bill or upload exhibits.")
