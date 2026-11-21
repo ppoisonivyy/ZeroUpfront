@@ -2,6 +2,10 @@
 
 The team's four lanes fit a planned international admission. Keep the patient, hospital international patient department (IPD), ZeroUpfront and insurer or third-party administrator (TPA). Keep the loop that returns missing exhibits to the hospital. Change the headline to **“Resolve insurance questions before arrival so the hospital can confirm the deposit.”** Preauthorization, a written payment guarantee, and the hospital's deposit decision each have their own evidence.
 
+![Planned admission across the patient, hospital, ZeroUpfront and payer lanes](figures/planned-admission-flow.svg)
+
+[Full-resolution PNG for the team's slides and documents](figures/planned-admission-flow.png)
+
 | Stage | Owner and handoff |
 | --- | --- |
 | Before arrival | Patient shares insurance details and consents to the hospital contacting the payer. IPD identifies the encounter, checks the hospital's direct-billing arrangement and collects the plan, medical report, estimate in its original currency and payer-specific exhibits. A missing consent or unknown arrangement needs an explicit owner. |

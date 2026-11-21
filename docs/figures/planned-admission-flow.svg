@@ -1,0 +1,92 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="984" viewBox="0 0 900 984" role="img" aria-labelledby="title desc"><title id="title">Planned admission and guarantee of payment</title><desc id="desc">Four lanes for patient, hospital, ZeroUpfront and payer. Staff correct gaps before submitting. At admission, the hospital checks the letter and requests amendment if needed. Hospital finance determines the deposit. Some payers require a final invoice at discharge.</desc><defs><marker id="arrow" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L8 4 L0 8Z" fill="#466476"/></marker></defs><rect width="900" height="984" fill="#fff"/><g font-family="Arial, Helvetica, sans-serif" fill="#153748">
+<text x="27" y="40" font-size="30" font-weight="700" fill="#183c49" text-anchor="start">Planned admission and guarantee of payment</text>
+<text x="28" y="68" font-size="17" font-weight="400" fill="#465e69" text-anchor="start">The hospital prepares the request. The payer decides whether and how much to guarantee.</text>
+<rect x="21" y="90" width="204" height="781" rx="7" fill="#f7f9fa"/>
+<text x="123" y="120" font-size="18" font-weight="700" fill="#183c49" text-anchor="middle">Patient</text>
+<rect x="239" y="90" width="204" height="781" rx="7" fill="#f7f9fa"/>
+<text x="341" y="120" font-size="18" font-weight="700" fill="#183c49" text-anchor="middle">Hospital IPD</text>
+<rect x="457" y="90" width="204" height="781" rx="7" fill="#eff8f5"/>
+<text x="559" y="120" font-size="18" font-weight="700" fill="#155a50" text-anchor="middle">ZeroUpfront</text>
+<rect x="675" y="90" width="204" height="781" rx="7" fill="#f7f9fa"/>
+<text x="777" y="120" font-size="18" font-weight="700" fill="#183c49" text-anchor="middle">Insurer or TPA</text>
+<rect x="21" y="142" width="858" height="32" rx="4" fill="#e8eef0"/>
+<text x="33" y="164" font-size="14" font-weight="700" fill="#42616c" text-anchor="start">01</text>
+<text x="65" y="164" font-size="17" font-weight="700" fill="#183c49" text-anchor="start">Before arrival</text>
+<rect x="32" y="194" width="182" height="67" rx="9" stroke="#acbcc2" stroke-width="1.35" fill="#fff"/>
+<text x="123.0" y="222.5" font-size="15.5" font-weight="500" fill="#173d4b" text-anchor="middle">Shares insurance</text>
+<text x="123.0" y="242.5" font-size="15.5" font-weight="500" fill="#173d4b" text-anchor="middle">details and consent</text>
+<rect x="250" y="194" width="182" height="67" rx="9" stroke="#acbcc2" stroke-width="1.35" fill="#fff"/>
+<text x="341.0" y="212.5" font-size="15.5" font-weight="500" fill="#173d4b" text-anchor="middle">Checks direct billing,</text>
+<text x="341.0" y="232.5" font-size="15.5" font-weight="500" fill="#173d4b" text-anchor="middle">collects report</text>
+<text x="341.0" y="252.5" font-size="15.5" font-weight="500" fill="#173d4b" text-anchor="middle">and estimate</text>
+<rect x="468" y="194" width="182" height="67" rx="9" stroke="#7fb9a9" stroke-width="1.35" fill="#e7f5f1"/>
+<text x="559.0" y="222.5" font-size="15.5" font-weight="500" fill="#14564b" text-anchor="middle">Checks the packet</text>
+<text x="559.0" y="242.5" font-size="15.5" font-weight="500" fill="#14564b" text-anchor="middle">against policy clauses</text>
+<path d="M214 227 H247" fill="none" stroke="#466476" stroke-width="1.8" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<path d="M432 227 H465" fill="none" stroke="#466476" stroke-width="1.8" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<rect x="250" y="294" width="182" height="52" rx="9" stroke="#acbcc2" stroke-width="1.35" fill="#fff"/>
+<text x="341.0" y="315.0" font-size="15.5" font-weight="500" fill="#173d4b" text-anchor="middle">Supplies the</text>
+<text x="341.0" y="335.0" font-size="15.5" font-weight="500" fill="#173d4b" text-anchor="middle">missing evidence</text>
+<path d="M483 262 V277 H340 V291" fill="none" stroke="#466476" stroke-width="1.8" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<path d="M433 322 H513 V264" fill="none" stroke="#466476" stroke-width="1.8" stroke-linejoin="round" marker-end="url(#arrow)" stroke-dasharray="5 4"/>
+<text x="354" y="273" font-size="13" font-weight="700" fill="#694913" text-anchor="start">Gap</text>
+<path d="M568 262 V365" fill="none" stroke="#466476" stroke-width="1.8" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<text x="577" y="320" font-size="13" font-weight="700" fill="#155a50" text-anchor="start">Complete</text>
+<rect x="468" y="369" width="182" height="62" rx="9" stroke="#7fb9a9" stroke-width="1.35" fill="#e7f5f1"/>
+<text x="559.0" y="395.0" font-size="15.5" font-weight="500" fill="#14564b" text-anchor="middle">Drafts the payer’s</text>
+<text x="559.0" y="415.0" font-size="15.5" font-weight="500" fill="#14564b" text-anchor="middle">request form</text>
+<rect x="250" y="369" width="182" height="62" rx="9" stroke="#acbcc2" stroke-width="1.35" fill="#fff"/>
+<text x="341.0" y="395.0" font-size="15.5" font-weight="500" fill="#173d4b" text-anchor="middle">Reviews, signs off</text>
+<text x="341.0" y="415.0" font-size="15.5" font-weight="500" fill="#173d4b" text-anchor="middle">and sends request</text>
+<path d="M467 400 H435" fill="none" stroke="#466476" stroke-width="1.8" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<rect x="686" y="442" width="182" height="80" rx="9" stroke="#d6a248" stroke-width="1.35" fill="#fff3dd"/>
+<text x="777.0" y="467.0" font-size="15.5" font-weight="500" fill="#684211" text-anchor="middle">Queries, declines,</text>
+<text x="777.0" y="487.0" font-size="15.5" font-weight="500" fill="#684211" text-anchor="middle">authorizes, or issues</text>
+<text x="777.0" y="507.0" font-size="15.5" font-weight="500" fill="#684211" text-anchor="middle">a full or partial GOP</text>
+<path d="M341 432 V480 H682" fill="none" stroke="#466476" stroke-width="1.8" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<text x="465" y="471" font-size="13" font-weight="500" fill="#425e68" text-anchor="start">Staff sends current revision</text>
+<text x="34" y="515" font-size="14" font-weight="500" fill="#425e68" text-anchor="start">If direct billing is unavailable or declined, IPD explains payment and reimbursement options.</text>
+<text x="678" y="545" font-size="12" font-weight="400" fill="#465e69" text-anchor="start">A query reopens the evidence loop.</text>
+<rect x="21" y="561" width="858" height="32" rx="4" fill="#e8eef0"/>
+<text x="33" y="583" font-size="14" font-weight="700" fill="#42616c" text-anchor="start">02</text>
+<text x="65" y="583" font-size="17" font-weight="700" fill="#183c49" text-anchor="start">At admission</text>
+<rect x="32" y="617" width="182" height="65" rx="9" stroke="#acbcc2" stroke-width="1.35" fill="#fff"/>
+<text x="123.0" y="644.5" font-size="15.5" font-weight="500" fill="#173d4b" text-anchor="middle">Arrives for the</text>
+<text x="123.0" y="664.5" font-size="15.5" font-weight="500" fill="#173d4b" text-anchor="middle">planned treatment</text>
+<rect x="250" y="617" width="182" height="65" rx="9" stroke="#acbcc2" stroke-width="1.35" fill="#fff"/>
+<text x="341.0" y="634.5" font-size="15.5" font-weight="500" fill="#173d4b" text-anchor="middle">Confirms encounter</text>
+<text x="341.0" y="654.5" font-size="15.5" font-weight="500" fill="#173d4b" text-anchor="middle">and checks for a</text>
+<text x="341.0" y="674.5" font-size="15.5" font-weight="500" fill="#173d4b" text-anchor="middle">written guarantee</text>
+<rect x="468" y="617" width="182" height="65" rx="9" stroke="#7fb9a9" stroke-width="1.35" fill="#e7f5f1"/>
+<text x="559.0" y="634.5" font-size="15.5" font-weight="500" fill="#14564b" text-anchor="middle">Compares actual dates,</text>
+<text x="559.0" y="654.5" font-size="15.5" font-weight="500" fill="#14564b" text-anchor="middle">treatment and cost</text>
+<text x="559.0" y="674.5" font-size="15.5" font-weight="500" fill="#14564b" text-anchor="middle">with the letter</text>
+<path d="M214 649 H247" fill="none" stroke="#466476" stroke-width="1.8" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<path d="M432 649 H465" fill="none" stroke="#466476" stroke-width="1.8" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<text x="481" y="610" font-size="13" font-weight="700" fill="#155a50" text-anchor="start">Letter on file</text>
+<path d="M270 683 V790" fill="none" stroke="#466476" stroke-width="1.8" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<text x="277" y="710" font-size="13" font-weight="700" fill="#694913" text-anchor="start">No valid letter</text>
+<text x="277" y="730" font-size="12" font-weight="400" fill="#465e69" text-anchor="start">IPD contacts payer</text>
+<rect x="686" y="715" width="182" height="61" rx="9" stroke="#d6a248" stroke-width="1.35" fill="#fff3dd"/>
+<text x="777.0" y="730.5" font-size="15.5" font-weight="500" fill="#684211" text-anchor="middle">Reviews request for</text>
+<text x="777.0" y="750.5" font-size="15.5" font-weight="500" fill="#684211" text-anchor="middle">clarification or</text>
+<text x="777.0" y="770.5" font-size="15.5" font-weight="500" fill="#684211" text-anchor="middle">an amendment</text>
+<path d="M650 650 H777 V712" fill="none" stroke="#466476" stroke-width="1.8" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<text x="654" y="694" font-size="13" font-weight="700" fill="#694913" text-anchor="start">Changed or unclear</text>
+<rect x="250" y="793" width="182" height="68" rx="9" stroke="#acbcc2" stroke-width="1.35" fill="#fff"/>
+<text x="341.0" y="812.0" font-size="15.5" font-weight="500" fill="#173d4b" text-anchor="middle">Finance determines</text>
+<text x="341.0" y="832.0" font-size="15.5" font-weight="500" fill="#173d4b" text-anchor="middle">deposit from terms</text>
+<text x="341.0" y="852.0" font-size="15.5" font-weight="500" fill="#173d4b" text-anchor="middle">and patient share</text>
+<rect x="32" y="793" width="182" height="68" rx="9" stroke="#acbcc2" stroke-width="1.35" fill="#fff"/>
+<text x="123.0" y="822.0" font-size="15.5" font-weight="500" fill="#173d4b" text-anchor="middle">Deposit waived,</text>
+<text x="123.0" y="842.0" font-size="15.5" font-weight="500" fill="#173d4b" text-anchor="middle">reduced or due</text>
+<path d="M557 683 V759 H341 V790" fill="none" stroke="#466476" stroke-width="1.8" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<text x="391" y="749" font-size="13" font-weight="700" fill="#155a50" text-anchor="start">Valid terms apply</text>
+<path d="M777 776 V826 H435" fill="none" stroke="#466476" stroke-width="1.8" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<text x="482" y="817" font-size="13" font-weight="500" fill="#425e68" text-anchor="start">Apply any revised terms</text>
+<path d="M250 827 H217" fill="none" stroke="#466476" stroke-width="1.8" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<rect x="21" y="891" width="858" height="60" rx="7" fill="#143b49"/>
+<text x="37" y="915" font-size="16" font-weight="700" fill="#fff" text-anchor="start">At discharge, when required</text>
+<text x="37" y="937" font-size="15" font-weight="400" fill="#ecf3f5" text-anchor="start">Hospital sends the final itemized invoice and discharge summary. The payer determines the covered amount.</text>
+<text x="24" y="973" font-size="13" font-weight="400" fill="#465e69" text-anchor="start">IPD = international patient department     GOP = guarantee of payment     TPA = third-party administrator</text>
+</g></svg>
