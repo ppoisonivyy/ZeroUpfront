@@ -34,4 +34,8 @@ A production build served from an isolated local PostgreSQL workspace passed the
 | Open an image-only Thai form page and an unsupported digital payer form | Both claims stayed on hold. Each displayed manual guidance and opened the original PDF. Neither exposed the staff-approval action. |
 | Render the queue and claim at 320 and 390 CSS pixels | Neither produced horizontal page overflow. Selecting a citation focused and scrolled to the source. The pre-arrival worklist remained reachable. |
 
+The forest-green release also passed layout checks at 320, 390, 768, 1024 and 1366 CSS pixels. At 1366 pixels, the PDF column measured 738 pixels and the adjacent review column measured 492. Enter opened the focused hospital menu and Escape dismissed it. On a 27-case queue, desktop and phone checks confirmed 25 rows on the first page, two on the second, no repeated cases, and recovery from a failed worklist request.
+
+With 10,000 restored synthetic claims, five fresh Chromium contexts took a median **817 ms** from navigation to the first rendered worklist, versus **1,722 ms** with the earlier browser rendering all 10,000 rows. Each run waited for the first row and two animation frames. Searching for a unique visible encounter took **298 ms** versus **228 ms** once the list was loaded. The paginated search includes a 180 ms typing delay and a server round trip. These local browser observations include startup and rendering and use a separate sample from the HTTP benchmark. [Database benchmark and limits](discharge-scale-benchmark.md)
+
 The checks cover browser behavior using synthetic cases and form specimens. They do not measure clinical accuracy, real payer acceptance, staff preference or end-to-end claims handling time.
