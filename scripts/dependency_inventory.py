@@ -81,13 +81,16 @@ def package_document():
 def image_document(image):
     def run(command):
         return subprocess.check_output(["docker", "run", "--rm", "--entrypoint", "sh", image, "-c", command], text=True).strip()
-    details = run("dpkg --print-architecture; python --version; uv --version").splitlines()
+    details = run("dpkg --print-architecture; python --version; /usr/local/bin/python -m pip --version").splitlines()
     packages = run("dpkg-query -W -f='${binary:Package}\\t${Version}\\n'").splitlines()
     libs = run("find /srv/zeroupfront/.venv -path '*.libs/*' -type f | sort").splitlines()
     rows = ["# Release container components", "",
-            f"This snapshot covers the tested Debian Bookworm {details[0]} release, {details[1]} and {details[2]}. "
-            "The Dockerfile also uses Node 24 to compile the browser bundle. Rebuild this inventory for another image or architecture. "
+            f"This snapshot covers the tested Debian Bookworm {details[0]} release with {details[1]}. "
+            "The build uses Node 24 to compile the browser bundle and mounts uv for dependency installation. Rebuild this inventory for another image or architecture. "
             "The image installs the Python runtime under /usr/local in addition to the Debian packages below.", "",
+            f"The base image includes {details[2].split()[0]} {details[2].split()[1]} under /usr/local. "
+            "Its CPython license is in `/usr/local/lib/python3.12/LICENSE.txt`. ReportLab ships additional font notices "
+            "for Bitstream Vera and DarkGarden under `reportlab/fonts/` in the virtual environment.", "",
             f"## Debian packages · {len(packages)}", "",
             "| Package | Installed version | Notice path inside the image |", "| --- | --- | --- |"]
     for row in sorted(packages):

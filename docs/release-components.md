@@ -1,6 +1,8 @@
 # Release container components
 
-This snapshot covers the tested Debian Bookworm arm64 release, Python 3.12.16 and uv 0.12.7 (aarch64-unknown-linux-musl). The Dockerfile also uses Node 24 to compile the browser bundle. Rebuild this inventory for another image or architecture. The image installs the Python runtime under /usr/local in addition to the Debian packages below.
+This snapshot covers the tested Debian Bookworm arm64 release with Python 3.12.16. The build uses Node 24 to compile the browser bundle and mounts uv for dependency installation. Rebuild this inventory for another image or architecture. The image installs the Python runtime under /usr/local in addition to the Debian packages below.
+
+The base image includes pip 25.0.1 under /usr/local. Its CPython license is in `/usr/local/lib/python3.12/LICENSE.txt`. ReportLab ships additional font notices for Bitstream Vera and DarkGarden under `reportlab/fonts/` in the virtual environment.
 
 ## Debian packages · 105
 

@@ -12,10 +12,10 @@ This register covers the hospital workspace, optional research programs, test da
 | Mozilla PDF.js | Renders a selected original PDF page in the browser, including clickable export attachment previews | [PDF.js](https://github.com/mozilla/pdf.js), Apache-2.0. The distribution includes separate resource notices described below. |
 | Inter and Noto Sans Thai | Locally served interface type and Thai PDF shaping | [Inter](https://rsms.me/inter/), [Noto Sans Thai license](app/fonts/OFL.txt), SIL Open Font License 1.1 |
 | FastAPI, Starlette, Uvicorn, Pydantic, python-multipart | HTTP requests, schema validation, multipart uploads and the ASGI server | [Python package versions and notices](docs/third-party-packages.md) |
-| PostgreSQL and psycopg | Durable case records, original files, revision history, transactions and concurrent review | [PostgreSQL license](https://www.postgresql.org/about/licence/) and [psycopg license](https://www.psycopg.org/psycopg3/docs/basic/install.html#license) |
+| PostgreSQL and psycopg | Durable case records, original files, revision history, transactions and concurrent review | [PostgreSQL license](https://www.postgresql.org/about/licence/) and [psycopg license](https://github.com/psycopg/psycopg/blob/3.3.9/psycopg/LICENSE.txt) |
 | argon2-cffi | Staff password hashing | [argon2-cffi](https://github.com/hynek/argon2-cffi) and its bindings in the package inventory |
 | pypdf, ReportLab, uharfbuzz and Pillow | PDF text extraction, assembly and attachments, generation of synthetic packets, Thai text shaping and image handling | [Python package versions and notices](docs/third-party-packages.md) |
-| OpenAI Python SDK and HTTPX | Server-side model calls, HTTP transport and test clients | [OpenAI Python, Apache-2.0](https://github.com/openai/openai-python) and [HTTPX](https://www.python-httpx.org/) |
+| OpenAI Python SDK, HTTPX2 and HTTPCore2 | Server-side model calls and their HTTP transport | [OpenAI Python, Apache-2.0](https://github.com/openai/openai-python) and [transport package versions](docs/third-party-packages.md) |
 
 **Component choice.** Use the existing libraries for PDF rendering, icons and fonts. Keep claim states, the approval action, evidence citations and payment balances in application code. Native labeled controls cover the current worklist and review forms. For a new dialog that needs focus trapping and focus restoration, evaluate an accessible headless primitive such as Radix Dialog against the keyboard requirements before adding a dependency. Those primitives are candidates for future work. [Radix Dialog](https://www.radix-ui.com/primitives/docs/components/dialog) · [WAI-ARIA dialog pattern](https://www.w3.org/WAI/ARIA/apg/patterns/dialog-modal/)
 
@@ -30,12 +30,14 @@ The Vite build emits a dependency notice at `/assets/third-party-licenses.md`. T
 | `wasm/LICENSE_*` | JBIG2, OpenJPEG, qcms and QuickJS components and the PDF.js wrapper notices for each |
 | `iccs/LICENSE` | CC0 1.0 for the included color profile |
 
+The Python release also ships ReportLab’s Bitstream Vera and DarkGarden font assets. Its wheel includes the Vera font license, DarkGarden GPL terms and source in `reportlab/fonts/`.
+
 ## Services, build and verification
 
 | Use | Components |
 | --- | --- |
 | Optional hosted processing | OpenAI Responses for model-assisted extraction and vision OCR. The policy research suite separately uses embeddings, Vector Stores and hosted retrieval. These are hosted services with their own terms and metering. Digital workspace screening runs locally. The project key stays server-side. [Configuration](.env.example) · [Research modes](docs/cloud-rag.md) · [Service terms](https://openai.com/policies/services-agreement/) |
-| Local and release builds | CPython, uv, Node.js, npm, TypeScript, the Vite React plugin and Vite. Docker builds use the Node and Python Debian Bookworm images and Astral's uv image. PostgreSQL runs separately. [Dockerfile](Dockerfile) · [Release guide](docs/deployment.md) |
+| Local and release builds | CPython, uv, Node.js, npm, TypeScript, the Vite React plugin and Vite. Docker builds use the Node and Python Debian Bookworm images and Astral's uv build image. Python’s base image also includes pip. PostgreSQL runs separately. [Dockerfile](Dockerfile) · [Release guide](docs/deployment.md) |
 | CI and source control | Git, GitHub, GitHub Actions hosted runners, actions/checkout, actions/setup-node and astral-sh/setup-uv. The workflow pins action revisions. [Workflow](.github/workflows/preflight.yml) |
 | Rehearsal tools | Python unittest, HTTPX, PostgreSQL command-line tools and OpenSSL for local TLS release testing. Poppler utilities inspect or rasterize selected research samples. Playwright and Chromium were used for browser verification and walkthrough captures. These tools run outside the production UI. |
 | Development and team materials | OpenAI Codex assisted development. The team walkthrough uses the presentation tooling in Codex. Neither service handles a claim in the running workspace. |
@@ -43,9 +45,9 @@ The Vite build emits a dependency notice at `/assets/third-party-licenses.md`. T
 ## Source documents and design references
 
 - The original policy evaluation uses the US OPM 2026 BCBS Service Benefit Plan brochure and Thailand's Allianz Ayudhya Superior Health Plus wording. Their owners publish the originals. The [research source register](docs/document-research.md) records the editions and what was tested.
-- The discharge rehearsal uses AIA Thailand's Thai and English claimant/physician forms, the CMS-hosted institutional CMS-1450/UB-04 specimen and the Blue Cross Blue Shield FEP Overseas Medical Claim Form. Templates, logos, form designs and coding material remain subject to their respective terms. The repository contains the harness and fictional case values. Downloaded templates and completed copies stay in the ignored local workspace. [AIA Thailand](https://www.aia.co.th/) · [CMS-1450](https://www.cms.gov/regulations-and-guidance/legislation/paperworkreductionactof1995/pra-listing-items/cms-1450) · [FEP forms](https://www.fepblue.org/claim-forms)
+- The discharge rehearsal uses AIA Thailand's Thai and English claimant/physician forms, the CMS-hosted institutional CMS-1450/UB-04 specimen and the Blue Cross Blue Shield FEP Overseas Medical Claim Form. Templates, logos, form designs and coding material remain subject to their respective terms. The repository contains the harness and fictional case values. Downloaded templates and completed copies stay in the ignored local workspace. [AIA Thailand form library](https://www.aia.co.th/th/help-support/form-library) · [CMS-1450](https://www.cms.gov/regulations-and-guidance/legislation/paperworkreductionactof1995/pra-listing-items/cms-1450) · [FEP forms](https://www.fepblue.org/claim-forms)
 - The training-sample folder describes synthetic text conversations. The project also generates fictional bills, clinical exhibits, payer replies, amounts and identifiers for rehearsal. [Fixture guide](fixtures/README.md) · [Document evaluation](docs/document-research.md)
-- The review interface adapts worklist and evidence-review patterns described by Linear, Stripe and Availity. The NHS design system informs status label research. These organizations are design references. [Linear triage](https://linear.app/docs/triage) · [Stripe disputes](https://docs.stripe.com/disputes/responding) · [Color research](docs/workspace-colors.md)
+- The review interface adapts worklist and evidence-review patterns described by Linear, Stripe and Availity. The NHS design system informs status label research. These organizations are design references. [Linear triage](https://linear.app/docs/triage) · [Stripe disputes](https://docs.stripe.com/disputes/responding) · [Design references, including Availity](docs/ux-redesign.md) · [Color research](docs/workspace-colors.md)
 
 ## Refresh the inventories
 

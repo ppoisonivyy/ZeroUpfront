@@ -8,9 +8,8 @@ RUN npm run build
 FROM ghcr.io/astral-sh/uv:0.12.7 AS uv
 FROM python:3.12-slim-bookworm
 WORKDIR /srv/zeroupfront
-COPY --from=uv /uv /usr/local/bin/uv
 COPY pyproject.toml uv.lock ./
-RUN uv sync --locked --no-dev --no-install-project
+RUN --mount=from=uv,source=/uv,target=/usr/local/bin/uv uv sync --locked --no-dev --no-install-project
 COPY app/ app/
 COPY fixtures/rulebooks.json fixtures/rulebooks.json
 COPY fixtures/discharge/ fixtures/discharge/
