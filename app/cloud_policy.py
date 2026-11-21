@@ -70,15 +70,20 @@ def prepare(client):
     return store.id
 
 
-def cloud_retrieve(client, question, edition, chunks, k=4):
-    local = {p.ref:p for p in chunks}
+def hosted_candidates(client, question, edition, chunks, k=4, ranker="auto"):
+    local = {p.ref: p for p in chunks}
     digests = {p.digest for p in chunks}
     if len(digests) != 1:
         raise ValueError("Cloud search requires one pinned policy revision")
     digest = digests.pop()
-    results = client.vector_stores.search(store_id(),query=question,max_num_results=min(20,max(3*k,k)),
-        filters={"type":"and","filters":[{"type":"eq","key":"edition","value":edition},
-                                        {"type":"eq","key":"sha256","value":digest}]})
+    results = client.vector_stores.search(
+        store_id(), query=question, max_num_results=min(20, 3 * k),
+        ranking_options={"ranker": ranker},
+        filters={"type": "and", "filters": [
+            {"type": "eq", "key": "edition", "value": edition},
+            {"type": "eq", "key": "sha256", "value": digest},
+        ]},
+    )
     candidates = []
     seen = set()
     for hit in results.data:
@@ -90,6 +95,14 @@ def cloud_retrieve(client, question, edition, chunks, k=4):
         if p.ref not in seen:
             candidates.append(p)
             seen.add(p.ref)
+    return candidates
+
+
+def cloud_retrieve(client, question, edition, chunks, k=4):
+    candidates = hosted_candidates(client, question, edition, chunks, k)
+    local = {p.ref: p for p in chunks}
+    digest = chunks[0].digest
+    seen = {p.ref for p in candidates}
     hosted_count = len(candidates)
     # A Thai query can yield an empty or very short managed shortlist on an
     # English policy. For a small edition, rank all remaining indexed pages too.

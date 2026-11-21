@@ -39,3 +39,25 @@ uv run --locked --env-file .env python bench/bilingual_embeddings.py --details
 ```
 
 This uses two live embedding requests. It does not persist embeddings or change the application's policy cache. The [fixture questions and labels](../bench/bilingual_queries.json) and the [benchmark script](../bench/bilingual_embeddings.py) disclose the inputs and metric calculations.
+
+## Do we need another reranker?
+
+OpenAI vector-store search already reranks with `auto` by default. The same endpoint accepts `none` to disable reranking. These controls rank passages from the hosted store. The documented interface takes a store ID and query. The second pass in ZeroUpfront embeds the question and candidate texts, computes cosine similarity and combines that order with hosted rank. It can include additional indexed pages from a short edition when hosted search supplies too few. No separate vendor or cross-encoder service is needed for the demo. [OpenAI vector-store search reference](https://developers.openai.com/api/reference/resources/vector_stores/methods/search/)
+
+We submitted the same 16 paired staff questions against the same edition and digest under three configurations. Each edition had eight candidate pages. Each method returned at most four pages. A complete result contains every labeled page for that question. Times are observed median retrieval latency over 16 questions per language with four concurrent benchmark workers, excluding generation and OCR.
+
+| Retrieval method | English complete | Thai complete | English / Thai page recall | English / Thai median |
+| --- | ---: | ---: | ---: | ---: |
+| Hosted search with reranking disabled | 14/16 | 0/16 | 23/25 · 1/25 | 0.54 s · 0.53 s |
+| Hosted search with automatic reranking | 15/16 | 1/16 | 24/25 · 2/25 | 1.26 s · 0.60 s |
+| Automatic reranking, short-edition candidate expansion and explicit large embeddings | 16/16 | 14/16 | 25/25 · 23/25 | 1.96 s · 1.41 s |
+
+The gain in the third row belongs to the combined method. It changes both candidate coverage and ranking. A reranker cannot recover a passage it never receives. The remaining Thai misses concerned observation over midnight and distinguishing an acknowledgment from payment evidence. A repeat before the comparison retrieved 22/25 required Thai pages and completed the same 14/16 questions. Preserve all required base clauses and exceptions for supported workflows in a reviewed rulebook. Use search to discover additional wording. [Policy representation decision](policy-representation.md)
+
+A separate experiment translated each Thai question to English for hosted search, preserving the original Thai for explicit embeddings. It completed 15/16 against a paired 14/16 control, with median translation latency of 2.34 s. Neither arm recovered both pages for the acknowledgment question. This is exploratory evidence on largely English policy wording. See the separate [full Thai policy evaluation](thai-public-eval.md).
+
+```sh
+uv run --locked --env-file .env python app/cloud_policy.py
+uv run --locked --env-file .env python bench/hosted_recall.py --compare
+uv run --locked --env-file .env python bench/translated_recall.py
+```

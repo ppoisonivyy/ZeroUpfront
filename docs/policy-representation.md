@@ -1,0 +1,51 @@
+# How ZeroUpfront should represent a policy
+
+**Keep the original documents. Publish a small, reviewed JSON rulebook for each supported edition.** Use the rulebook to fetch mandatory clauses and run repeatable checks. Use search for questions or wording the rulebook does not yet cover. A JSON object containing every page as a string still has the original retrieval problem. A generated summary can make an omitted endorsement harder to notice.
+
+This distinction matters on the actual source material. On the 42-page Allianz Thai contract, a Thai question about a motorcycle accident needed both the base exclusion and the endorsement. The large embedding model surfaced the endorsement and missed the base exclusion. On the synthetic US certificate, the question about an insurer acknowledgment also needed the payment evidence clause on a different page. An answer can quote a retrieved page perfectly and still miss the clause that controls the result. [Allianz native-text benchmark and page labels](thai-public-eval.md) · [Bilingual search results](embedding-eval.md)
+
+## Data to retain
+
+| Record | Contents | How the coordinator uses it |
+| --- | --- | --- |
+| Original evidence | Original PDF, digest, edition, issuing insurer, schedule, riders and amendments. Derived text keeps language, physical page, extraction method and source pointer. | Open the exact document and page that justified a finding. Visually check digits, table headers and footnotes. |
+| Policy rulebook | A stable rule ID, scope, benefit, conditions, effective dates, units and currency, required case exhibits, source anchors, dependencies and explicit overrides. Record author, review state and revision. | Select a supported task and resolve every linked clause in the applicable edition. Run threshold, date and amount checks in code. |
+| Case facts | Versioned typed facts tied to case exhibits. Preserve missing values, ambiguity, currency and provenance. | Distinguish a hospital estimate, a proposed request, the insurer's written guarantee and a payment. A missing receipt leaves payment unknown. |
+| Search index | Searchable passages from source documents with edition, digest and page metadata. Rebuild it from the evidence after OCR or indexing changes. | Find additional context, propose new rules for review, and answer exploratory questions with citations. |
+
+A coordinator selects the insurer, plan edition and task in the MVP. If a relevant rider is missing, two provisions conflict, the scan is illegible, or the case falls outside a reviewed rule's scope, show the evidence gap. Deploying a corrected policy creates a new version and invalidates approval for any rule whose source changed. Preserve the prior version for cases already reviewed.
+
+## Why this fits the workflow
+
+- OpenAI Structured Outputs can constrain the shape of extracted JSON. Validate values against source pages, then validate applicability and arithmetic independently. A valid enum or integer can encode the wrong coverage interpretation. [OpenAI Structured Outputs](https://developers.openai.com/api/docs/guides/structured-outputs?api-mode=responses)
+- HL7's clinical guideline methodology describes checking computable rules against the original narrative intent and testing them. Da Vinci DTR illustrates how a US payer can supply structured questions and logic for documentation. These are useful engineering precedents. Thai policy rules still come from the applicable insurer documents. [HL7 guideline methodology](https://hl7.org/fhir/uv/cpg/methodology.html) · [Da Vinci DTR](https://hl7.org/fhir/us/davinci-dtr/)
+- FHIR InsurancePlan provides a reference for plan benefits, networks and limits. Eligibility and authorization are distinct transactions. FHIR models eligibility inquiry and response separately. Bumrungrad describes obtaining a written insurer guarantee before direct settlement in its published workflow. Preserve the insurer letter with its own date, scope and amount. [FHIR InsurancePlan](https://hl7.org/fhir/R4/insuranceplan.html) · [HL7 CoverageEligibilityResponse](https://hl7.org/fhir/R4/coverageeligibilityresponse.html) · [Bumrungrad insurance guidance](https://www.bumrungrad.com/en/medical-travel-guides/patient-finance-insurance-information?page=2)
+- Store a quote with its page and edition, plus surrounding words when wording repeats. W3C's annotation model uses exact quotes and context to identify spans. LegalBench-RAG's expert-labeled evidence spans provide an example of evaluating retrieval precision separately from answer quality. [W3C Web Annotation](https://www.w3.org/TR/annotation-model/#text-quote-selector) · [LegalBench-RAG paper](https://arxiv.org/abs/2408.10343)
+
+## What to build for the event
+
+1. For two synthetic insurers, choose the workflows shown to judges. A reviewer maps each base rule, endorsement, exclusion and required exhibit to its source page. Store small rules as versioned JSON in Git and review policy changes in a pull request. The proposed shared service can store this same representation in PostgreSQL with indexed plan/edition fields.
+2. Have Astra propose structured case facts and optional rule edits. A new rule enters the staff workflow after review. Give coordinators a source page next to each proposed fact or rule. Explicit fields for branch, currency, date and member/encounter prevent silently applying a plausible rule to the wrong case.
+3. For a known check, load every mandatory dependency by ID before computing or drafting. Add relevant search hits for explanation. Show the THB computation and preserve both the base clause and dated rider. Unmapped questions return cited research or staff review.
+4. Evaluate false-ready cases, required-clause recall including riders, irrelevant evidence in the displayed set, exact factual fields and reviewer time. Independently label unseen policy editions. A supervised task selection can measure lookup correctness, while a free-text interface also needs a separate routing benchmark. An agent that summarizes incomplete evidence cannot restore a missing clause. The demo can run as one orchestrated workflow with regular functions for source resolution and checks. [OpenAI agent design guide](https://openai.com/business/guides-and-resources/a-practical-guide-to-building-ai-agents/)
+
+## Preprocess editions once and supplements on arrival
+
+Preprocess policies and endorsements when onboarding a plan. Pin the original file, recover page text, assemble the structured rules and validate their source anchors. Promote an edition only after its reviewer has checked what the rulebook covers. Index supplementary policy wording and keep a traceable link to the prior edition. A rider supplied by a patient stays scoped to that patient's case until the team verifies whether it applies more broadly.
+
+For a new case or supplementary upload, persist the original and create a new case revision listing the active exhibits. Start independent document jobs immediately. Extract text and proposed facts once per document digest and reader/model version within the authorized hospital scope. Reuse unchanged outputs on later revisions. An itemized replacement estimate can supersede the earlier estimate while both originals stay accessible. A supplemental receipt adds payment evidence. A new rider can change the applicable clauses and amounts, so rerun the dependent checks. Check identifiers, dates, currency and active revisions after extraction.
+
+A job publishes a draft only if its case revision is still current and the required exhibits have completed and passed validation. Until then the UI can show partial processing progress or a blocking gap. A slow job finishing for an earlier revision cannot replace the current result. OpenAI documents that vector-store file creation is asynchronous and deletion has a consistency window. Filter by pinned revision/digest and confirm the search index is ready before querying it. Apply bounded concurrency and backoff at the project level. [OpenAI retrieval guide](https://developers.openai.com/api/docs/guides/retrieval) · [OpenAI rate limits](https://developers.openai.com/api/docs/guides/rate-limits)
+
+In a live same-policy comparison, preprocessing the real Thai edition improved complete retrieval from 2/6 to 3/6 Thai questions and from 2/6 to 4/6 English questions. It cost about $2.10 at the published token rates. Once-per-edition preprocessing amortizes that work. Parallel extraction primarily affects elapsed time, while rule mapping, source quality and revision checks address correctness. [Full Thai policy experiment](thai-public-eval.md)
+
+## Working example of a curated clause map
+
+The offline research prototype contains four explicit staff tasks over two fictional editions. For a selected task it follows the rule dependencies and checks the file digest, edition, unique full clause and page. It returns the cited text. Unsupported tasks, stale PDFs, clipped quotations and missing dependencies fail the check. For the US guarantee and payment task it retrieves the portal acknowledgment clause on page 6 and the payment receipt clause on page 8. A payment amount still requires a receipt in the current case.
+
+On four deliberately mapped tasks, lookup returned all **7/7 required pages** and completed **4/4** tasks. Raw lexical PDF search on the corresponding Thai questions recovered 2/7 required pages and completed 1/4. Lookup receives an explicit staff selection and encodes project-authored rules for these cases. This comparison measures lookup after selection. Independent reviewers must still validate that the mapping expresses the policy correctly. It does not measure how well a new question maps to a task or how much work it takes to maintain a new edition. [Fixture catalog](../fixtures/complex/rulebook-example.json) · [Runnable comparison](../bench/rulebook_lookup.py)
+
+```sh
+uv run --locked python bench/rulebook_lookup.py
+uv run --locked python bench/rulebook_lookup.py --edition NQ-26B --task reconcile_guarantee_and_payment
+```

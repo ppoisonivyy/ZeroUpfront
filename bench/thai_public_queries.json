@@ -1,0 +1,38 @@
+[
+  {
+    "id": "short-admission",
+    "th": "ถ้าโรงพยาบาลรับเป็นคนไข้ในแล้ว แต่คนไข้เสียชีวิตหลังเข้าอยู่ในวอร์ดได้แค่สองชั่วโมง ยังนับว่าเข้าเกณฑ์เรื่องระยะเวลานอนโรงพยาบาลไหม",
+    "en": "A registered inpatient died two hours after reaching the ward. Does the minimum length of stay still apply?",
+    "required": [[4]]
+  },
+  {
+    "id": "dependent-already-admitted",
+    "th": "วันแรกที่ประกันเริ่มคุ้มครอง ลูกยังนอนรักษาตัวอยู่ตั้งแต่สัปดาห์ก่อน ลูกจะเริ่มใช้สิทธิได้เมื่อไร",
+    "en": "My child was already in hospital before our cover began. At what point can the child first receive cover?",
+    "required": [[7]]
+  },
+  {
+    "id": "critical-care-room",
+    "th": "ถ้าต้องย้ายไปไอซียู ค่าห้องคิดได้กี่เท่าของห้องปกติ แล้วใช้อัตรานี้ได้นานแค่ไหน",
+    "en": "After a transfer to intensive care, what multiple of the ordinary room allowance applies and for how many days?",
+    "required": [[20, 23]]
+  },
+  {
+    "id": "safer-job",
+    "th": "ผมเลิกทำงานเสี่ยงแล้วเปลี่ยนไปนั่งทำงานในออฟฟิศ เบี้ยประกันอุบัติเหตุที่จ่ายไว้จะปรับให้ไหม แล้วเขานับคืนเงินตั้งแต่วันไหน",
+    "en": "I switched from hazardous work to a desk job. Can my accident premium fall, and from what date would a refund accrue?",
+    "required": [[31]]
+  },
+  {
+    "id": "motorbike-passenger",
+    "th": "ถ้าคนซ้อนมอเตอร์ไซค์เสียชีวิต ครอบครัวอยากดูทั้งข้อยกเว้นเดิมกับเอกสารที่ซื้อเพิ่ม ต้องดูตรงไหน แล้ววงเงินที่เพิ่มมาคิดเป็นกี่เปอร์เซ็นต์ของทุนประกัน",
+    "en": "A motorcycle passenger died. Which pages show both the original accident exclusion and the add-on that sets the payable percentage of the insured sum?",
+    "required": [[33], [36]]
+  },
+  {
+    "id": "rebate-then-claim",
+    "th": "ได้ส่วนลดประวัติดีเป็นเงินคืนไปแล้ว เพิ่งเจอใบเสร็จเก่าที่จะขอเคลม ถ้าค่าสินไหมที่อนุมัติน้อยกว่าเงินที่ได้คืน จะต้องคืนส่วนต่างไหม",
+    "en": "I received a claim-free rebate before finding an old bill. If the approved claim is smaller than the rebate, do I owe the excess back?",
+    "required": [[37]]
+  }
+]

@@ -1,0 +1,100 @@
+{
+  "schema_version": 1,
+  "revision": "2026-11-21.1",
+  "scope": "Project-authored research fixture for staff-selected workflows on two synthetic policy editions. Each link supplies source exhibits. No insurer or clinical reviewer has validated the task mappings.",
+  "policies": {
+    "KM-26C": {
+      "file": "th-policy.pdf",
+      "sha256": "88e49e01824f9ec32c7cb0057e7a473042ede32ba81a49626a8dc6f94b2f5518",
+      "tasks": {
+        "review_observation_stay": [
+          "KM-3.3"
+        ],
+        "review_room_endorsement": [
+          "KM-7.1"
+        ]
+      },
+      "clauses": {
+        "KM-3.3": {
+          "page": 3,
+          "quote": "Emergency department observation alone does not establish an overnight room entitlement. Use the ward arrival and discharge times together with the billed night lines.",
+          "requires": []
+        },
+        "KM-4.1": {
+          "page": 4,
+          "quote": "Gold room charges are limited to THB 5,000 per eligible inpatient night under the base schedule. Test each night separately. Any excess is listed for the coordinator to discuss with the member.",
+          "requires": []
+        },
+        "KM-4.2": {
+          "page": 4,
+          "quote": "A companion bed and visitor meals are member expenses even when they appear under the same room heading. Split these components before applying the cap. An item total plus its subtotal represents one expense.",
+          "requires": []
+        },
+        "KM-7.1": {
+          "page": 7,
+          "quote": "Rider R9 increases the Gold room limit to THB 6,000 per eligible night at facility BKK-17 for admissions from 1 November through 31 December 2026 inclusive. The member schedule must explicitly list R9.",
+          "requires": [
+            "KM-4.1",
+            "KM-7.2",
+            "KM-7.3"
+          ]
+        },
+        "KM-7.2": {
+          "page": 7,
+          "quote": "Circular R8 listed THB 5,500 per night for the same branch through 31 October 2026. R8 expired before November admissions. Do not combine allowances across riders or offset one night's excess against another night.",
+          "requires": []
+        },
+        "KM-7.3": {
+          "page": 7,
+          "quote": "R9 changes only the room limit in KM-4.1. Companion beds and meals remain member expenses under KM-4.2, even when the hospital prints them in the same cost center.",
+          "requires": [
+            "KM-4.2"
+          ]
+        }
+      }
+    },
+    "NQ-26B": {
+      "file": "us-policy.pdf",
+      "sha256": "d6ae0d7f51e628761c7f1f565ed103b1c5f80a60dcbc213fe361f9237a0b02d8",
+      "tasks": {
+        "reconcile_guarantee_and_payment": [
+          "NQ-6.3",
+          "NQ-8.3"
+        ],
+        "review_accident_notice": [
+          "NQ-7.1"
+        ]
+      },
+      "clauses": {
+        "NQ-3.2": {
+          "page": 3,
+          "quote": "For an unplanned overseas accident, the base notice window is 48 hours from admission. A rider on the member schedule may extend this window. Attach the time- stamped notice or assistance-desk receipt.",
+          "requires": []
+        },
+        "NQ-6.3": {
+          "page": 6,
+          "quote": "The insurer reply can approve, limit or query a request. A successful portal submission and a generated case number are acknowledgements of delivery. Record them separately from a written guarantee.",
+          "requires": []
+        },
+        "NQ-7.1": {
+          "page": 7,
+          "quote": "Rider M7 applies to G2 certificates listing M7 for accidental admissions in Thailand on or after 1 October 2026. It replaces the 48-hour notice deadline in NQ- 3.2 with 72 hours. The itemized estimate and implant schedule still apply.",
+          "requires": [
+            "NQ-3.2",
+            "NQ-7.2"
+          ]
+        },
+        "NQ-7.2": {
+          "page": 7,
+          "quote": "Rider M6 applied to earlier admissions and allowed 60 hours. It expires on 30 September 2026. A copy attached to the file after expiry does not extend it. For a new admission use the service date and active schedule.",
+          "requires": []
+        },
+        "NQ-8.3": {
+          "page": 8,
+          "quote": "Keep the original invoice, revised estimate and subsequent receipt as separate exhibits. An estimate is forward-looking. A statement records charges. Only an identified payment receipt establishes payment.",
+          "requires": []
+        }
+      }
+    }
+  }
+}
