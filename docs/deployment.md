@@ -1,6 +1,6 @@
 # Deploy the staff workspace
 
-The release serves the React app, the PDF viewer and the FastAPI API from one origin. Each hospital gets a dedicated PostgreSQL database. Staff in that installation can access its cases. A clean staff installation starts with empty queues. The published hackathon walkthrough uses a private loopback instance with synthetic examples. A container is available to build for a separately provisioned host. [Local demo](../README.md#run-the-demo)
+The release serves the React app, the PDF viewer and the FastAPI API from one origin. Each hospital gets a dedicated PostgreSQL database. Hospital coordinators work within their institution. Its insurer accounts can read submitted pre-arrival packets addressed to their payer. A clean staff installation starts with empty queues. The published hackathon walkthrough uses a private loopback instance with synthetic examples. A container is available to build for a separately provisioned host. [Local demo](../README.md#run-the-demo)
 
 ## Build and verify
 
@@ -57,4 +57,4 @@ A shared service can present a hospital directory at its root. Each hospital has
 
 Keep evidence preservation, revision checks, staff approval and payment recording consistent across installations. For a pilot, add reviewed, versioned payer profiles scoped to the hospital's contract. Each profile should name its form edition, claim route, required evidence, signatures, currency and rules for corrections. Save the profile version on the reviewed revision. The AIA consent, FEP assignment and CMS replacement trials are acceptance cases for this future work. The hackathon release still uses its documented supported layouts. [Thai results](thai-payer-forms.md) · [US results](us-payer-forms.md) · [Microsoft’s dedicated deployment pattern](https://learn.microsoft.com/en-us/azure/architecture/guide/multitenant/approaches/overview)
 
-For an on-stage demo, open the local synthetic workspace before presenting and start on the claim queue. For a shared team or judge instance, use the existing staff sign-in and individually provisioned accounts over HTTPS. A later hospital pilot can integrate the hospital’s identity provider and MFA. All staff in a given installation currently share case access.
+For an on-stage demo, open the local synthetic workspace before presenting and start on the claim queue. For a shared team or judge instance, use the existing staff sign-in and individually provisioned accounts over HTTPS. A later hospital pilot can integrate the hospital’s identity provider and MFA. Provision hospital coordinators and insurer reviewers separately. The inbox limits each insurer reviewer to submitted revisions for that payer. [Hospital and insurer setup](hospital-workspaces.md)
