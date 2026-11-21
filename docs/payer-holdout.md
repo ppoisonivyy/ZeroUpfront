@@ -59,7 +59,9 @@ Run the current application on the frozen cases from the repository root. The sc
 uv run --locked python bench/payer_challenge.py --workers 4
 ```
 
-Recompute either historical score directly from the saved HTTP observations.
+The live command exits successfully only when all 11 targets appear on their required form pages, all six values appear in both the form citations and finding messages, and the 45 aligned expectations produce zero false targeted alerts. Every one of the 14 cases must remain held with approval and export blocked, with all 52 original documents intact. An incomplete or duplicated case set is rejected. Inspect `scored.json` for the case and field behind a failure.
+
+Recompute either historical score directly from the saved HTTP observations. This mode reports the evidence gathered at the time. To enforce the current exit criteria on a saved file, add `--require-current`.
 
 ```bash
 uv run --locked python bench/payer_challenge.py --score-observed bench/payer_challenge_cases/first-observations.json --out .local/holdout-first
