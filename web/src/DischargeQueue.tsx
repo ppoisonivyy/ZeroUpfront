@@ -1,11 +1,11 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   ArrowRight, BadgeCheck, CircleAlert, ClipboardList, FileSearch, Filter,
   Inbox, Landmark, Layers, ListFilter, Play, Plus, ReceiptText, Search, Send, X,
 } from "lucide-react";
 import { useStaffSession } from "./Auth";
 import { api, displayDate } from "./api";
-import { claimHref, claimPayerStatus, claimStatus, minorMoney, type DischargeClaim, type DischargeQueue, type DischargeWorklist, type PattayaSettlementSummary } from "./dischargeApi";
+import { claimHref, claimPayerStatus, claimStatus, minorMoney, pattayaSteps, type DischargeClaim, type DischargeQueue, type DischargeWorklist, type PattayaSettlementSummary } from "./dischargeApi";
 
 const examples = {
   duplicate_line: "Duplicate bill line", aligned: "Aligned discharge packet",
@@ -27,20 +27,26 @@ export function ClaimPill({ status }: { status: string }) {
 }
 
 function settlementLabel(settlement: PattayaSettlementSummary) {
-  if (settlement.status === "paid") return "Paid in full";
-  if (settlement.status === "reconciliation_required" || settlement.outstanding_minor === null)
-    return "Finance reconciliation required";
-  const stage = settlement.status === "partially_paid" ? "Awaiting insurer top-up" : "Awaiting hospital credit";
-  return stage + " · " + minorMoney(settlement.outstanding_minor, "THB");
+  const task = pattayaSteps[settlement.next_action];
+  return settlement.outstanding_minor ? task + " · " + minorMoney(settlement.outstanding_minor, "THB") : task;
 }
 
-export function DischargeList({ prior }: { prior?: string }) {
+// Keep searches within the signed-in discharge desk; they may contain patient identifiers.
+export function useDischargeListView() {
+  const [search, setSearch] = useState("");
+  const [filter, setFilter] = useState({ queue: "all" as DischargeQueue, search: "", page: 1 });
+  const returnToRow = useRef<string | null>(null);
+  return { search, setSearch, filter, setFilter, returnToRow };
+}
+
+export function DischargeList({ prior, view }: { prior?: string; view: ReturnType<typeof useDischargeListView> }) {
   const { mode } = useStaffSession();
   const [example, setExample] = useState("duplicate_line");
   const [pending, setPending] = useState("");
   const [error, setError] = useState<{ scenario: string; message: string } | null>(null);
-  const [search, setSearch] = useState("");
-  const [filter, setFilter] = useState({ queue: "all" as DischargeQueue, search: "", page: 1 });
+  const { search, setSearch, filter, setFilter, returnToRow } = view;
+  const listHeading = useRef<HTMLHeadingElement>(null);
+  const initialFocus = useRef(document.activeElement);
   const [retry, setRetry] = useState(0);
   const [result, setResult] = useState<{ key: string; data?: DischargeWorklist; error?: string }>({ key: "" });
   const { queue, page } = filter;
@@ -76,6 +82,15 @@ export function DischargeList({ prior }: { prior?: string }) {
   }, [queue, submittedSearch, page, key]);
   const current = result.key === key && filter.search === search.trim() ? result : undefined;
   const data = current?.data;
+  useEffect(() => {
+    const id = returnToRow.current;
+    if (!data || !id) return;
+    returnToRow.current = null;
+    if (document.activeElement === document.body || document.activeElement === initialFocus.current) {
+      const row = document.getElementById("claim-entry-" + id);
+      (row || listHeading.current)?.focus();
+    }
+  }, [data, returnToRow]);
   const setQueue = (next: DischargeQueue) => setFilter(prev => ({ ...prev, queue: next, page: 1 }));
   async function start(scenario: string) {
     if (pending) return;
@@ -111,7 +126,7 @@ export function DischargeList({ prior }: { prior?: string }) {
     <section className="work-inbox" aria-label="Discharge claim worklist">
       <div className="inbox-bar"><div className="inbox-name">
         <span className="inbox-icon"><ListFilter size={19} /></span>
-        <h2>{queue === "all" ? "All claims" : queues.find(q => q.id === queue)?.label}</h2>
+        <h2 ref={listHeading} tabIndex={-1}>{queue === "all" ? "All claims" : queues.find(q => q.id === queue)?.label}</h2>
         <span className="quantity" aria-live="polite">{data?.total ?? "…"}</span>
         {queue !== "all" && <button className="icon-button" onClick={() => setQueue("all")} aria-label="Clear work queue filter"><X size={14} /></button>}
       </div><label className="queue-search"><Search size={16} /><input type="search" aria-label="Find a claim"
@@ -121,7 +136,10 @@ export function DischargeList({ prior }: { prior?: string }) {
       : !data ? <div className="queue-empty" role="status">Loading claims…</div>
       : data.items.length > 0 ? <div className="claim-collection" role="list">
         <div className="queue-columns" aria-hidden="true"><span>Encounter</span><span>Payer</span><span>Final bill</span><span>Review status</span><span /></div>
-        {data.items.map(c => <div role="listitem" key={c.id}><a className="claim-entry" href={claimHref(c.id)}>
+        {data.items.map(c => <div role="listitem" key={c.id}><a className="claim-entry" href={claimHref(c.id)} id={"claim-entry-" + c.id}
+          onClick={event => {
+            if (!event.metaKey && !event.ctrlKey && !event.shiftKey && !event.altKey) returnToRow.current = c.id;
+          }}>
           <span className="entry-subject"><span className="entry-icon"><ReceiptText size={18} /></span>
             <span><strong>{c.procedure}</strong><small>{c.encounter || c.member} · {displayDate(c.discharge_date)}</small></span></span>
           <span className="entry-payer"><strong>{c.insurer || "Unrecorded payer"}</strong>

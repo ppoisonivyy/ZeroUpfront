@@ -6,7 +6,7 @@ import psycopg
 from fastapi import APIRouter, Header, HTTPException, Query, Request
 from psycopg.rows import dict_row
 from psycopg.types.json import Jsonb
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 from app import preclaim_fixture as fixture
 from app.hospital_platform import hospital_path
@@ -42,6 +42,14 @@ CREATE TABLE IF NOT EXISTS zeroupfront_demo.preclaim_reviews (
 CREATE TABLE IF NOT EXISTS zeroupfront_demo.preclaim_submissions (
     case_id text PRIMARY KEY, revision integer NOT NULL, actor text NOT NULL, username text NOT NULL,
     created_at timestamptz NOT NULL DEFAULT now(),
+    FOREIGN KEY(case_id,revision) REFERENCES zeroupfront_demo.preclaim_reviews(case_id,revision)
+);
+CREATE TABLE IF NOT EXISTS zeroupfront_demo.preclaim_questions (
+    case_id text NOT NULL, revision integer NOT NULL, sequence integer NOT NULL CHECK(sequence > 0),
+    source_role text NOT NULL, page integer NOT NULL CHECK(page > 0), question text NOT NULL,
+    asked_by text NOT NULL, asked_at timestamptz NOT NULL DEFAULT now(),
+    reply text, replied_by text, replied_at timestamptz,
+    PRIMARY KEY(case_id,revision,sequence),
     FOREIGN KEY(case_id,revision) REFERENCES zeroupfront_demo.preclaim_reviews(case_id,revision)
 );
 """
@@ -83,10 +91,12 @@ def seed(dsn, hospital):
 
 def summaries(dsn):
     with psycopg.connect(dsn) as db:
-        rows = db.execute("""SELECT c.id,c.head,a.actor,s.revision,r.case_values FROM zeroupfront_demo.preclaims c
+        rows = db.execute("""SELECT c.id,c.head,a.actor,s.revision,r.case_values,q.sequence,q.reply FROM zeroupfront_demo.preclaims c
             JOIN zeroupfront_demo.preclaim_revisions r ON r.case_id=c.id AND r.revision=c.head
             LEFT JOIN zeroupfront_demo.preclaim_reviews a ON a.case_id=c.id AND a.revision=c.head
             LEFT JOIN zeroupfront_demo.preclaim_submissions s ON s.case_id=c.id AND s.revision=c.head
+            LEFT JOIN LATERAL (SELECT sequence,reply FROM zeroupfront_demo.preclaim_questions
+                WHERE case_id=c.id AND revision=s.revision ORDER BY sequence DESC LIMIT 1) q ON true
             ORDER BY c.id""").fetchall()
     return [
         {
@@ -102,7 +112,7 @@ def summaries(dsn):
             "input_kind": "payer_preclaim",
             "status": "staff_reviewed" if actor else "ready_for_review" if rev > 1 else "needs_review",
             "insurer_status": "submitted" if sent else "not_sent",
-            "workflow_stage": "waiting_for_insurer"
+            "workflow_stage": "hospital_reply_needed" if sequence and reply is None else "hospital_replied" if sequence else "waiting_for_insurer"
             if sent
             else "staff_reviewed"
             if actor
@@ -110,7 +120,7 @@ def summaries(dsn):
             if rev > 1
             else "needs_documents",
         }
-        for ident, rev, actor, sent, values in rows
+        for ident, rev, actor, sent, values, sequence, reply in rows
     ]
 
 
@@ -123,7 +133,7 @@ def _insurer(request):
 def _row(db, ident, revision=None, *, payer=None):
     row = db.execute(
         """SELECT c.id,c.insurer,c.hospital,c.head,r.revision,r.policy,r.report,r.estimate,r.draft,r.case_values,
-                        a.actor AS reviewer,a.form,s.revision AS submitted_revision
+                        a.actor AS reviewer,a.form,s.revision AS submitted_revision,s.created_at AS submitted_at
                  FROM zeroupfront_demo.preclaims c
                  JOIN zeroupfront_demo.preclaim_revisions r ON r.case_id=c.id AND r.revision=coalesce(%s::int,c.head)
                  LEFT JOIN zeroupfront_demo.preclaim_reviews a ON a.case_id=c.id AND a.revision=r.revision
@@ -194,6 +204,13 @@ def _detail(db, row, *, payer=None):
         if issues
         else "ready_for_review"
     )
+    questions = db.execute(
+        """SELECT sequence,source_role,page,question,asked_at,reply,replied_at
+           FROM zeroupfront_demo.preclaim_questions WHERE case_id=%s AND revision=%s ORDER BY sequence""",
+        (row["id"], row["revision"]),
+    ).fetchall() if row["submitted_revision"] else []
+    if questions:
+        status = "hospital_reply_needed" if questions[-1]["reply"] is None else "hospital_replied"
     sources = [
         {"role": key, "label": label, "page": page, "url": source + key, "quote": quote}
         for key, label, page, quote in (
@@ -244,6 +261,8 @@ def _detail(db, row, *, payer=None):
         "form_edition": values["form_edition"],
         "reviewer": row["reviewer"],
         "submitted_revision": row["submitted_revision"],
+        "submitted_at": row["submitted_at"],
+        "questions": questions,
         "simulation": True,
     }
 
@@ -304,6 +323,71 @@ def report_example(request: Request, ident: str):
         if not row:
             raise HTTPException(404, "Pre-claim not found.")
         return _pdf(_value(db, row["replacement"]), "fictional-signed-medical-report.pdf")
+
+
+class CitedQuestion(BaseModel):
+    model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
+    source_role: Literal["policy", "report", "estimate", "request"]
+    page: int = Field(ge=1)
+    question: str = Field(min_length=1, max_length=1500)
+    previous_sequence: int = Field(ge=0)
+
+
+class HospitalReply(BaseModel):
+    model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
+    reply: str = Field(min_length=1, max_length=3000)
+
+
+def _submitted_for_update(db, ident, revision, payer=None):
+    # Authorize the submitted revision before locking its correspondence.
+    row = _row(db, ident, revision, payer=payer)
+    locked = db.execute(
+        "SELECT revision FROM zeroupfront_demo.preclaim_submissions WHERE case_id=%s AND revision=%s FOR UPDATE",
+        (ident, revision),
+    ).fetchone()
+    if not locked or row["head"] != revision:
+        raise HTTPException(409, "Reopen the current submitted revision before responding.")
+    return row
+
+
+@router.post("/api/insurer/preclaims/{ident}/clarifications")
+def ask_question(request: Request, ident: str, question: CitedQuestion, if_match: Match = None):
+    revision, payer = _revision(if_match), _insurer(request)
+    with psycopg.connect(request.app.state.dsn, row_factory=dict_row) as db:
+        row = _submitted_for_update(db, ident, revision, payer)
+        latest = db.execute(
+            "SELECT sequence,reply FROM zeroupfront_demo.preclaim_questions "
+            "WHERE case_id=%s AND revision=%s ORDER BY sequence DESC LIMIT 1", (ident, revision),
+        ).fetchone()
+        if (latest and latest["reply"] is None) or question.previous_sequence != (latest["sequence"] if latest else 0):
+            raise HTTPException(409, "This conversation changed. Reload the current request.")
+        digest = row["form" if question.source_role == "request" else question.source_role]
+        if question.page > len(fixture.pages(_value(db, digest))):
+            raise HTTPException(422, "Choose a page in the submitted document.")
+        db.execute(
+            """INSERT INTO zeroupfront_demo.preclaim_questions
+               (case_id,revision,sequence,source_role,page,question,asked_by) VALUES (%s,%s,%s,%s,%s,%s,%s)""",
+            (ident, revision, question.previous_sequence + 1, question.source_role, question.page,
+             question.question, request.state.username),
+        )
+        return _detail(db, row, payer=payer)
+
+
+@router.post("/api/preclaims/{ident}/clarifications/{sequence}/reply")
+def answer_question(request: Request, ident: str, sequence: int, answer: HospitalReply, if_match: Match = None):
+    if not getattr(request.state, "username", None) or request.state.role != "hospital":
+        raise HTTPException(403, "Hospital staff sign-in required to answer this question.")
+    revision = _revision(if_match)
+    with psycopg.connect(request.app.state.dsn, row_factory=dict_row) as db:
+        row = _submitted_for_update(db, ident, revision)
+        saved = db.execute(
+            """UPDATE zeroupfront_demo.preclaim_questions SET reply=%s,replied_by=%s,replied_at=now()
+               WHERE case_id=%s AND revision=%s AND sequence=%s AND reply IS NULL""",
+            (answer.reply, request.state.username, ident, revision, sequence),
+        )
+        if saved.rowcount != 1:
+            raise HTTPException(409, "This question has changed. Reload the current request.")
+        return _detail(db, row)
 
 
 Action = Literal["attach-report", "review", "submit"]

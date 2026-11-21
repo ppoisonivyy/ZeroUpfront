@@ -15,7 +15,7 @@ const categories = { exchange_difference: "Exchange-rate differences", bank_fees
 const payers = { insurer: "Insurer", patient: "Patient", hospital: "Hospital", other: "Another party", unclear: "Needs review" };
 
 function FeeReader({ path, revision, eventId, source, openLetter }: {
-  path: string; revision: number; eventId: number; source: Source; openLetter: (source: Source) => void;
+  path: string; revision: number; eventId: number; source: Source; openLetter: (source: Source, trigger: HTMLButtonElement) => void;
 }) {
   const [result, setResult] = useState<Assessment>();
   const [error, setError] = useState("");
@@ -45,7 +45,7 @@ function FeeReader({ path, revision, eventId, source, openLetter }: {
 
   return <section className="guarantee-fees" aria-label="Guarantee fee terms">
     <h3>Who covers the FX costs?</h3>
-    <button type="button" className="text-action" onClick={() => openLetter(source)}><FileText size={14} />Open original payer letter</button>
+    <button type="button" className="text-action" onClick={event => openLetter(source, event.currentTarget)}><FileText size={14} />Open original payer letter</button>
     <p>Reading the terms sends the original payer PDF to OpenAI to identify who covers exchange differences and bank fees in Thai or English.</p>
     <button type="button" className="secondary" disabled={busy || !!result} onClick={() => void read()}>{busy ? "Reading the payer letter…" : "Read fee terms with OpenAI"}</button>
     {error && <p role="alert" className="error-message">{error}</p>}
@@ -55,10 +55,10 @@ function FeeReader({ path, revision, eventId, source, openLetter }: {
       {result.findings.length > 0 && <dl>{result.findings.map(finding => <div key={finding.category}>
         <dt>{categories[finding.category]}</dt><dd>{payers[finding.payer]}</dd>
         {finding.page > 0 && finding.quote && <dd className="guarantee-fee-citation"><q lang={/[\u0E00-\u0E7F]/u.test(finding.quote) ? "th" : undefined}>{finding.quote}</q>{" "}
-          <button type="button" className="text-action" onClick={() => openLetter({ ...source, page: finding.page, quote: finding.quote })}>View page {finding.page}</button>
+          <button type="button" className="text-action" onClick={event => openLetter({ ...source, page: finding.page, quote: finding.quote }, event.currentTarget)}>View page {finding.page}</button>
         </dd>}
         {finding.definition && <dd className="guarantee-fee-citation">Party definition: <q>{finding.definition.quote}</q>{" "}
-          <button type="button" className="text-action" onClick={() => openLetter({ ...source, page: finding.definition!.page, quote: finding.definition!.quote })}>View definition on page {finding.definition.page}</button>
+          <button type="button" className="text-action" onClick={event => openLetter({ ...source, page: finding.definition!.page, quote: finding.definition!.quote }, event.currentTarget)}>View definition on page {finding.definition.page}</button>
         </dd>}
       </div>)}</dl>}
       <p>Confirm each responsibility against the signed letter before assigning a charge.</p>
@@ -66,7 +66,7 @@ function FeeReader({ path, revision, eventId, source, openLetter }: {
   </section>;
 }
 
-export function GuaranteeFees({ claim, openLetter }: { claim: DischargeClaim; openLetter: (source: Source) => void }) {
+export function GuaranteeFees({ claim, openLetter }: { claim: DischargeClaim; openLetter: (source: Source, trigger: HTMLButtonElement) => void }) {
   const reply = [...claim.events].reverse().find(event => event.kind === "reply");
   if (!reply?.source_url || (reply.data.outcome !== "confirmed" && reply.data.outcome !== "partial")) return null;
   const source = { role: "payer_decision", label: "Payer decision letter", url: reply.source_url, page: 1, quote: "" };

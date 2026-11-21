@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
-import { api } from "./api";
+import { api, RequestError } from "./api";
 
 export function useResource<T>(url: string, epoch: number) {
-  const [result, set] = useState<{ key: string; data?: T; error?: string }>({
+  const [result, set] = useState<{ key: string; data?: T; error?: string; status?: number }>({
     key: "",
   });
   const key = url + ":" + epoch;
@@ -21,6 +21,7 @@ export function useResource<T>(url: string, epoch: number) {
               error instanceof Error
                 ? error.message
                 : "The case could not be loaded.",
+            status: error instanceof RequestError ? error.status : undefined,
           });
       });
     return () => controller.abort();

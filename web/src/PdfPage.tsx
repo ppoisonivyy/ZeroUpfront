@@ -13,6 +13,7 @@ type Props = {
   onReady?: () => void;
   onPageChange?: (page: number) => void;
   fixedPage?: boolean;
+  readable?: boolean;
 };
 export default function PdfPage(props: Props) {
   return <DocumentPage key={props.url + "#" + (props.page ?? 1)} {...props} />;
@@ -25,12 +26,15 @@ function DocumentPage({
   onReady,
   onPageChange,
   fixedPage = false,
+  readable = false,
 }: Props) {
   const frame = useRef<HTMLDivElement>(null);
   const [width, setWidth] = useState(0);
   const [doc, setDoc] = useState<PDFDocumentProxy | null>(null);
   const [active, setActive] = useState(page);
   const [target, setTarget] = useState(String(page));
+  const [readText, setReadText] = useState(() => readable && matchMedia("(max-width: 760px)").matches);
+  const [extracted, setExtracted] = useState<{ page: number; text: string } | null>(null);
   const [status, setStatus] = useState("Loading original page…");
   const error =
     "The page preview is unavailable. Open the original PDF to review it.";
@@ -61,8 +65,31 @@ function DocumentPage({
     };
   }, [url]);
   useEffect(() => {
+    if (!doc || !readText) return;
+    let stopped = false;
+    doc.getPage(active)
+      .then(pdfPage => pdfPage.getTextContent())
+      .then(content => {
+        if (stopped) return;
+        const text = content.items
+          .map(item => "str" in item ? item.str + (item.hasEOL ? "\n" : " ") : "")
+          .join("").trim();
+        setExtracted({ page: active, text });
+      })
+      .catch(() => {
+        if (!stopped) setExtracted({ page: active, text: "" });
+      });
+    return () => { stopped = true; };
+  }, [doc, active, readText]);
+  useEffect(() => {
+    if (readText && extracted?.page === active && extracted.text) {
+      onText?.(extracted.text);
+      onReady?.();
+    }
+  }, [active, readText, extracted, onText, onReady]);
+  useEffect(() => {
     const host = frame.current;
-    if (!doc || !host || !width) return;
+    if (readText || !doc || !host || !width) return;
     const documentProxy = doc;
     let stopped = false;
     let rendering: RenderTask | undefined;
@@ -104,7 +131,7 @@ function DocumentPage({
       rendering?.cancel();
       canvas.remove();
     };
-  }, [doc, active, width, label, onText, onReady]);
+  }, [doc, active, width, label, onText, onReady, readText]);
   function selectPage(value: number) {
     if (doc && Number.isInteger(value) && value >= 1 && value <= doc.numPages) {
       setActive(value);
@@ -114,6 +141,10 @@ function DocumentPage({
   }
   return (
     <>
+      {readable && <div className="pdf-mode" role="group" aria-label="Document view">
+        <button type="button" aria-pressed={readText} onClick={() => setReadText(true)}>Readable text</button>
+        <button type="button" aria-pressed={!readText} onClick={() => setReadText(false)}>Original page</button>
+      </div>}
       {doc && doc.numPages > 1 && !fixedPage && (
         <div className="pdf-pager">
           <button
@@ -134,8 +165,10 @@ function DocumentPage({
               onChange={(e) => {
                 setTarget(e.target.value);
                 const n = Number(e.target.value);
-                if (n >= 1 && n <= doc.numPages && Number.isInteger(n))
+                if (n >= 1 && n <= doc.numPages && Number.isInteger(n)) {
                   setActive(n);
+                  onPageChange?.(n);
+                }
               }}
               onBlur={() => setTarget(String(active))}
             />{" "}
@@ -151,7 +184,13 @@ function DocumentPage({
           </button>
         </div>
       )}
-      <div className="pdf-scroll">
+      {readText && <section className="pdf-readable" aria-label={label + ", page " + active + ", readable text"}>
+        {extracted?.page === active ? extracted.text
+          ? <p>{extracted.text}</p>
+          : <p>Readable text is unavailable on this page. Select Original page to inspect the document image.</p>
+          : <p role="status">{!doc && status === error ? error : "Loading page text…"}</p>}
+      </section>}
+      <div className="pdf-scroll" hidden={readText}>
         {status && (
           <p className="pdf-message" role="status">
             {status}

@@ -63,7 +63,16 @@ export type DischargeClaim = {
   events: (Omit<WorkflowEvent, "kind"> & { kind: string })[];
 };
 export type DischargeQueue = "all" | "needs" | "ready" | "payer";
+export const pattayaSteps = {
+  book: "Insurer treasury · Choose funding",
+  record_short: "Hospital finance · Verify bank credit",
+  top_up: "Insurer treasury · Record top-up remittance",
+  confirm_topup: "Hospital finance · Verify top-up credit",
+  complete: "Hospital paid in full",
+  review: "Hospital finance · Review settlement evidence",
+};
 export type PattayaSettlementSummary = {
+  next_action: keyof typeof pattayaSteps;
   status: "unpaid" | "partially_paid" | "paid" | "reconciliation_required";
   outstanding_minor: number | null;
 };

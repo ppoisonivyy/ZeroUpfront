@@ -188,13 +188,15 @@ def detail(dsn, ident, rev=None):
 _SUMMARIES = """
     SELECT c.id, c.head AS revision, fields.member, fields.procedure, fields.insurer, fields.encounter,
            fields.admission_date, fields.discharge_date, fields.currency, fields.bill_total_minor, fields.example_scenario,
+           fields.source_reported_cap_minor, fields.source_reported_patient_share_minor,
            CASE WHEN a.actor IS NULL THEN fields.status ELSE 'staff_reviewed' END AS status,
            coalesce(stage.status, 'not_sent') AS insurer_status
     FROM zeroupfront_demo.discharge_cases c
     JOIN zeroupfront_demo.discharge_revisions r ON r.case_id=c.id AND r.revision=c.head
     CROSS JOIN LATERAL jsonb_to_record(r.evidence) AS fields(
         member text, procedure text, insurer text, encounter text, admission_date text,
-        discharge_date text, currency text, bill_total_minor numeric, status text, example_scenario text)
+        discharge_date text, currency text, bill_total_minor numeric, status text, example_scenario text,
+        source_reported_cap_minor bigint, source_reported_patient_share_minor bigint)
     LEFT JOIN zeroupfront_demo.discharge_approvals a ON a.case_id=c.id AND a.revision=c.head
     LEFT JOIN LATERAL (
         SELECT CASE WHEN e.kind='submission' THEN 'submitted' ELSE e.data->>'outcome' END AS status
@@ -214,6 +216,8 @@ def summaries(dsn):
 
 
 def _pattaya_worklist_balances(db, items):
+    from app import pattaya_agents
+
     # Fetch ledger events only for practice cases already selected for display.
     cases = {item["id"]: item for item in items if item.pop("example_scenario", None) == "pattaya_fx"}
     if not cases:
@@ -223,7 +227,7 @@ def _pattaya_worklist_balances(db, items):
         SELECT e.case_id, e.kind, e.data
         FROM zeroupfront_demo.discharge_events e
         JOIN zeroupfront_demo.discharge_cases c ON c.id=e.case_id AND c.head=e.revision
-        WHERE e.case_id=ANY(%s) AND e.kind IN ('reply', 'payment')
+        WHERE e.case_id=ANY(%s) AND e.kind IN ('reply', 'payment', 'fx_booking', 'topup_remittance')
         ORDER BY e.case_id, e.version
     """, (list(cases),)):
         events[row["case_id"]].append(row)
@@ -236,7 +240,8 @@ def _pattaya_worklist_balances(db, items):
             outstanding = decision["amount_minor"] - ledger["paid_by_currency"].get("THB", 0)
         else:
             status = "reconciliation_required"
-        item["pattaya_settlement"] = dict(status=status, outstanding_minor=outstanding)
+        review = pattaya_agents.review({**item, **ledger, "example_scenario": "pattaya_fx"})
+        item["pattaya_settlement"] = dict(status=status, outstanding_minor=outstanding, next_action=review["next_action"])
 
 
 def worklist(dsn, queue, search, page, page_size):

@@ -1,6 +1,6 @@
 # Deploy the staff workspace
 
-The release serves the React app, the PDF viewer and the FastAPI API from one origin. Each hospital gets a dedicated PostgreSQL database. Hospital coordinators work within their institution. Its insurer accounts can read submitted pre-arrival packets addressed to their payer. A clean staff installation starts with empty queues. The published hackathon walkthrough uses a private loopback instance with synthetic examples. A container is available to build for a separately provisioned host. [Local demo](../README.md#run-the-demo)
+The release serves the React app, the PDF viewer and the FastAPI API from one origin. Each hospital gets a dedicated PostgreSQL database. Hospital coordinators work within their institution. Its insurer accounts can read submitted pre-arrival packets addressed to their payer and send page-specific clarification questions to hospital staff. A clean staff installation starts with empty queues. The published hackathon walkthrough uses a private loopback instance with synthetic examples. A container is available to build for a separately provisioned host. [Local demo](../README.md#run-the-demo)
 
 ## Build and verify
 

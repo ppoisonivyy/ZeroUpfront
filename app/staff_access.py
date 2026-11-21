@@ -193,8 +193,9 @@ def install_access(app):
         if not access_api and insurer_api != (insurer is not None):
             return JSONResponse({"detail": "Sign in with the appropriate workspace account."}, 403,
                                 headers={"Cache-Control": "no-store"})
-        if insurer_api and request.method not in {"GET", "HEAD", "OPTIONS"}:
-            return JSONResponse({"detail": "The insurer inbox is read-only."}, 403,
+        clarification = request.method == "POST" and re.fullmatch(r"/api/insurer/preclaims/[A-Za-z0-9_-]+/clarifications", path)
+        if insurer_api and request.method not in {"GET", "HEAD", "OPTIONS"} and not clarification:
+            return JSONResponse({"detail": "This action is unavailable to the insurer desk."}, 403,
                                 headers={"Cache-Control": "no-store"})
         request.state.insurer = insurer
         request.state.role = "insurer" if insurer is not None else "hospital"

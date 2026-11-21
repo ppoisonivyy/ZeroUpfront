@@ -205,3 +205,13 @@
 .ai-review :is(h4, p) { margin: 6px 0; }
 .ai-review h4 { margin-top: 15px; }
 .ai-review button { justify-self: start; }
+
+.source-return { margin: 4px 16px; min-height: 36px; }
+.pdf-mode { display: inline-flex; margin: 0 14px 10px; padding: 3px; border: 1px solid var(--line); border-radius: 8px; background: white; }
+.pdf-mode button { border: 0; border-radius: 5px; background: transparent; padding: 7px 12px; color: var(--ink); font: inherit; font-size: .875rem; cursor: pointer; }
+.pdf-mode button[aria-pressed="true"] { background: var(--action); color: white; }
+.pdf-readable { margin: 0 14px 14px; background: white; border: 1px solid var(--line); padding: 16px; font-size: 1rem; line-height: 1.55; overflow-wrap: anywhere; }
+.pdf-readable p { margin: 0; white-space: pre-wrap; }
+@media (max-width: 760px) {
+  .source-return, .pdf-mode button { min-height: 44px; }
+}

@@ -9,10 +9,10 @@ import {
   History,
 } from "lucide-react";
 import { ClaimFindings } from "./ClaimFindings";
-import { ClaimPill, DischargeList } from "./DischargeQueue";
+import { ClaimPill, DischargeList, useDischargeListView } from "./DischargeQueue";
 import { api, displayDate, RequestError, type Source } from "./api";
 import { AttachmentList } from "./Attachments";
-import { SourceView } from "./SourceView";
+import { SourceView, useSourceNavigation } from "./SourceView";
 import { RecordedEvent } from "./CaseWorkflow";
 import { ClaimMutation, ClaimUpload } from "./DischargeForms";
 import DischargeOcr from "./DischargeOcr";
@@ -117,19 +117,10 @@ function ClaimDetail({
     claim.status === "needs_review" &&
     claim.findings.length > 0 &&
     claim.findings.every((f) => f.code === "verify_ocr");
-  const pick = (s: Source) => {
+  const navigation = useSourceNavigation();
+  const pick = (s: Source, trigger?: HTMLButtonElement) => {
     setSelection(s);
-    if (matchMedia("(max-width:760px)").matches) {
-      const viewer = document.getElementById("source-view");
-      viewer?.focus({ preventScroll: true });
-      viewer?.scrollIntoView({ block: "start" });
-    }
-  };
-  const openLetter = (letter: Source) => {
-    setSelection(letter);
-    const viewer = document.getElementById("source-view");
-    viewer?.focus({ preventScroll: true });
-    viewer?.scrollIntoView({ block: "start" });
+    navigation.open(trigger);
   };
   if (panel === "ocr" && canVerifyOcr)
     return <DischargeOcr claim={claim} onSaved={saved} onBack={overview} />;
@@ -287,9 +278,9 @@ function ClaimDetail({
           <a href={claimHref(claim.id)}>Open current claim</a>
         </p>
       )}
-      {!pinned && !superseded && !pattayaExample && <GuaranteeFees claim={claim} openLetter={openLetter} />}
+      {!pinned && !superseded && !pattayaExample && <GuaranteeFees claim={claim} openLetter={pick} />}
       {showPattaya ? (
-        <PattayaSettlement claim={claim} onUpdated={onUpdated} reload={reload} openSource={openLetter} />
+        <PattayaSettlement claim={claim} onUpdated={onUpdated} reload={reload} openSource={pick} />
       ) : <dl className="facts claim-facts">
         <div>
           <dt>Final bill total</dt>
@@ -346,7 +337,7 @@ function ClaimDetail({
                 <div className="evidence-cites">{check.sources.map((cite, i) => {
                   const file = claim.sources.find(source => source.role === cite.role);
                   if (!file) return null;
-                  return <button key={i} type="button" onClick={() => pick({...file, page: cite.page, quote: cite.quote})}>
+                  return <button key={i} type="button" onClick={event => pick({...file, page: cite.page, quote: cite.quote}, event.currentTarget)}>
                     {dischargeRoles[cite.role as keyof typeof dischargeRoles]} · p. {cite.page}
                   </button>;
                 })}</div>
@@ -411,7 +402,7 @@ function ClaimDetail({
                 className={
                   "source-row " + (s.role === source?.role ? "chosen" : "")
                 }
-                onClick={() => pick(s)}
+                onClick={event => pick(s, event.currentTarget)}
                 aria-pressed={s.role === source?.role}
               >
                 <span className="file-icon">
@@ -449,6 +440,7 @@ function ClaimDetail({
             source={source}
             revision={claim.revision}
             historical={pinned}
+            onReturn={navigation.onReturn}
           />
         )}
       </div>
@@ -580,6 +572,12 @@ export function Discharge({
   prior?: string;
   revision?: number;
 }) {
+  const queueView = useDischargeListView();
+  if (!id) return <DischargeList prior={prior} view={queueView} />;
+  return <DischargeCase key={id + ":" + String(revision)} id={id} prior={prior} revision={revision} />;
+}
+
+function DischargeCase({ id, prior, revision }: { id: string; prior?: string; revision?: number }) {
   const [epoch, setEpoch] = useState(0);
   const [loaded, setLoaded] = useState<{
     key: string;
@@ -609,7 +607,6 @@ export function Discharge({
     return () => abort.abort();
   }, [url, key, id]);
   const reload = () => setEpoch((n) => n + 1);
-  if (!id) return <DischargeList prior={prior} />;
   if (id === "new")
     return (
       <ClaimUpload

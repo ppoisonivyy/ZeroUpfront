@@ -33,7 +33,7 @@ const stateLabels: Record<string, string> = {
   original: "Original claim",
 };
 
-export function PayerSecondRead({ claim, pick }: { claim: DischargeClaim; pick: (s: Source) => void }) {
+export function PayerSecondRead({ claim, pick }: { claim: DischargeClaim; pick: (s: Source, trigger: HTMLButtonElement) => void }) {
   const [family, setFamily] = useState<Family | "">("");
   const [confirmed, setConfirmed] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -89,7 +89,7 @@ export function PayerSecondRead({ claim, pick }: { claim: DischargeClaim; pick: 
         <div className="evidence-cites">{check.pages.map(cite => {
           const file = claim.sources.find(s => s.role === cite.role);
           return file && <button type="button" key={cite.role + cite.page}
-            onClick={() => pick({ ...file, page: cite.page, quote: "" })}>
+            onClick={event => pick({ ...file, page: cite.page, quote: "" }, event.currentTarget)}>
             {dischargeRoles[cite.role]} · p. {cite.page}
           </button>;
         })}</div>

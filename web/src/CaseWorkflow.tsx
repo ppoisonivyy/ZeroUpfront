@@ -38,6 +38,7 @@ const eventNames: Record<string, string> = {
   resolve_hold: "Operational hold resolved",
   payment: "Payment recorded",
   fx_booking: "Simulated bank FX booked",
+  topup_remittance: "Insurer top-up instructed",
 };
 const payerStatuses: Record<string, string> = {
   not_sent: "Awaiting submission",

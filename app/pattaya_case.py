@@ -74,7 +74,7 @@ class BankMessage:
         def money(minor):
             return f"{self.currency} {Decimal(minor) / 100:,.2f}"
 
-        is_instruction = self.kind == "instruction"
+        is_instruction = self.kind in ("instruction", "topup_instruction")
         heading = "SENDER TRANSFER INSTRUCTION" if is_instruction else "BENEFICIARY CREDIT ADVICE"
         lines = [f"SIMULATED {heading}", "Pattaya practice case / fictional bank document",
                  "Issued by: " + ("Practice Sending Bank" if is_instruction else "Practice Receiving Bank"),
@@ -97,6 +97,8 @@ def bank_message(ident, kind, *, hospital_slug=None):
         leg, value_date, gross, fee, net = "SEND-01", "2026-11-30", 23_900_000, None, None
     elif kind == "initial_credit":
         leg, value_date, gross, fee, net = "CREDIT-01", "2026-11-30", 23_900_000, 30_000, 23_870_000
+    elif kind == "topup_instruction":
+        leg, value_date, gross, fee, net = "SEND-02", "2026-12-01", 30_000, None, None
     elif kind == "topup_credit":
         leg, value_date, gross, fee, net = "CREDIT-02", "2026-12-01", 30_000, 0, 30_000
     else:

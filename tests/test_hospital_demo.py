@@ -93,6 +93,7 @@ class HospitalDemoTests(unittest.TestCase):
             quote_id = next(q["quote_id"] for q in desk["quotes"] if q["instrument"] == "forward")
             for action, details in (("book_forward", {"quote_id": quote_id}),
                                     ("record_short_credit", {"bank_document": "initial_credit"}),
+                                    ("record_remittance", {"bank_document": "topup_instruction"}),
                                     ("record_topup", {"bank_document": "topup_credit"})):
                 if "bank_document" in details:
                     path = case_url + "/pattaya/bank-documents/" + details["bank_document"]

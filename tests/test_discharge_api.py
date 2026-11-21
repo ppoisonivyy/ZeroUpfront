@@ -122,9 +122,9 @@ class DischargeApiTests(unittest.TestCase):
         self.assertEqual(result.status_code, 200, result.text)
         rows = {item["id"]: item for item in result.json()["items"]}
         self.assertEqual([rows[case["id"]]["pattaya_settlement"] for case in cases], [
-            {"status": "unpaid", "outstanding_minor": 23_900_000},
-            {"status": "partially_paid", "outstanding_minor": 30_000},
-            {"status": "paid", "outstanding_minor": 0},
+            {"status": "unpaid", "outstanding_minor": 23_900_000, "next_action": "book"},
+            {"status": "partially_paid", "outstanding_minor": 30_000, "next_action": "review"},
+            {"status": "paid", "outstanding_minor": 0, "next_action": "complete"},
         ])
         _, ordinary = self.new("aligned")
         item = self.client.post(ROOT + "/worklist/search", json={"search": ordinary["id"]}).json()["items"][0]

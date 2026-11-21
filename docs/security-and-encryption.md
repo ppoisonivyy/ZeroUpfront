@@ -4,7 +4,7 @@ ZeroUpfront handles insurance identifiers, health records, financial decisions a
 
 ## Who can open a submitted preauthorization?
 
-A coordinator signs in to the hospital queue. An insurer reviewer signs in with a separate account at that hospital. The server looks up the reviewer’s assigned payer for each request. The reviewer can read submitted revisions for that payer and the PDFs attached to those revisions. A replacement report, a draft, or another hospital’s submission requires its own authorized handoff. The reviewer inbox is read-only. Password resets preserve the assignment and revoke active sessions. [Access tests](../tests/test_staff_access.py) · [Handoff tests](../tests/test_preclaim_handoff.py)
+A coordinator signs in to the hospital queue. An insurer reviewer signs in with a separate account at that hospital. The server looks up the reviewer’s assigned payer for each request. The reviewer can read submitted revisions for that payer and their PDFs, and can ask a question about a page in that submitted packet. Hospital staff can answer. The conversation is bound to the submitted revision and leaves the signed form intact. A replacement report, a draft, or another hospital’s submission requires its own authorized handoff. Password resets preserve the assignment and revoke active sessions. [Access tests](../tests/test_staff_access.py) · [Handoff tests](../tests/test_preclaim_handoff.py)
 
 ## What protects each copy?
 

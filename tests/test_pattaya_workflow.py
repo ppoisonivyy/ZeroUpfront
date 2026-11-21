@@ -58,6 +58,8 @@ class PattayaWorkflowTests(unittest.TestCase):
             overrides.setdefault("quote_id", pattaya_agents.quotes()[action.removeprefix("book_")]["quote_id"])
         if action in pattaya_case.CREDIT_DOCUMENTS:
             overrides.setdefault("bank_document", pattaya_case.CREDIT_DOCUMENTS[action])
+        if action == "record_remittance":
+            overrides.setdefault("bank_document", "topup_instruction")
         return self.client.post(path + "/pattaya/actions", headers={"If-Match": f'"{revision}"'},
                                 json={"action": action, "confirmed": True, "workflow_version": version, **overrides})
 
@@ -84,7 +86,8 @@ class PattayaWorkflowTests(unittest.TestCase):
         self.assertEqual(report["booked_quote"], fresh)
         self.assertEqual(report["next_action"], "top_up")
         self.assertEqual(report["outstanding_minor"], 30000)
-        self.assertEqual(self.action(path, "record_topup", 4).json()["settlement_status"], "paid")
+        self.assertEqual(self.action(path, "record_remittance", 4).status_code, 200)
+        self.assertEqual(self.action(path, "record_topup", 5).json()["settlement_status"], "paid")
 
     def test_both_instruments_reach_paid_only_after_the_insurer_credit(self):
         for kind, cents in (("spot", 702941), ("forward", 686782)):
@@ -117,15 +120,40 @@ class PattayaWorkflowTests(unittest.TestCase):
                 report = self.review(path)
                 self.assertEqual((report["outstanding_minor"], report["shortfall_owner"], report["patient_fx_minor"]),
                                  (30_000, "insurer", 0))
+                self.assertEqual(self.action(path, "record_topup", 4).status_code, 409)
+                instruction = self.action(path, "record_remittance", 4, insurer_reference=" TREASURY-267 ")
+                self.assertEqual(instruction.status_code, 200, instruction.text)
+                self.assertEqual(instruction.json()["events"][-1]["data"]["insurer_reference"], "TREASURY-267")
+                self.assertEqual(self.action(path, "record_remittance", 4, insurer_reference="TREASURY-267").json()["workflow_version"], 5)
+                self.assertEqual(self.action(path, "record_remittance", 4, insurer_reference="CHANGED").status_code, 409)
+                pending = self.review(path)
+                self.assertEqual((pending["next_action"], pending["outstanding_minor"], pending["patient_fx_minor"]),
+                                 ("confirm_topup", 30_000, 0))
                 with ThreadPoolExecutor(2) as pool:
-                    receipts = list(pool.map(lambda _: self.action(path, "record_topup", 4), range(2)))
+                    receipts = list(pool.map(lambda _: self.action(path, "record_topup", 5), range(2)))
                 self.assertEqual([r.status_code for r in receipts], [200, 200])
                 saved = self.client.get(path).json()
                 self.assertEqual(saved["settlement_status"], "paid")
                 self.assertEqual(saved["case_paid_by_currency"], {"THB": 23_900_000})
-                self.assertEqual([e["kind"] for e in saved["events"]], ["submission", "reply", "fx_booking", "payment", "payment"])
+                self.assertEqual([e["kind"] for e in saved["events"]], ["submission", "reply", "fx_booking", "payment", "topup_remittance", "payment"])
                 self.assertEqual(self.review(path)["next_action"], "complete")
-                self.assertEqual(self.action(path, "record_short_credit", 3).json()["workflow_version"], 5)
+                self.assertEqual(self.action(path, "record_short_credit", 3).json()["workflow_version"], 6)
+
+    def test_worklist_and_case_share_stage_through_each_department_handoff(self):
+        path, case = self.new()
+        actions = [(None, "book"), ("book_forward", "record_short"), ("record_short_credit", "top_up"),
+                   ("record_remittance", "confirm_topup"), ("record_topup", "complete")]
+        for action, expected in actions:
+            if action:
+                result = self.action(path, action, case["workflow_version"])
+                self.assertEqual(result.status_code, 200, result.text)
+                case = result.json()
+            response = self.client.post("/api/discharge/worklist/search", json={"search": case["id"]})
+            self.assertEqual(response.status_code, 200, response.text)
+            row = response.json()["items"][0]["pattaya_settlement"]
+            desk = self.review(path)
+            self.assertEqual(row["next_action"], expected)
+            self.assertEqual((row["next_action"], row["outstanding_minor"]), (desk["next_action"], desk["outstanding_minor"]))
 
     def test_preview_and_archive_receiving_bank_evidence(self):
         path, _ = self.new()
@@ -143,8 +171,16 @@ class PattayaWorkflowTests(unittest.TestCase):
         self.assertEqual(self.client.get(path).json()["paid_by_currency"], {})
         for action, kind, version, gross, fee, net in (
             ("record_short_credit", "initial_credit", 3, 23_900_000, 30_000, 23_870_000),
-            ("record_topup", "topup_credit", 4, 30_000, 0, 30_000),
+            ("record_topup", "topup_credit", 5, 30_000, 0, 30_000),
         ):
+            if action == "record_topup":
+                self.assertEqual(preview(kind).status_code, 404)
+                original = preview("topup_instruction")
+                self.assertEqual(original.status_code, 200)
+                self.assertEqual(self.action(path, "record_remittance", 4, bank_document="topup_credit").status_code, 422)
+                instruction = self.action(path, "record_remittance", 4).json()["events"][-1]
+                self.assertTrue(instruction["data"]["bank_reference"])
+                self.assertEqual(self.client.get(instruction["source_url"]).content, original.content)
             shown = preview(kind)
             self.assertEqual(shown.status_code, 200, shown.text[:120])
             result = self.action(path, action, version)

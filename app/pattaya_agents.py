@@ -104,7 +104,7 @@ def _latest_event(case, kind, label):
     return result + " · recorded " + instant.astimezone(UTC).strftime("%d %b %Y, %H:%M UTC")
 
 
-def _settlement_step(verified, booked, paid):
+def _settlement_step(verified, booked, paid, remittance):
     if not verified or paid < 0 or paid > GUARANTEE_MINOR:
         return "review"
     if paid == GUARANTEE_MINOR:
@@ -112,7 +112,7 @@ def _settlement_step(verified, booked, paid):
     if not paid:
         return "record_short" if booked else "book"
     if booked and paid == SHORT_CREDIT_MINOR:
-        return "top_up"
+        return "confirm_topup" if remittance else "top_up"
     return "review"
 
 
@@ -125,6 +125,7 @@ ACTIONS = {
     "book": ("compare_funding", "Choose a simulated bank quote to fund the approved hospital payment."),
     "record_short": ("reconcile_credits", "The funding is booked. Record the separate simulated hospital credit."),
     "top_up": ("reconcile_credits", "The insurer owes the THB 300 top-up. The patient owes zero for FX."),
+    "confirm_topup": ("reconcile_credits", "The insurer recorded its remittance. Confirm the separate hospital credit advice."),
     "complete": ("reconcile_credits", "The recorded THB credits cover the insurer’s guarantee in full."),
     "review": ("reconcile_credits", "Review the records with finance before another settlement step."),
 }
@@ -134,7 +135,7 @@ INSTRUCTIONS = (
     "and compare available funding for an unbooked claim. When funding is booked or credits exist, "
     "reconcile credits. A booking alone is no hospital credit. Select book for an unfunded, unpaid guarantee, "
     "record_short for a booked but unpaid claim, top_up for the expected first credit with a balance, "
-    "complete for exact settlement, and review for conflicting evidence. Monetary minor units are hundredths. "
+    "confirm_topup for a recorded insurer remittance awaiting the hospital credit, complete for exact settlement, and review for conflicting evidence. Monetary minor units are hundredths. "
     "No trades, payments, financial advice or patient contact."
 )
 
@@ -210,7 +211,8 @@ def review(case, *, use_model=False):
     valid_currency = set(amounts) <= {"THB"}
     due = GUARANTEE_MINOR if guaranteed else 0
     outstanding = max(0, due - paid)
-    action = _settlement_step(fees_verified and valid_booking and valid_currency, booked, paid)
+    remittance = next((event["data"] for event in case["events"] if event["kind"] == "topup_remittance"), None)
+    action = _settlement_step(fees_verified and valid_booking and valid_currency, booked, paid, remittance)
     owner = "insurer" if fees_verified and valid_currency and outstanding else None
 
     trace = [
@@ -238,7 +240,7 @@ def review(case, *, use_model=False):
             "read_guarantee": dict(verified=fees_verified, amount_minor=due, currency="THB", patient_fx_minor=patient_fx_minor),
             "compare_funding": dict(quotes=prices, booking=booked, booked_quote=booking, valid_booking=valid_booking),
             "reconcile_credits": dict(paid_minor=paid, outstanding_minor=outstanding, currency="THB",
-                                     valid_currency=valid_currency, shortfall_owner=owner,
+                                     valid_currency=valid_currency, shortfall_owner=owner, remittance_recorded=bool(remittance),
                                      expected_first_credit_minor=SHORT_CREDIT_MINOR),
         }
         model_review = _model_assessment(facts, action)

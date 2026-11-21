@@ -40,10 +40,11 @@ def require_case(case):
             raise WorkspaceError(404, "Hospital settlement example not found.")
 
 
-def apply(dsn, ident, revision, action, version, *, quote_id=None, bank_document=None, actor=None, username=None):
+def apply(dsn, ident, revision, action, version, *, quote_id=None, bank_document=None, insurer_reference=None, actor=None, username=None):
     from app import pattaya_agents
 
-    required_step = {"book_spot": "book", "book_forward": "book", "record_short_credit": "record_short", "record_topup": "top_up"}
+    required_step = {"book_spot": "book", "book_forward": "book", "record_short_credit": "record_short",
+                     "record_remittance": "top_up", "record_topup": "confirm_topup"}
     with psycopg.connect(dsn) as db:
         store._head(db, ident, revision)
         case = store._detail(db, ident, revision)
@@ -51,8 +52,16 @@ def apply(dsn, ident, revision, action, version, *, quote_id=None, bank_document
         reference = f"SIM-{ident}-{action.upper()}"
         if action in pattaya_case.CREDIT_DOCUMENTS and bank_document != pattaya_case.CREDIT_DOCUMENTS[action]:
             raise WorkspaceError(422, "Select the receiving-bank credit advice for this payment.")
+        if insurer_reference is not None:
+            insurer_reference = insurer_reference.strip()
+            if action != "record_remittance" or not insurer_reference:
+                raise WorkspaceError(422, "Supply an insurer reference only when recording its remittance.")
+        if action == "record_remittance" and bank_document != "topup_instruction":
+            raise WorkspaceError(422, "Select the insurer remittance instruction.")
         previous = next((event for event in case["events"] if event["data"].get("reference") == reference), None)
         if previous:
+            if previous["kind"] == "topup_remittance" and previous["data"].get("insurer_reference") != insurer_reference:
+                raise WorkspaceError(409, "A different remittance reference was already recorded. Reload its instruction.")
             if previous["kind"] == "fx_booking" and previous["data"].get("quote_id") != quote_id:
                 raise WorkspaceError(409, "A different bank quote was already booked. Reload the saved ticket.")
             return case
@@ -70,6 +79,16 @@ def apply(dsn, ident, revision, action, version, *, quote_id=None, bank_document
             store.append_event(db, case, "fx_booking", data, actor or "Practice treasury desk", username)
             return store._detail(db, ident, revision)
         advice = pattaya_case.bank_message(ident, bank_document, hospital_slug=case.get("staff_practice_hospital"))
+        if action == "record_remittance":
+            if (advice.kind != "topup_instruction" or advice.case_id != ident or advice.encounter != case["encounter"]
+                    or advice.beneficiary != case["facility"] or not advice.bank_reference.strip()
+                    or advice.currency != "THB" or advice.gross_minor != review["outstanding_minor"] or advice.net_minor is not None):
+                raise WorkspaceError(422, "The remittance instruction does not match this outstanding balance.")
+            data = dict(reference=reference, bank_reference=advice.bank_reference, value_date=advice.value_date,
+                        currency=advice.currency, instructed_minor=advice.gross_minor, insurer_reference=insurer_reference)
+            store.append_event(db, case, "topup_remittance", data, actor or "Practice insurer treasury", username,
+                               advice.document(), "pattaya-topup-instruction.pdf")
+            return store._detail(db, ident, revision)
         return _post_advice(db, case, action, advice, reference, actor, username)
 
 
@@ -102,7 +121,8 @@ def preview_bank_document(case, kind):
     from app import pattaya_agents
 
     next_step = pattaya_agents.review(case)["next_action"]
-    visible = {"record_short": ("instruction", "initial_credit"), "top_up": ("topup_credit",)}
+    visible = {"record_short": ("instruction", "initial_credit"), "top_up": ("topup_instruction",),
+               "confirm_topup": ("topup_credit",)}
     if kind not in visible.get(next_step, ()):
         raise WorkspaceError(404, "No pending bank document of this kind. Recorded receipts have their own sources.")
     return pattaya_case.bank_message(case["id"], kind, hospital_slug=case.get("staff_practice_hospital")).document()

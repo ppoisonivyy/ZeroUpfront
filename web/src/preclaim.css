@@ -23,3 +23,16 @@
 .packet-files button svg { flex: none; }
 .packet-files button svg:last-child { margin-left: auto; }
 @media(max-width:650px) { .preclaim-heading .preclaim-total { text-align: start; } }
+.handoff-line { font-weight: 600; }
+.preclaim-questions { display: grid; gap: .7rem; align-items: start; }
+.preclaim-questions > button { justify-self: start; }
+.question-exchange { border-inline-start: 3px solid var(--action); padding-inline-start: 12px; overflow-wrap: anywhere; }
+.question-exchange strong { display: block; font-size: .86rem; }
+.question-exchange p { white-space: pre-wrap; margin: .3rem 0; }
+.question-exchange button { display: inline-flex; gap: .3rem; align-items: center; margin: .15rem 0 .55rem; }
+.preclaim-questions form, .preclaim-questions label { display: grid; gap: .4rem; }
+.preclaim-questions form { gap: .75rem; }
+.preclaim-questions label { min-width: 0; font-weight: 600; font-size: .88rem; }
+.preclaim-questions :is(textarea, input, select) { width: 100%; box-sizing: border-box; padding: .55rem; border: 1px solid var(--line); border-radius: 6px; color: inherit; background: white; font: inherit; font-weight: 400; }
+.preclaim-questions textarea { resize: vertical; }
+.question-citation { display: grid; grid-template-columns: minmax(0, 1fr) 5rem; gap: .6rem; }

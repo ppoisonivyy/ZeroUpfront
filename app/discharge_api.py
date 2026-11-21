@@ -65,6 +65,7 @@ class WorklistCounts(BaseModel):
 class PattayaSettlementBalance(BaseModel):
     status: Literal["unpaid", "partially_paid", "paid", "reconciliation_required"]
     outstanding_minor: int | None
+    next_action: Literal["book", "record_short", "top_up", "confirm_topup", "complete", "review"]
 
 
 class WorklistItem(Summary):
@@ -262,10 +263,11 @@ class PracticeConfirmation(BaseModel):
 
 
 class PracticeAction(PracticeConfirmation):
-    action: Literal["book_spot", "book_forward", "record_short_credit", "record_topup"]
+    action: Literal["book_spot", "book_forward", "record_short_credit", "record_remittance", "record_topup"]
     workflow_version: int = Field(strict=True, ge=0)
     quote_id: str | None = Field(default=None, max_length=80)
-    bank_document: Literal["instruction", "initial_credit", "topup_credit"] | None = None
+    insurer_reference: str | None = Field(default=None, min_length=1, max_length=100)
+    bank_document: Literal["instruction", "initial_credit", "topup_instruction", "topup_credit"] | None = None
 
 
 def _pattaya_case(dsn, ident, revision):
@@ -327,7 +329,7 @@ def guarantee_fees(request: Request, ident: str, options: GuaranteeFeeRequest, i
 
 
 @router.get("/{ident}/pattaya/bank-documents/{kind}", response_class=Response, responses=PDF)
-def pattaya_bank_document(request: Request, ident: str, kind: Literal["instruction", "initial_credit", "topup_credit"],
+def pattaya_bank_document(request: Request, ident: str, kind: Literal["instruction", "initial_credit", "topup_instruction", "topup_credit"],
                           revision: Annotated[int, Query(ge=1)]):
     from app import pattaya_workflow
 
@@ -357,7 +359,7 @@ def pattaya_action(request: Request, ident: str, command: PracticeAction, if_mat
     dsn, revision = request.app.state.dsn, _revision(if_match)
     return pattaya_workflow.apply(dsn, ident, revision, command.action, command.workflow_version,
                                  actor=request.state.actor, username=request.state.username,
-                                 quote_id=command.quote_id, bank_document=command.bank_document)
+                                 quote_id=command.quote_id, bank_document=command.bank_document, insurer_reference=command.insurer_reference)
 
 
 def _sample_bill(dsn, case):

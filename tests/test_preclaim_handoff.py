@@ -131,6 +131,39 @@ class PreclaimHandoffTests(unittest.TestCase):
             self.assertEqual(other.get(reviewed).status_code, 404)
             self.assertEqual(other.get(shared["draft_url"]).status_code, 404)
             self.assertEqual(payer.get(south + "/insurer/preclaims").status_code, 401)
+            # Questions belong to the reviewed copy and stay pinned to its document and page.
+            resource = reviewed + "/clarifications"
+            match = {"If-Match": '"2"'}
+            question = {
+                "source_role": "estimate", "page": 1, "question": "Which services are included in this line?",
+                "previous_sequence": 0,
+            }
+            self.assertEqual(other.post(resource, json=question, headers=match).status_code, 404)
+            self.assertEqual(staff.post(resource, json=question, headers=match).status_code, 403)
+            self.assertEqual(payer.post(resource, json=dict(question, page=999), headers=match).status_code, 422)
+            self.assertEqual(payer.post(resource, json=dict(question, question="  "), headers=match).status_code, 422)
+            self.assertEqual(payer.post(resource, json=question, headers={"If-Match": '"1"'}).status_code, 404)
+            asked = payer.post(resource, json=question, headers=match)
+            self.assertEqual(asked.status_code, 200, asked.text)
+            self.assertEqual(asked.json()["status"], "hospital_reply_needed")
+            self.assertEqual(staff.get(case).json()["questions"][0]["question"], question["question"])
+            self.assertEqual(payer.post(resource, json=question, headers=match).status_code, 409)
+            item = next(x for x in staff.get(north + "/cases").json() if x["id"] == fixture.CASE)
+            self.assertEqual(item["workflow_stage"], "hospital_reply_needed")
+            reply = {"reply": "The submitted estimate lists the facility and professional charges."}
+            reply_url = case + "/clarifications/1/reply"
+            self.assertEqual(payer.post(reply_url, json=reply, headers=match).status_code, 403)
+            updated = staff.post(reply_url, json=reply, headers=match)
+            self.assertEqual(updated.status_code, 200, updated.text)
+            self.assertEqual(staff.post(reply_url, json=reply, headers=match).status_code, 409)
+            self.assertEqual(payer.post(resource, json=question, headers=match).status_code, 409)
+            received = payer.get(inbox).json()[0]
+            self.assertEqual(received["questions"][0]["reply"], reply["reply"])
+            self.assertEqual(received["status"], "hospital_replied")
+            self.assertEqual(received["revision"], 2)
+            self.assertEqual(payer.get(received["draft_url"]).content, saved_form)
+            self.assertEqual(staff.get(case + "?revision=1").json()["questions"], [])
+
             for client, username in ((staff, "desk"), (payer, "reviewer")):
                 self.assertEqual(
                     client.post(

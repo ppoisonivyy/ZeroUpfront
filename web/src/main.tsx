@@ -27,7 +27,7 @@ import {
 import type { CaseDetail, CaseSummary, PacketStatus } from "./api";
 import { api, blocked, casePath, displayDate, hospitalPrefix, money, statuses } from "./api";
 import { ApproveDraft, ReplaceEstimate } from "./ReviewForms";
-import { SourceView } from "./SourceView";
+import { SourceView, useSourceNavigation } from "./SourceView";
 import { AttachmentList } from "./Attachments";
 import { NewCase } from "./CaseIntake";
 import { CaseWorkflow, payerStatus } from "./CaseWorkflow";
@@ -158,11 +158,11 @@ function Worklist({ epoch, retry }: { epoch: number; retry: () => void }) {
       x.toLocaleLowerCase().includes(term.trim().toLocaleLowerCase()),
     );
     if (!found) return false;
-    if (filter === "attention") return blocked(c.status) || !!c.open_hold_count;
+    if (filter === "attention") return blocked(c.status) || !!c.open_hold_count || c.workflow_stage === "hospital_reply_needed";
     if (filter === "review")
       return c.status === "ready_for_review" && !c.open_hold_count;
     if (filter === "insurer")
-      return ["submitted", "query", "supplement_sent"].includes(
+      return c.workflow_stage !== "hospital_reply_needed" && ["submitted", "query", "supplement_sent"].includes(
         c.insurer_status || "",
       );
     return true;
@@ -283,7 +283,7 @@ function Worklist({ epoch, retry }: { epoch: number; retry: () => void }) {
                       </small>
                     )}
                   </span>
-                  {c.input_kind === "payer_preclaim" && c.workflow_stage === "waiting_for_insurer" ? <span className="pill good"><i />Waiting for insurer</span> : c.input_kind === "payer_preclaim" && c.workflow_stage === "needs_documents" ? <span className="pill warning"><i />Needs documents</span> : <Pill status={c.status} />}
+                  {c.workflow_stage === "hospital_reply_needed" ? <span className="pill warning"><i />Hospital reply needed</span> : c.workflow_stage === "hospital_replied" ? <span className="pill good"><i />Hospital replied · With insurer</span> : c.input_kind === "payer_preclaim" && c.workflow_stage === "waiting_for_insurer" ? <span className="pill good"><i />Waiting for insurer</span> : c.input_kind === "payer_preclaim" && c.workflow_stage === "needs_documents" ? <span className="pill warning"><i />Needs documents</span> : <Pill status={c.status} />}
                   <ChevronRight size={17} />
                 </a>
               ))}
@@ -451,6 +451,7 @@ function CaseWorkspace({
     sources.findIndex((s) => s.role === "policy"),
   );
   const source = sources[selected] || sources[0];
+  const navigation = useSourceNavigation();
   const intake = packet.intake || packet.input_kind === "intake";
   const [clarificationError, setClarificationError] = useState("");
   const [preparing, setPreparing] = useState(false);
@@ -612,13 +613,9 @@ function CaseWorkspace({
                     key={s.url + "-" + i}
                     className={"source-row " + (s === source ? "chosen" : "")}
                     aria-pressed={s === source}
-                    onClick={() => {
+                    onClick={event => {
                       setSelected(i);
-                      if (window.matchMedia("(max-width: 760px)").matches)
-                        document.getElementById("source-view")?.scrollIntoView({
-                          block: "start",
-                          behavior: "instant",
-                        });
+                      navigation.open(event.currentTarget);
                     }}
                   >
                     <span className="file-icon">
@@ -705,6 +702,7 @@ function CaseWorkspace({
             source={source}
             revision={packet.revision}
             historical={historical}
+            onReturn={navigation.onReturn}
           />
         )}
       </div>
@@ -971,7 +969,7 @@ function App() {
             fallback={<p className="loading">Opening discharge workspace…</p>}
           >
             <Discharge
-              key={route.id + ":" + String(route.rev)}
+              key={session.username || session.actor || "local"}
               id={route.id || undefined}
               prior={route.prior}
               revision={route.rev}
