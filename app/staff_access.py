@@ -192,7 +192,7 @@ def _capability(path):
         return "export"
     if "/sources/" in path or path.endswith(("/source", "/sample-estimate", "/sample-bill", "/ocr-review", "/clarification", "/report-example")):
         return "original"
-    if path.endswith(("/second-read", "/guarantee-fees", "/agent-review")):
+    if path.endswith(("/second-read", "/guarantee-fees", "/agent-review", "/report-signature-hint")):
         return "ai_review"
     return "case_workspace"
 

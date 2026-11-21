@@ -13,7 +13,7 @@ from openai import APIError, OpenAI
 from pydantic import BaseModel, ConfigDict, Field, StringConstraints, field_validator
 
 from app import workspace_store as store
-from app import discharge_store, preclaims
+from app import discharge_store, preclaims, preclaim_signature_assist
 from app.discharge_api import router as discharge_router
 from app.workspace_http_common import INTAKE_BYTES, MultipartBodyLimit, _actor, _pdf, _read_upload, _revision, ocr_service_error
 from app.case_workflow import validate_attachment
@@ -405,6 +405,7 @@ def create_workspace(hospital=None):
     install_access(workspace)
     if hospital:
         workspace.add_middleware(HospitalContext, hospital=hospital)
+    workspace.include_router(preclaim_signature_assist.router)
     workspace.include_router(preclaims.router)
     workspace.include_router(discharge_router)
     workspace.include_router(router)

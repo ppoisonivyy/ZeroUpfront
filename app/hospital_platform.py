@@ -14,7 +14,7 @@ import psycopg
 from psycopg.conninfo import conninfo_to_dict
 
 
-OpenAIUse = Literal["hosted_ocr", "payer_second_read", "guarantee_fees"]
+OpenAIUse = Literal["hosted_ocr", "payer_second_read", "guarantee_fees", "report_signature_hint"]
 OPENAI_USES = get_args(OpenAIUse)
 OPENAI_BASE = "https://api.openai.com/v1"
 
