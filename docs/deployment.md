@@ -13,12 +13,14 @@ uv run --locked python bench/container_release.py --image zeroupfront:release
 
 ## Configure the service
 
+Set the optional `WORKSPACE_HOSPITAL_NAME` to the public-facing hospital name, for example `Canal Demo Hospital`. Staff see it on sign-in and in the workspace header. Restart the service after changing it. The facility on an individual encounter is entered from the source documents.
+
 Supply a dedicated persistent PostgreSQL connection as the server-side secret `DATABASE_URL`. The database role needs schema creation and read/write privileges in that database. The service initializes its tables on startup. Use the managed provider's TLS settings and configure backups with a tested restore. Source PDFs, document revisions, decisions and session records live in the database. Browser files are served from the image.
 
 ```sh
 docker run -d --name zeroupfront --read-only \
   --tmpfs /tmp:rw,noexec,nosuid,size=128m \
-  -p 127.0.0.1:8080:8080 -e DATABASE_URL zeroupfront:release
+  -p 127.0.0.1:8080:8080 -e DATABASE_URL -e WORKSPACE_HOSPITAL_NAME zeroupfront:release
 docker exec -it zeroupfront python -m app.staff_access add coordinator --name "Case coordinator"
 ```
 
@@ -35,3 +37,11 @@ Digital PDFs can be screened without an API key. On a service authorized to send
 ## Release boundary
 
 Hospital and payer staff currently use their own channels for transmission and supply the original written reply. Provisioning a host, signing the provider's data agreements, validating payer-specific templates, testing backup recovery in the target environment and connecting to the hospital billing and insurer systems require a deployment owner and partner access. Use synthetic records to evaluate this release until those controls are in place.
+
+## One product, a workspace for each hospital
+
+For the hackathon, deploy the same release for each participating hospital and give each installation its own database, staff accounts, uploaded files and audit history. Use separate databases for the live team demo and for any hospital pilot. A hospital name on an intake form identifies the facility on an exhibit. The configured server and database determine which workspace a signed-in user can access. Running two hospitals in one existing database would give staff access to both hospitals’ records. The release has no in-app hospital switcher.
+
+Keep evidence preservation, revision checks, staff approval and payment recording consistent across installations. For a pilot, add reviewed, versioned payer profiles scoped to the hospital's contract. Each profile should name its form edition, claim route, required evidence, signatures, currency and rules for corrections. Save the profile version on the reviewed revision. The AIA consent, FEP assignment and CMS replacement trials are acceptance cases for this future work. The hackathon release still uses its documented supported layouts. [Thai results](thai-payer-forms.md) · [US results](us-payer-forms.md) · [Microsoft’s dedicated deployment pattern](https://learn.microsoft.com/en-us/azure/architecture/guide/multitenant/approaches/overview)
+
+For an on-stage demo, open the local synthetic workspace before presenting and start on the claim queue. For a shared team or judge instance, use the existing staff sign-in and individually provisioned accounts over HTTPS. A later hospital pilot can integrate the hospital’s identity provider and MFA. All staff in a given installation currently share case access.

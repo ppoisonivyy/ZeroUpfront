@@ -64,6 +64,22 @@ class DischargeApiTests(unittest.TestCase):
             files={"file": ("reply.pdf", raw, "application/pdf")} if raw else None,
         )
 
+    def test_unrecognized_or_repeated_pdfs_never_disappear_from_intake_or_replacement(self):
+        meta, raw, names = load_discharge_fixture("aligned")
+        supplied = [(k, (names[k], v, "application/pdf")) for k, v in raw.items()]
+        form = dict(meta, confirmed="true")
+        before = len(self.client.get(ROOT).json())
+        for extra in [("unsigned_mandate", supplied[0][1]), supplied[0]]:
+            resp = self.client.post(ROOT, data=form, files=[*supplied, extra])
+            self.assertEqual(resp.status_code, 422, resp.text)
+        self.assertEqual(len(self.client.get(ROOT).json()), before)
+        path, original = self.new("aligned")
+        for extra in [("unsigned_mandate", supplied[0][1]), supplied[0]]:
+            resp = self.client.post(path + "/documents", data={"confirmed": "true"}, headers=match(1),
+                                    files=[supplied[0], extra])
+            self.assertEqual(resp.status_code, 422, resp.text)
+        self.assertEqual(self.client.get(path).json()["revision"], original["revision"])
+
     def test_all_declared_scenarios_have_expected_http_disposition_and_findings(self):
         manifest = Path(__file__).resolve().parents[1] / "fixtures/discharge/expected.json"
         for name, expected in json.loads(manifest.read_text()).items():

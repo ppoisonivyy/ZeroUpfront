@@ -1,8 +1,19 @@
 # ZeroUpfront
 
-ZeroUpfront helps hospital coordinators prepare preauthorization requests and check discharge claims. Coordinators inspect source pages, resolve discrepancies, review a packet and record the payer's reply. The hospital retains each document revision and its original PDFs.
+ZeroUpfront helps hospital coordinators prepare preauthorization requests and check discharge claims. Discharge is the main worklist. A coordinator compares the final bill, discharge summary, written payer letter and supporting records, opens the cited page, and signs off the reviewed revision. Staff can then export the packet and record an external submission, a payer decision and actual payments separately. Pre-arrival stays accessible in the same workspace.
+
+## What the discharge tests found
+
+We ran **16 fictional packets on four official form editions**. Seven used AIA Thailand's Thai or English inpatient form. Nine used the US CMS-1450 institutional form or the FEP overseas member form. All 16 stayed on hold. The checker explained the intended change or missing exhibit in **1 of 12** targeted variations. The app also held both aligned AIA packets. Real-form support still requires a field-by-field implementation and validation for each edition.
+
+The supported-format control shows the rest of the flow. A corrected packet can reach staff approval, a reviewed export with four clickable originals, a recorded payer query and decision, and two simulated remittances. All transmissions and receipts in the rehearsal were simulated. [Thailand cases and live OCR](docs/thai-payer-forms.md) · [US cases and live OCR](docs/us-payer-forms.md) · [Interface design and browser checks](docs/ux-redesign.md)
+
+![Discharge review showing the repeated pharmacy charge and page 2 of the original fictional bill](docs/figures/discharge-review.png)
 
 ## Start here
+
+- [Run the coordinator workspace](#coordinator-workspace) or [build the release image](docs/deployment.md).
+- [Third-party software, services, fonts, form sources and design references](THIRD_PARTY.md) · [Locked versions and licenses](docs/third-party-packages.md) · [Release image components](docs/release-components.md).
 
 - [Discharge claim workflow and comparison with preauthorization](docs/discharge-workflow.md)
 - [Discharge screening and settlement test results](docs/discharge-journey-results.md) and [live OpenAI OCR on the scanned discharge summary](docs/discharge-ocr.md)
@@ -39,13 +50,28 @@ npm --prefix web run build
 uv run --locked python app/run_workspace.py
 ```
 
-Open [the local workspace](http://127.0.0.1:8038/). On the discharge worklist, choose **Try a discharge case**, then **Duplicate bill line**. Open the page 2 finding, choose **Try corrected bill**, and save the corrected revision. Its original bill and history remain available for inspection.
+Open [the local workspace](http://127.0.0.1:8038/). On the discharge worklist, choose **Try duplicate bill example**. Inspect the repeated pharmacy charge on page 2, choose **Try corrected bill**, and save the corrected revision. Review its attachments, mark the packet reviewed, then open **Claim and attachments** to preview each original or download the export. **Version history** keeps the original bill accessible.
 
 Choose **Try a case** on the pre-arrival worklist to start a fresh synthetic example. Choose **Partial guarantee** to compare the written letter with actual admission charges, or open Z002 to replace an unitemized estimate. Select an attachment to preview the exact original before downloading the reviewed packet.
 
 The launcher saves case history in a dedicated PostgreSQL cluster under `.local/workspace/`. Use `--data-dir .local/rehearsal/postgres --port 8040` to start an isolated rehearsal. A networked installation uses staff accounts and a dedicated `DATABASE_URL`. Staff record transmissions made through their hospital's existing payer channel. [Staff deployment guide](docs/deployment.md)
 
 Digital processing works offline. For supported scanned pre-arrival and discharge exhibits, configure a funded server-side `OPENAI_API_KEY` and `WORKSPACE_ENABLE_OCR=1` in `.env`, then run `uv run --locked --env-file .env python app/run_workspace.py`. When the only remaining discharge finding concerns OCR, **Verify scanned pages** lets staff compare each original page with its transcript and record the verification. The new revision then goes through ordinary staff review. The long-policy evaluation commands below run separately. [Measured workspace performance](docs/workspace-performance.md)
+
+### Rehearse official Thai and US forms
+
+With the coordinator prerequisites installed, run both countries in parallel. Each uses its own temporary database. The first run downloads the official blank forms and checks their fingerprints. The reports and filled fictional PDFs stay under `.local/th-payer/` and `.local/us-payer/`.
+
+```sh
+uv run --locked python bench/payer_forms.py
+uv run --locked --env-file .env python bench/payer_forms.py --live
+```
+
+The second command sends synthetic pages to OpenAI for OCR and uses API credit. [Expected results and Thai fixtures](docs/thai-payer-forms.md) · [US fixtures, form purposes and failure cases](docs/us-payer-forms.md)
+
+### Hospital setup and staff access
+
+Use the same release across hospitals, with a separate workspace, staff accounts and PostgreSQL database for each. Set `WORKSPACE_HOSPITAL_NAME` for the name shown at sign-in and in the workspace header. The local loopback demo opens directly on the claim worklist. A networked workspace uses the built-in username and password sign-in over HTTPS. For a shared hackathon presentation, sign in before showing the case. [Account setup and deployment guide](docs/deployment.md)
 
 ### Research tools
 

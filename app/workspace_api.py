@@ -138,6 +138,7 @@ async def lifespan(app):
     discharge_store.initialize(dsn)
     initialize_access(dsn)
     app.state.dsn = dsn
+    app.state.hospital_name = os.getenv("WORKSPACE_HOSPITAL_NAME", "").strip()
     yield
 
 

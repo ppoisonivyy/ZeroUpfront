@@ -23,6 +23,7 @@ export function SourceView({
     <section
       className="panel viewer"
       id="source-view"
+      tabIndex={-1}
       aria-labelledby="source-title"
     >
       <div className="panel-heading">
@@ -55,7 +56,7 @@ export function SourceView({
           Original document
         </span>
         <span>
-          {historical ? "Pinned" : "Case"} R{revision} · p. {page}
+          {historical ? "Pinned" : "Case"} R{revision} · cited p. {page}
         </span>
       </div>
       {url ? (

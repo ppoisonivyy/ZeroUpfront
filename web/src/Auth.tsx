@@ -2,7 +2,7 @@ import { createContext, useContext, useEffect, useState } from "react";
 import type { FormEvent, ReactNode } from "react";
 import "./auth.css";
 
-type Session = { mode: "local" | "staff"; actor: string | null; username?: string | null };
+type Session = { mode: "local" | "staff"; actor: string | null; username?: string | null; hospital_name?: string };
 const StaffSession = createContext<Session>({ mode: "local", actor: null });
 export const useStaffSession = () => useContext(StaffSession);
 
@@ -68,7 +68,9 @@ export function AuthGate({ children }: { children: ReactNode }) {
   </div></main>;
   if (session.mode === "staff" && !session.actor) return <main className="staff-entry">
     <form onSubmit={login} className="staff-form">
-      <strong>ZeroUpfront</strong><h1>Staff sign in</h1>
+      <strong>ZeroUpfront</strong><div className="staff-form-heading"><h1>Staff sign in</h1>
+        {session.hospital_name && <p>{session.hospital_name}</p>}
+      </div>
       <label>Username<input name="username" autoComplete="username" required autoCapitalize="none" maxLength={128}/></label>
       <label>Passphrase<input name="password" type="password" autoComplete="current-password" required maxLength={256}/></label>
       {problem && <p role="alert">{problem}</p>}

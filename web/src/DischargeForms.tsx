@@ -124,7 +124,7 @@ export function ClaimUpload({
           <p className="hint">
             {claim
               ? "Upload one or more corrected exhibits together."
-              : "You can start with an incomplete packet. Missing exhibits will appear in the review."}
+              : "Attach PDFs for the final itemized bill, discharge summary, written payer letter and supporting records. You can start with missing documents."}
           </p>
           {claim?.sample_bill_available && (
             <label className="check-field">

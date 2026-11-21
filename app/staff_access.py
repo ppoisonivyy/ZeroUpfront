@@ -138,6 +138,12 @@ class Login(BaseModel):
 
 
 def install_access(app):
+    def session_data(request, actor, username):
+        data = {"mode": mode(), "actor": actor, "username": username}
+        if request.app.state.hospital_name:
+            data["hospital_name"] = request.app.state.hospital_name
+        return data
+
     @app.middleware("http")
     async def require_access(request: Request, call_next):
         if not request.url.path.startswith("/api/"):
@@ -166,7 +172,7 @@ def install_access(app):
 
     @app.get("/api/access/session")
     def session(request: Request):
-        return {"mode": mode(), "actor": request.state.actor, "username": request.state.username}
+        return session_data(request, request.state.actor, request.state.username)
 
     @app.post("/api/access/login")
     def login(request: Request, credentials: Login, response: Response):
@@ -198,7 +204,7 @@ def install_access(app):
             db.execute("DELETE FROM zeroupfront_demo.login_attempts WHERE bucket=%s", (_digest("account/"+username),))
         response.set_cookie(COOKIE, token, httponly=True, secure=request.url.scheme == "https",
                             samesite="strict", max_age=SESSION_SECONDS, path="/api")
-        return {"mode": "staff", "actor": record[1], "username": username}
+        return session_data(request, record[1], username)
 
     @app.post("/api/access/logout")
     def logout(request: Request, response: Response):
@@ -206,7 +212,7 @@ def install_access(app):
             db.execute("DELETE FROM zeroupfront_demo.staff_sessions WHERE token_hash=%s",
                        (_digest(request.cookies.get(COOKIE, "")),))
         response.delete_cookie(COOKIE, path="/api", httponly=True, samesite="strict")
-        return {"mode": mode(), "actor": None, "username": None}
+        return session_data(request, None, None)
 
 
 # A missing account follows the same password verification path.
