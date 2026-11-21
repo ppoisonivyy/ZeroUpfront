@@ -148,3 +148,14 @@ class WorkspaceApiTests(unittest.TestCase):
             response = pending.result(timeout=15)
         self.assertEqual(response.status_code, 412)
         self.assertEqual(response.headers["content-type"], "application/json")
+
+    def test_export_validates_persisted_originals_against_the_approved_manifest(self):
+        self.assertEqual(self.replace().status_code, 200)
+        reviewed = self.approve(2).json()
+        estimate = next(source for source in reviewed["sources"] if source["role"] == "estimate")
+        with psycopg.connect(self.dsn) as db:
+            db.execute("UPDATE zeroupfront_demo.documents SET pdf=%s WHERE digest=%s",
+                       (b"invalid stored PDF content", estimate["sha256"]))
+        packet = self.client.get(CASE + "/export?revision=2")
+        self.assertEqual(packet.status_code, 409)
+        self.assertEqual(packet.headers["content-type"], "application/json")
