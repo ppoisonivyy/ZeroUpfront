@@ -150,19 +150,33 @@ class DischargeApiTests(unittest.TestCase):
         self.assertEqual(self.client.get(endpoint, params={"search": "fictional-member"}).status_code, 422)
 
     def test_worklists_preserve_large_integer_minor_units_from_stored_revisions(self):
-        import psycopg
-
-        _, case = self.new("aligned")
+        path, case = self.new("aligned")
+        _, other = self.new("aligned")
         amount = 10**30 + 7
+        stored = {"bill_total_minor": amount, "source_reported_cap_minor": amount + 1,
+                  "source_reported_patient_share_minor": amount - 1}
         with psycopg.connect(os.environ["DATABASE_URL"]) as db:
             db.execute("""UPDATE zeroupfront_demo.discharge_revisions
-                          SET evidence=jsonb_set(evidence, '{bill_total_minor}', to_jsonb(%s::numeric))
-                          WHERE case_id=%s AND revision=1""", (str(amount), case["id"]))
-        legacy = next(row for row in self.client.get(ROOT).json() if row["id"] == case["id"])
-        result = self.client.post(ROOT + "/worklist/search", json={"search": case["id"]}).json()
-        for row in (legacy, result["items"][0]):
+                          SET evidence=evidence || %s::jsonb
+                          WHERE case_id=%s AND revision=1""", (json.dumps(stored), case["id"]))
+
+        detail = self.client.get(path).json()
+        self.assertEqual({key: detail[key] for key in stored}, stored)
+        legacy = self.client.get(ROOT)
+        legacy.raise_for_status()
+        legacy_item = next(item for item in legacy.json() if item["id"] == case["id"])
+        result = self.client.post(ROOT + "/worklist/search", json={"search": case["id"], "page_size": 1})
+        result.raise_for_status()
+        for row in (legacy_item, result.json()["items"][0]):
             self.assertIs(type(row["bill_total_minor"]), int)
             self.assertEqual(row["bill_total_minor"], amount)
+
+        page = self.client.get(ROOT + "/worklist", params={"page": 2, "page_size": 1})
+        page.raise_for_status()
+        self.assertEqual(len(page.json()["items"]), 1)
+        other_result = self.client.post(ROOT + "/worklist/search", json={"search": other["id"]})
+        other_result.raise_for_status()
+        self.assertEqual([item["id"] for item in other_result.json()["items"]], [other["id"]])
 
     def test_unrecognized_or_repeated_pdfs_never_disappear_from_intake_or_replacement(self):
         meta, raw, names = load_discharge_fixture("aligned")

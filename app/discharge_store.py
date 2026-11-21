@@ -241,7 +241,7 @@ _SUMMARIES = """
     CROSS JOIN LATERAL jsonb_to_record(r.evidence) AS fields(
         member text, procedure text, insurer text, encounter text, admission_date text,
         discharge_date text, currency text, bill_total_minor numeric, status text, example_scenario text,
-        source_reported_cap_minor bigint, source_reported_patient_share_minor bigint)
+        source_reported_cap_minor numeric, source_reported_patient_share_minor numeric)
     LEFT JOIN zeroupfront_demo.discharge_approvals a ON a.case_id=c.id AND a.revision=c.head
     LEFT JOIN LATERAL (
         SELECT CASE WHEN e.kind='submission' THEN 'submitted'
