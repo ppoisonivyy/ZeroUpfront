@@ -31,13 +31,17 @@ Use the same practice claim. Save the one-page fictional reply to your computer 
 
 ## Human review after a payer reply
 
-In the staffed demo, **Discharge claims → VISIT-CB-002** opens a complete synthetic packet. A coordinator reviews it and records its submission before logging a written payer reply. The following actions apply to that discharge case. Amelia’s separate pre-arrival request can remain pending throughout.
+In the staffed demo, **Discharge claims → VISIT-CB-002** opens a complete synthetic packet. A coordinator reviews it and records its submission before logging a written payer reply. For that case, use the [fictional written query](../fixtures/discharge/followup/canal-bridge-query.pdf) and the [matching three-page hospital answer](../fixtures/discharge/followup/canal-bridge-answer.pdf). The answer includes the original two-page discharge summary. Amelia’s separate pre-arrival request can remain pending throughout.
 
 | What happened | What the coordinator does | What stays on file |
 | --- | --- | --- |
 | The insurer queried an item or issued a partial or declined decision | Open **Record payer reply**, enter the payer reference and written terms, attach the matching PDF, and name the follow-up owner and deadline. | The original payer document and its disposition are available on that revision. |
 | The hospital answered or appealed | Open **Prepare query answer** or **Prepare appeal**. Check the original decision and correct the draft against the cited evidence. After transmission through the hospital’s approved channel, record the channel, reference and exact outgoing PDF. | A distinct record of what the hospital sent. A subsequent decision still comes from the payer. |
 | A patient needs a financial update | Choose **Review patient update**, check the figures in English or Thai, enter the public billing contact and next update date, and save the reviewed copy. | A bilingual statement with reviewed figures. Posting a later receipt requires another review before a current copy can be downloaded. |
+
+The illustrated response uses the supplied three-page answer. Choose **Prepared outside ZeroUpfront** and attest to the file that was sent. For a response composed in the app, choose **Download edited response PDF**. That file is tied to the specific written payer decision. Edits require a fresh download before recording transmission.
+
+![Coordinator recording the reply to the payer, with the exact answer PDF, transmission reference, owner and deadline visible](figures/payer-followup.png)
 
 ## Pattaya FX rehearsal
 
