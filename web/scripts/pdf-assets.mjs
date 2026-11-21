@@ -16,6 +16,6 @@ await Promise.all(
 const assetDirectory = new URL("../public/assets/", import.meta.url);
 await mkdir(assetDirectory, { recursive: true });
 await cp(
-  new URL("../node_modules/@fontsource-variable/inter/LICENSE", import.meta.url),
-  new URL("inter-license.txt", assetDirectory),
+  new URL("../node_modules/@fontsource-variable/dm-sans/LICENSE", import.meta.url),
+  new URL("dm-sans-license.txt", assetDirectory),
 );

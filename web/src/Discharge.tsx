@@ -251,7 +251,7 @@ function ClaimDetail({
     );
   return (
     <>
-      <div className="page-title">
+      <div className="page-title case-jacket">
         <div>
           <p className="section-label">Discharge claim · R{claim.revision}</p>
           <h1>{claim.procedure}</h1>

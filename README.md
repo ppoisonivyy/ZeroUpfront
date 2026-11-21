@@ -22,7 +22,7 @@ uv run --locked python app/run_workspace.py
 2. Open the finding. Page 2 shows the same pharmacy item twice. Choose **Try corrected bill**, inspect the replacement, confirm it belongs to the encounter and select **Save corrected packet**.
 3. Choose **Review discharge packet**, review the attachments and select **Mark packet reviewed**. Open **Claim and attachments** to preview the originals or download the reviewed PDF. **Version history** still opens the first bill.
 
-For the pre-arrival hospital and insurer design prototype, open the [two-workspace review guide](docs/workspace-review/README.md).
+The hospital app uses the team’s forest-green workspace design. On desktop the original PDF and review action appear side by side. On a phone, tap a citation to jump to the page. The separate insurer handoff prototype uses fictional records saved in the browser. [Hospital and insurer design guide](docs/workspace-review/README.md)
 
 ## Where OpenAI fits
 
