@@ -87,7 +87,7 @@ uv run --locked --env-file .env python bench/hosted_recall.py --compare
 
 ## Staff release
 
-The release serves the built React client and FastAPI from one origin. Give each hospital a dedicated PostgreSQL database and `DATABASE_URL`, set `WORKSPACE_HOSPITAL_NAME`, and use staff mode behind HTTPS. The deployment guide covers account provisioning, proxy settings, and the `/healthz` and `/readyz` probes. To build and rehearse the release locally with Docker, run the commands below. [Deployment guide](docs/deployment.md)
+The release serves the built React client and FastAPI from one origin. Give each hospital a dedicated PostgreSQL database and `DATABASE_URL`, set `WORKSPACE_HOSPITAL_NAME`, and use staff mode behind HTTPS. The deployment guide covers account provisioning, proxy settings, and the `/healthz` and `/readyz` probes. To build and rehearse the release locally with Docker, run the commands below. [Deployment guide](docs/deployment.md) · [Scaling benchmarks](docs/scaling.md) · [Security and encryption](docs/security-and-encryption.md) · [Regional privacy rules](docs/privacy-by-jurisdiction.md)
 
 ```sh
 docker build -t zeroupfront:release .

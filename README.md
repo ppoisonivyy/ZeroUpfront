@@ -34,6 +34,12 @@ The supported-format rehearsal runs from correction through review, export and s
 
 A database rehearsal created **10,000 distinct synthetic inpatient encounters**, kept 11,040 revisions and restored 47,048 original PDF blobs. All 760 timed HTTP requests passed their checks. The hospital worklist now displays 25 claims at a time and searches the full database. On the same machine, the median time to render the queue fell from **1.72 seconds to 0.82 seconds** across five browser sessions per version. [Database benchmark and restore instructions](docs/discharge-scale-benchmark.md) · [Browser measurements and search tradeoff](docs/ux-redesign.md)
 
+## Running across hospitals
+
+Deploy the same release with a separate database and staff accounts per hospital. On the 10,000-claim test set, increasing the API from one to four processes raised reviewed PDF export throughput from **73 to 230 requests/s**. A separate test kept four workers fixed and raised the API CPU quota from one to four, moving throughput from **38 to 147 exports/s**. Worklist and search throughput stayed nearly flat as processes were added. [Scaling results, controls and reproduction](docs/scaling.md)
+
+The HTTPS release test verified the database certificate and negotiated PostgreSQL TLS 1.3. Storage encryption, backup keys, access roles and approved overseas processing depend on the hospital’s deployment and agreements. The security audit and privacy guide distinguish tested controls from the controls a real patient-data pilot still needs. [Security audit and encryption](docs/security-and-encryption.md) · [Thailand, US and EU privacy rules](docs/privacy-by-jurisdiction.md)
+
 ## Hackathon build declaration
 
 The team planned the insurance workflow before the event. At the 10:00 Bangkok kickoff on 21 November, the public repository contained a README, a demo outline, ignore rules and an empty application directory. Later commits added the coordinator worklist, revision history, field checks that cite original pages, reviewed export, and separate records for payer decisions and payments. [Pre-kickoff snapshot](https://github.com/aowngong/ZeroUpfront/tree/2bdede36e2df9f917025d415e4c8bc5b5e5c452c) · [Organizer agenda and FAQ](https://luma.com/39zve8ph)

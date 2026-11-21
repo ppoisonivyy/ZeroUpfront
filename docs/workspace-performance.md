@@ -21,7 +21,7 @@ One unmeasured digital cycle warms the service. Each of 50 measured cycles start
 
 The host was an Apple M4 Max running macOS 27.2.1, Python 3.12.9, Uvicorn 0.54.0 and PostgreSQL 18.6 with default durability. The digital timings exclude cloud inference, browser rendering, internet transport and human review. A production sizing estimate still needs multi-user load, representative document sizes, a managed database and actual deployment-region network timings. Separate integration tests exercise concurrent replacements, approval replays and stale export rejection. [HTTP benchmark](../bench/workspace_http.py) · [Concurrency tests](../tests/test_workspace_api.py)
 
-For the separate discharge workflow, a 10,000-encounter benchmark covers PostgreSQL restore, paginated queues, member search, original PDF retrieval and correction under concurrent load. [Discharge benchmark](discharge-scale-benchmark.md)
+For the separate discharge workflow, a 10,000-encounter benchmark covers PostgreSQL restore, paginated queues, member search, original PDF retrieval and correction under concurrent load. [Discharge benchmark](discharge-scale-benchmark.md) · [Authenticated process and CPU scaling](scaling.md)
 
 ## Startup and persistence
 
