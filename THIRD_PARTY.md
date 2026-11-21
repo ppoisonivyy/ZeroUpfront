@@ -10,7 +10,7 @@ This register covers the hospital workspace, optional research programs, test da
 | Native HTML controls and project CSS | Search, disclosure, file input, validation, responsive layouts and status labels | Browser-provided behavior. The workflow and styling live in [web/src](web/src). |
 | Lucide React | Icons alongside text labels | [Lucide](https://lucide.dev/license), ISC with MIT terms for listed Feather-derived icons |
 | Mozilla PDF.js | Renders a selected original PDF page in the browser, including clickable export attachment previews | [PDF.js](https://github.com/mozilla/pdf.js), Apache-2.0. The distribution includes separate resource notices described below. |
-| Inter and Noto Sans Thai | Locally served interface type and Thai PDF shaping | [Inter](https://rsms.me/inter/), [Noto Sans Thai license](app/fonts/OFL.txt), SIL Open Font License 1.1 |
+| DM Sans and Noto Sans Thai | Locally served interface type and Thai PDF shaping | [DM Sans license](https://github.com/google/fonts/blob/main/ofl/dmsans/OFL.txt), [Noto Sans Thai license](app/fonts/OFL.txt), SIL Open Font License 1.1 |
 | FastAPI, Starlette, Uvicorn, Pydantic, python-multipart | HTTP requests, schema validation, multipart uploads and the ASGI server | [Python package versions and notices](docs/third-party-packages.md) |
 | PostgreSQL and psycopg | Durable case records, original files, revision history, transactions and concurrent review | [PostgreSQL license](https://www.postgresql.org/about/licence/) and [psycopg license](https://github.com/psycopg/psycopg/blob/3.3.9/psycopg/LICENSE.txt) |
 | argon2-cffi | Staff password hashing | [argon2-cffi](https://github.com/hynek/argon2-cffi) and its bindings in the package inventory |
@@ -21,7 +21,7 @@ This register covers the hospital workspace, optional research programs, test da
 
 ## Assets and notices in the browser release
 
-The Vite build emits a dependency notice at `/assets/third-party-licenses.md`. The [asset-copy script](web/scripts/pdf-assets.mjs) also ships the Inter license at `/assets/inter-license.txt` and the original PDF.js resource license files under `/pdfjs/`.
+The Vite build emits a dependency notice at `/assets/third-party-licenses.md`. The [asset-copy script](web/scripts/pdf-assets.mjs) also ships the DM Sans license at `/assets/dm-sans-license.txt` and the original PDF.js resource license files under `/pdfjs/`.
 
 | PDF.js resource location | Attribution and terms supplied by upstream |
 | --- | --- |

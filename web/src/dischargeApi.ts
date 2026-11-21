@@ -59,6 +59,15 @@ export type DischargeClaim = {
   allowed_actions: ClaimAction[];
   events: (Omit<WorkflowEvent, "kind"> & { kind: string })[];
 };
+export type DischargeQueue = "all" | "needs" | "ready" | "payer";
+export type DischargeWorklist = {
+  items: Pick<DischargeClaim, "id" | "encounter" | "member" | "procedure" | "insurer" |
+    "discharge_date" | "insurer_status" | "bill_total_minor" | "currency" | "status">[];
+  counts: Record<DischargeQueue, number>;
+  total: number;
+  page: number;
+  page_size: number;
+};
 export const claimPath = (id: string) =>
   "/api/discharge/" + encodeURIComponent(id);
 export const claimHref = (id: string, revision?: number) =>

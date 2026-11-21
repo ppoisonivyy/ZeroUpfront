@@ -51,7 +51,7 @@ This catalog includes every registry package in both lockfiles, including develo
 | [@emnapi/core](https://www.npmjs.com/package/@emnapi/core/v/2.0.0-beta.2) | 2.0.0-beta.2 | transitive build, optional | MIT |
 | [@emnapi/runtime](https://www.npmjs.com/package/@emnapi/runtime/v/2.0.0-beta.2) | 2.0.0-beta.2 | transitive build, optional | MIT |
 | [@emnapi/wasi-threads](https://www.npmjs.com/package/@emnapi/wasi-threads/v/2.2.0) | 2.2.0 | transitive build, optional | MIT |
-| [@fontsource-variable/inter](https://www.npmjs.com/package/@fontsource-variable/inter/v/5.3.0) | 5.3.0 | direct | OFL-1.1 |
+| [@fontsource-variable/dm-sans](https://www.npmjs.com/package/@fontsource-variable/dm-sans/v/5.3.0) | 5.3.0 | direct | OFL-1.1 |
 | [@napi-rs/canvas](https://www.npmjs.com/package/@napi-rs/canvas/v/1.2.0) | 1.2.0 | transitive, optional | MIT |
 | [@napi-rs/canvas-android-arm64](https://www.npmjs.com/package/@napi-rs/canvas-android-arm64/v/1.2.0) | 1.2.0 | transitive, optional | MIT |
 | [@napi-rs/canvas-darwin-arm64](https://www.npmjs.com/package/@napi-rs/canvas-darwin-arm64/v/1.2.0) | 1.2.0 | transitive, optional | MIT |

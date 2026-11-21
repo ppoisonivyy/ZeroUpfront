@@ -3,8 +3,7 @@ import { createRoot } from "react-dom/client";
 import {
   ArrowLeft,
   BookOpen,
-  ReceiptText,
-  PanelTop,
+  ChevronDown,
   Hospital,
   Building2,
   Check,
@@ -188,7 +187,7 @@ function Worklist({ epoch, retry }: { epoch: number; retry: () => void }) {
   });
   return (
     <>
-      <div className="page-title">
+      <div className="page-title desk-heading">
         <div>
           <p className="section-label">Pre-arrival coordination</p>
           <h1>Case worklist</h1>
@@ -511,7 +510,7 @@ function CaseWorkspace({
   }
   return (
     <>
-      <div className="page-title">
+      <div className="page-title case-jacket">
         <div>
           <div className="section-label">
             Pre-arrival request <span className="label-sep">/</span>{" "}
@@ -924,31 +923,30 @@ function App() {
         Skip to case workspace
       </a>
       <div className="app-layout">
-        <header className="app-rail">
-          <a href="#/discharge" className="product-brand" aria-label="ZeroUpfront home">
-            <span className="product-symbol" aria-hidden="true"><i /><i /></span>
-            ZeroUpfront
-          </a>
-          <nav className="workflow-links" aria-label="Hospital workflows">
-            <p className="rail-label">Workspace</p>
-            <a aria-current={route.discharge ? "page" : undefined} href="#/discharge">
-              <ReceiptText size={18} /> Discharge claims
+        <header className="hospital-masthead">
+          <div className="mast-inner">
+            <a href="#/discharge" className="mast-brand" aria-label="ZeroUpfront home">
+              <span className="mast-symbol"><Layers size={20} aria-hidden="true" /></span>
+              ZeroUpfront
             </a>
-            <a aria-current={!route.discharge ? "page" : undefined} href="#/cases">
-              <ClipboardList size={18} /> Pre-arrival cases
-            </a>
-          </nav>
-          <div className="rail-session"><Hospital size={18} /><div>
-            <strong>{session.mode === "local" ? "Local workspace" : "Hospital workspace"}</strong>
-            <span>{session.mode === "local" ? "Rehearsal mode" : "Staff access"}</span>
-          </div></div>
+            <nav className="mast-nav" aria-label="Hospital workflows">
+              <a aria-current={route.discharge ? "page" : undefined} href="#/discharge">Discharge claims</a>
+              <a aria-current={!route.discharge ? "page" : undefined} href="#/cases">Pre-arrival cases</a>
+            </nav>
+            <button className="mast-context" popoverTarget="workspace-context">
+              <Hospital size={15} /> Hospital <ChevronDown size={13} />
+            </button>
+            <div id="workspace-context" className="workspace-context" popover="auto">
+              <strong>{session.hospital_name || "Hospital workspace"}</strong>
+              <span>{session.mode === "local" ? "Local rehearsal" : "Signed-in staff"}</span>
+              <nav aria-label="Workspace shortcuts" onClick={() => document.getElementById("workspace-context")?.hidePopover()}>
+                <a href="#/discharge">Discharge worklist <ChevronRight size={15} /></a>
+                <a href="#/cases">Pre-arrival worklist <ChevronRight size={15} /></a>
+              </nav>
+            </div>
+          </div>
         </header>
         <div className="app-content">
-          <div className={"context-strip" + (session.hospital_name ? " named-workspace" : "")}>
-            {session.hospital_name ? <Hospital size={16} /> : <PanelTop size={16} />}
-            <span>{session.hospital_name || "Coordinator workspace"}</span><ChevronRight className="context-path" size={13} />
-            <strong className="context-path">{route.discharge ? "Discharge claims" : "Pre-arrival cases"}</strong>
-          </div>
           <main id="main-content" tabIndex={-1}>
         {(route.id || route.create) && (
           <nav className="breadcrumbs" aria-label="Breadcrumb">

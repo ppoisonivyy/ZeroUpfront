@@ -22,7 +22,7 @@ uv run --locked python app/run_workspace.py
 2. Open the finding. Page 2 shows the same pharmacy item twice. Choose **Try corrected bill**, inspect the replacement, confirm it belongs to the encounter and select **Save corrected packet**.
 3. Choose **Review discharge packet**, review the attachments and select **Mark packet reviewed**. Open **Claim and attachments** to preview the originals or download the reviewed PDF. **Version history** still opens the first bill.
 
-For the pre-arrival hospital and insurer design prototype, open the [two-workspace review guide](docs/workspace-review/README.md).
+The hospital app uses the team’s forest-green workspace design. On desktop the original PDF and review action appear side by side. On a phone, tap a citation to jump to the page. The separate insurer handoff prototype uses fictional records saved in the browser. [Hospital and insurer design guide](docs/workspace-review/README.md)
 
 ## Where OpenAI fits
 
@@ -31,6 +31,8 @@ For supported scans, OpenAI transcribes the page so staff can compare the text w
 ## What we verified
 
 The supported-format rehearsal runs from correction through review, export and simulated settlement. Separately, we filled published AIA Thailand, US CMS-1450 and Blue Cross Blue Shield Federal Employee Program forms with synthetic cases to test where screening should stop. On the **first blinded holdout**, the field readers identified **10 of 11** expected outcomes on the correct page. They missed a different named payee. After fixing that and a cents citation, a **fresh panel passed 8 of 8** payee and amount checks on its first run. All eight unverified claims stayed on hold. Actual payer acceptance and staff time savings remain unmeasured. [Blinded results](docs/payer-holdout.md) · [Fresh confirmation](docs/payer-confirmation.md)
+
+A database rehearsal created **10,000 distinct synthetic inpatient encounters**, kept 11,040 revisions and restored 47,048 original PDF blobs. All 760 timed HTTP requests passed their checks. The hospital worklist now displays 25 claims at a time and searches the full database. On the same machine, the median time to render the queue fell from **1.72 seconds to 0.82 seconds** across five browser sessions per version. [Database benchmark and restore instructions](docs/discharge-scale-benchmark.md) · [Browser measurements and search tradeoff](docs/ux-redesign.md)
 
 ## Hackathon build declaration
 

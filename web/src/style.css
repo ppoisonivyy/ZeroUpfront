@@ -1,34 +1,34 @@
 @font-face {
-  font-family: Inter;
-  src: url("@fontsource-variable/inter/files/inter-latin-wght-normal.woff2")
+  font-family: "DM Sans";
+  src: url("@fontsource-variable/dm-sans/files/dm-sans-latin-wght-normal.woff2")
     format("woff2-variations");
   font-weight: 100 900;
   font-display: swap;
 }
 :root {
   font-family:
-    Inter,
+    "DM Sans",
     -apple-system,
     BlinkMacSystemFont,
     "Segoe UI",
     sans-serif;
   color: var(--ink);
-  background: #f3f6f9;
+  background: #f8f9f6;
   font-synthesis: none;
-  --ink: #173445;
-  --muted: #506874;
-  --line: #d3dfe3;
-  --action: #185a89;
-  --action-hover: #10456b;
-  --selected: #e7f1fa;
-  --control: #788a97;
-  --focus: #145c93;
+  --ink: #202b29;
+  --muted: #51615c;
+  --line: #d8dfda;
+  --action: #215e4b;
+  --action-hover: #184c43;
+  --selected: #e8f0e8;
+  --control: #738579;
+  --focus: #215e4b;
   --problem: #8b3829;
   --problem-bg: #fff0eb;
   --teal: #006c62;
-  --navy: #17374f;
+  --navy: #163f3a;
   --paper: #fff;
-  --subtle: #f3f7f8;
+  --subtle: #f3f5ef;
   --mint: #e7f4ef;
   --amber: #844a0e;
   --warm: #fff3dc;

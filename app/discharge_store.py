@@ -184,22 +184,65 @@ def detail(dsn, ident, rev=None):
         return _detail(db, ident, rev)
 
 
+_SUMMARIES = """
+    SELECT c.id, c.head AS revision, fields.member, fields.procedure, fields.insurer, fields.encounter,
+           fields.admission_date, fields.discharge_date, fields.currency, fields.bill_total_minor,
+           CASE WHEN a.actor IS NULL THEN fields.status ELSE 'staff_reviewed' END AS status,
+           coalesce(stage.status, 'not_sent') AS insurer_status
+    FROM zeroupfront_demo.discharge_cases c
+    JOIN zeroupfront_demo.discharge_revisions r ON r.case_id=c.id AND r.revision=c.head
+    CROSS JOIN LATERAL jsonb_to_record(r.evidence) AS fields(
+        member text, procedure text, insurer text, encounter text, admission_date text,
+        discharge_date text, currency text, bill_total_minor numeric, status text)
+    LEFT JOIN zeroupfront_demo.discharge_approvals a ON a.case_id=c.id AND a.revision=c.head
+    LEFT JOIN LATERAL (
+        SELECT CASE WHEN e.kind='submission' THEN 'submitted' ELSE e.data->>'outcome' END AS status
+        FROM zeroupfront_demo.discharge_events e
+        WHERE e.case_id=c.id AND e.revision=c.head AND e.kind IN ('submission','reply')
+        ORDER BY e.version DESC LIMIT 1
+    ) stage ON true
+"""
+
+
 def summaries(dsn):
-    with psycopg.connect(dsn) as db:
-        with db.cursor(row_factory=psycopg.rows.dict_row) as cur:
-            return cur.execute("""
-                SELECT c.id,c.head AS revision,r.evidence->>'member' AS member,r.evidence->>'procedure' AS procedure,
-                       r.evidence->>'insurer' AS insurer,r.evidence->>'encounter' AS encounter,
-                       r.evidence->>'admission_date' AS admission_date,r.evidence->>'discharge_date' AS discharge_date,
-                       r.evidence->>'currency' AS currency,r.evidence->'bill_total_minor' AS bill_total_minor,
-                       CASE WHEN a.actor IS NULL THEN r.evidence->>'status' ELSE 'staff_reviewed' END AS status,
-                       coalesce(stage.status,'not_sent') AS insurer_status
-                FROM zeroupfront_demo.discharge_cases c JOIN zeroupfront_demo.discharge_revisions r
-                ON r.case_id=c.id AND r.revision=c.head LEFT JOIN zeroupfront_demo.discharge_approvals a USING(case_id,revision)
-                LEFT JOIN LATERAL (SELECT CASE WHEN e.kind='submission' THEN 'submitted' ELSE e.data->>'outcome' END AS status
-                    FROM zeroupfront_demo.discharge_events e WHERE e.case_id=c.id AND e.revision=c.head
-                    AND e.kind IN ('submission','reply') ORDER BY e.version DESC LIMIT 1) stage ON true ORDER BY c.id
-            """).fetchall()
+    with psycopg.connect(dsn, row_factory=psycopg.rows.dict_row) as db:
+        return db.execute(_SUMMARIES + " ORDER BY c.id").fetchall()
+
+
+def worklist(dsn, queue, search, page, page_size):
+    # One statement keeps the selection, totals and returned page on a single database snapshot.
+    query = f"""
+        WITH claims AS ({_SUMMARIES}),
+        queues AS MATERIALIZED (
+            SELECT claims.*, status='needs_review' AS needs,
+                   status IN ('ready_for_review','ready_for_staff_review') AS ready,
+                   insurer_status<>'not_sent' AS payer FROM claims
+        ), matches AS MATERIALIZED (
+            SELECT * FROM queues
+            WHERE CASE %(queue)s WHEN 'needs' THEN needs WHEN 'ready' THEN ready
+                                 WHEN 'payer' THEN payer ELSE true END
+              AND (%(search)s = '' OR id ILIKE %(pattern)s OR encounter ILIKE %(pattern)s
+                   OR member ILIKE %(pattern)s OR procedure ILIKE %(pattern)s OR insurer ILIKE %(pattern)s)
+        ), selected AS (
+            SELECT * FROM matches
+            ORDER BY CASE WHEN needs OR insurer_status='query' THEN 0 WHEN ready THEN 1 ELSE 2 END,
+                     discharge_date, id
+            LIMIT %(size)s OFFSET %(offset)s
+        )
+        SELECT count(*) AS all,
+               count(*) FILTER (WHERE needs) AS needs,
+               count(*) FILTER (WHERE ready) AS ready,
+               count(*) FILTER (WHERE payer) AS payer,
+               (SELECT count(*) FROM matches) AS total,
+               coalesce((SELECT jsonb_agg(to_jsonb(selected) - ARRAY['needs','ready','payer'])
+                         FROM selected), '[]'::jsonb) AS items
+        FROM queues
+    """
+    pattern = "%" + search.replace("\\", "\\\\").replace("%", r"\%").replace("_", r"\_") + "%"
+    with psycopg.connect(dsn, row_factory=psycopg.rows.dict_row) as db:
+        row = db.execute(query, dict(queue=queue, search=search, pattern=pattern, size=page_size,
+                                     offset=(page - 1) * page_size)).fetchone()
+    return dict(items=row.pop("items"), total=row.pop("total"), counts=row, page=page, page_size=page_size)
 
 
 def _write(db, ident, rev, evidence, raw, names):

@@ -150,6 +150,38 @@ class AIReadValidation(unittest.TestCase):
         checks = reader.validated_checks(reader.Review(checks=fields), "fep", {"records": 2})
         self.assertEqual(checks[0].state, "unknown")
 
+    def test_well_cited_advice_still_has_to_agree_with_the_observed_fields(self):
+        cms = [
+            observation("member", "absent", cite("bill")),
+            observation("disposition", "unknown"),
+            observation("replacement", "original", cite("bill")),
+            observation("expense", "match", cite("bill"), cite("bill", 3)),
+        ]
+        fields = reader.validated_checks(
+            reader.Review(checks=cms),
+            "cms",
+            {"bill": 3},
+            field_evidence={
+                "cms_member_mismatch": {},
+                "cms_initial_claim_type": {},
+                "cms_total_mismatch": {},
+            },
+        )
+        self.assertEqual([f.state for f in fields], ["unknown", "unknown", "original", "unknown"])
+        self.assertIn("conflicts", fields[0].observation)
+
+        fep = [observation("payee", "member", cite("records")), observation("expense", "unknown")]
+        for verified, expected in [
+            ("fep_provider_assignment", "unknown"),
+            ("fep_member_reimbursement", "member"),
+            ("fep_assignment_provider", "unknown"),
+        ]:
+            with self.subTest(verified=verified):
+                fields = reader.validated_checks(
+                    reader.Review(checks=fep), "fep", {"records": 1}, field_evidence={verified: {}}
+                )
+                self.assertEqual(fields[0].state, expected)
+
     def test_independent_document_cannot_establish_a_route_when_elections_conflict(self):
         fields = [observation("payee", "hospital", cite("records")), observation("expense", "unknown")]
         review = reader.Review(checks=fields)

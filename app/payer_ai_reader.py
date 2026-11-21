@@ -208,26 +208,35 @@ def _counts(case, originals):
     return counts
 
 
-# These comparisons have a known form location and an independently checkable hospital value.
+# Observed states supported by the edition-specific form readers. The AI can abstain on
+# any field. A conflicting state must go back to staff even if its citations exist.
+FIELD_STATES = {
+    ("cms", "member"): {"match": "cms_insured_id_agrees", "conflict": "cms_member_mismatch"},
+    ("cms", "disposition"): {"match": "cms_disposition_agrees", "conflict": "cms_disposition_mismatch"},
+    ("cms", "replacement"): {
+        "original": "cms_initial_claim_type",
+        "present": "cms_original_reference_present",
+        "absent": "cms_original_claim_reference",
+    },
+    ("cms", "expense"): {"match": "cms_stated_total_agrees", "conflict": "cms_total_mismatch"},
+    ("aia", "admission"): {"match": "aia_admission_matches", "conflict": "aia_admission_mismatch"},
+    ("aia", "expense"): {"match": "aia_amount_matches", "conflict": "aia_amount_mismatch"},
+    ("aia", "consent"): {"absent": "aia_missing_consent"},
+    ("aia", "certification"): {"absent": "aia_missing_certification"},
+    ("fep", "expense"): {"match": "fep_stated_total_agrees", "conflict": "fep_total_mismatch"},
+    ("fep", "payee"): {
+        "hospital": "fep_provider_assignment",
+        "member": "fep_member_reimbursement",
+        "unsigned": "fep_assignment_signature",
+        "other_provider": "fep_assignment_provider",
+    },
+}
+
+# These states additionally require a distinct hospital page for the same encounter.
 REFERENCE_FIELDS = {
-    ("cms", "member"): (
-        "bill",
-        "member",
-        "subscriber ID",
-        {"match": "cms_insured_id_agrees", "conflict": "cms_member_mismatch"},
-    ),
-    ("aia", "admission"): (
-        "records",
-        "encounter",
-        "admission number",
-        {"match": "aia_admission_matches", "conflict": "aia_admission_mismatch"},
-    ),
-    ("fep", "payee"): (
-        "records",
-        "facility",
-        "treating facility",
-        {"other_provider": "fep_assignment_provider"},
-    ),
+    ("cms", "member"): ("bill", "member", "subscriber ID", {"match", "conflict"}),
+    ("aia", "admission"): ("records", "encounter", "admission number", {"match", "conflict"}),
+    ("fep", "payee"): ("records", "facility", "treating facility", {"other_provider"}),
 }
 
 
@@ -319,15 +328,26 @@ def _corroborate(check, family, reference_on_page, field_evidence):
         hold = next((field_evidence[c] for c in hold_codes if c in field_evidence), None)
         if hold:
             return check.model_copy(update={"state": "unknown", "observation": hold["message"]})
-    rule = REFERENCE_FIELDS.get((family, check.field))
+    key = (family, check.field)
+    states = FIELD_STATES.get(key, {})
+    if check.state == "unknown":
+        return check
+    observed_states = {state for state, code in states.items() if code in field_evidence}
+    if observed_states and check.state not in observed_states:
+        return check.model_copy(
+            update={
+                "state": "unknown",
+                "observation": "The AI observation conflicts with the form reader. Verify this field on the original documents.",
+            }
+        )
+    rule = REFERENCE_FIELDS.get(key)
     if not rule:
         return check
-    form_role, key, label, codes = rule
-    if check.state not in codes:
+    form_role, key, label, required_states = rule
+    if check.state not in required_states:
         return check
     cited = {(p.role, p.page) for p in check.pages}
-    fact = field_evidence.get(codes[check.state])
-    other_state_found = any(code in field_evidence for state, code in codes.items() if state != check.state)
+    fact = field_evidence.get(states[check.state])
     if fact:
         # Official-form readers verify both field positions and link the second record to
         # this encounter. Use their wording too, so a model transcription error is not repeated.
@@ -342,15 +362,11 @@ def _corroborate(check, family, reference_on_page, field_evidence):
     else:
         # For a visual read without a typed comparison, retain a supplied pair only when
         # the independent page contains the actual reference for this encounter.
-        if (
-            not other_state_found
-            and reference_on_page
-            and any(
-                role in {"bill", "records", "summary"}
-                and any(r == form_role and (r, n) != (role, page) for r, n in cited)
-                and reference_on_page(role, page, key, form_role)
-                for role, page in cited
-            )
+        if reference_on_page and any(
+            role in {"bill", "records", "summary"}
+            and any(r == form_role and (r, n) != (role, page) for r, n in cited)
+            and reference_on_page(role, page, key, form_role)
+            for role, page in cited
         ):
             return check
     return check.model_copy(

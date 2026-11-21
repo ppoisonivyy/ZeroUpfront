@@ -64,6 +64,78 @@ class DischargeApiTests(unittest.TestCase):
             files={"file": ("reply.pdf", raw, "application/pdf")} if raw else None,
         )
 
+    def test_worklist_pagination_search_counts_and_current_revision(self):
+        def worklist(**params):
+            response = self.client.get(ROOT + "/worklist", params=params)
+            self.assertEqual(response.status_code, 200, response.text)
+            return response.json()
+
+        prior = worklist()["counts"]
+        held, _ = self.new("duplicate_line")
+        ready, _ = self.new("aligned")
+        reviewed, _ = self.new("aligned")
+        self.assertEqual(self.approve(reviewed, 1).status_code, 200)
+        self.event(reviewed, 1, 0, "submission", {"reference": "W-1", "channel": "Portal"}).raise_for_status()
+        self.event(reviewed, 1, 1, "reply", {"reference": "Q-1", "terms": "More evidence required.",
+                   "outcome": "query", "confirmed": "true"}, pdf(["Synthetic query."])).raise_for_status()
+        counts = worklist()["counts"]
+        self.assertEqual(counts, {k: prior[k] + v for k, v in {"all": 3, "needs": 1, "ready": 1, "payer": 1}.items()})
+        for path, queue in [(held, "needs"), (ready, "ready"), (reviewed, "payer")]:
+            ident = path.split("/")[-1]
+            item = worklist(queue=queue, search="  " + ident.lower() + "  ")
+            self.assertEqual((item["total"], [r["id"] for r in item["items"]], item["counts"]), (1, [ident], counts))
+
+        legacy = self.client.get(ROOT).json()
+        def priority(row):
+            if row["status"] == "needs_review" or row["insurer_status"] == "query":
+                return 0
+            return 1 if row["status"] in ("ready_for_review", "ready_for_staff_review") else 2
+
+        expected = sorted(legacy, key=lambda r: (priority(r), r["discharge_date"], r["id"]))
+        for page in range(1, len(expected) // 3 + 3):
+            result = worklist(page=page, page_size=3)
+            self.assertEqual((result["page"], result["page_size"], result["total"]), (page, 3, len(expected)))
+            self.assertEqual(result["items"], expected[(page - 1) * 3:page * 3])
+
+        self.client.post(held + "/documents", headers=match(1),
+                         data={"sample_bill": "true", "confirmed": "true"}).raise_for_status()
+        ident = held.split("/")[-1]
+        self.assertEqual(worklist(queue="needs", search=ident)["total"], 0)
+        corrected = worklist(queue="ready", search=ident)
+        self.assertEqual(corrected["items"][0]["revision"], 2)
+        self.assertEqual(corrected["counts"]["needs"], counts["needs"] - 1)
+        self.assertEqual(corrected["counts"]["ready"], counts["ready"] + 1)
+
+    def test_worklist_literal_substrings_thai_search_and_limits(self):
+        meta, raw, names = load_discharge_fixture("aligned")
+        fields = dict(meta, confirmed="true", member="สมาชิก_Q77", encounter="บิล%77",
+                      procedure="หัตถการใหม่", insurer="กองทุนไทย")
+        case = self.client.post(ROOT, data=fields, files={"bill": (names["bill"], raw["bill"], "application/pdf")})
+        case.raise_for_status()
+        endpoint = ROOT + "/worklist"
+        for term in ("ชิก_q7", "บิล%7", "ถการให", "ทุนไท"):
+            data = self.client.get(endpoint, params={"search": term}).json()
+            self.assertEqual([row["id"] for row in data["items"]], [case.json()["id"]])
+        for term in ("ชิก%77", "บิล_77", "Wrist%fixation"):
+            self.assertEqual(self.client.get(endpoint, params={"search": term}).json()["total"], 0)
+        for invalid in ({"page": 0}, {"page_size": 0}, {"page_size": 101}, {"queue": "missing"}, {"search": "a" * 251}):
+            self.assertEqual(self.client.get(endpoint, params=invalid).status_code, 422)
+
+    def test_worklists_preserve_large_integer_minor_units_from_stored_revisions(self):
+        import psycopg
+
+        _, case = self.new("aligned")
+        amount = 10**30 + 7
+        with psycopg.connect(os.environ["DATABASE_URL"]) as db:
+            db.execute("""UPDATE zeroupfront_demo.discharge_revisions
+                          SET evidence=jsonb_set(evidence, '{bill_total_minor}', to_jsonb(%s::numeric))
+                          WHERE case_id=%s AND revision=1""", (str(amount), case["id"]))
+        legacy = next(row for row in self.client.get(ROOT).json() if row["id"] == case["id"])
+        result = self.client.get(ROOT + "/worklist", params={"search": case["id"]}).json()
+        for row in (legacy, result["items"][0]):
+            self.assertIs(type(row["bill_total_minor"]), int)
+            self.assertEqual(row["bill_total_minor"], amount)
+
     def test_unrecognized_or_repeated_pdfs_never_disappear_from_intake_or_replacement(self):
         meta, raw, names = load_discharge_fixture("aligned")
         supplied = [(k, (names[k], v, "application/pdf")) for k, v in raw.items()]
