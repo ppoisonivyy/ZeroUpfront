@@ -95,6 +95,50 @@ def set_demo_password(dsn, name, username, *, reset=False):
                            first, reset=reset, insurer="Meridian Assist" if reviewer and not reset else None)
 
 
+def _demo_accounts(dsn):
+    with psycopg.connect(dsn) as db:
+        return dict(db.execute("SELECT username,role FROM zeroupfront_demo.staff_accounts"))
+
+
+def _coordinator_login(accounts):
+    if "coordinator" in accounts:
+        if accounts["coordinator"] != "coordinator":
+            raise ValueError("The coordinator username belongs to a different role.")
+        return "coordinator"
+    if accounts.get("judge") == "coordinator":
+        return "judge"
+    return "coordinator"
+
+
+def rename_demo_coordinator(dsn):
+    """Explicit, atomic rename. Historical staff identities stay as recorded."""
+    with psycopg.connect(dsn) as db:
+        # Serialize provisioning and concurrent rename requests. Row locks also wait for sign-in
+        # transactions, which hold FOR SHARE until the session has been saved.
+        db.execute("LOCK TABLE zeroupfront_demo.staff_accounts IN SHARE ROW EXCLUSIVE MODE")
+        accounts = dict(db.execute("""
+            SELECT username, role FROM zeroupfront_demo.staff_accounts
+            WHERE username IN ('judge', 'coordinator') ORDER BY username FOR UPDATE
+        """))
+        if accounts == {"coordinator": "coordinator"}:
+            return False
+        if accounts != {"judge": "coordinator"}:
+            raise ValueError("Rename needs one existing judge coordinator and an unused coordinator username.")
+        db.execute("""
+            INSERT INTO zeroupfront_demo.staff_accounts (username,display_name,password_hash,active,insurer_scope,role)
+            SELECT 'coordinator',display_name,password_hash,active,insurer_scope,role
+            FROM zeroupfront_demo.staff_accounts WHERE username='judge'
+        """)
+        db.execute("UPDATE zeroupfront_demo.finance_assignments SET username='coordinator' WHERE username='judge'")
+        db.execute("DELETE FROM zeroupfront_demo.staff_sessions WHERE username='judge'")
+        db.execute("DELETE FROM zeroupfront_demo.staff_accounts WHERE username='judge'")
+        db.execute("""
+            INSERT INTO zeroupfront_demo.access_audit(username,capability,outcome)
+            VALUES ('judge','demo_account_rename','renamed_to_coordinator')
+        """)
+        return True
+
+
 def prepare(admin_dsn, approved_uses=()):
     directory = {}
     with psycopg.connect(admin_dsn, autocommit=True) as admin:
@@ -104,9 +148,8 @@ def prepare(admin_dsn, approved_uses=()):
                 admin.execute(sql.SQL("CREATE DATABASE {}").format(sql.Identifier(database)))
             dsn = make_conninfo(admin_dsn, dbname=database)
             seed(Hospital(slug, name, dsn))
-            with psycopg.connect(dsn) as db:
-                existing = {row[0] for row in db.execute("SELECT username FROM zeroupfront_demo.staff_accounts")}
-            for username in ("judge", "reviewer"):
+            existing = _demo_accounts(dsn)
+            for username in (_coordinator_login(existing), "reviewer"):
                 if username not in existing:
                     set_demo_password(dsn, name, username)
             variable = "ZU_DEMO_" + slug.upper().replace("-", "_") + "_DSN"
@@ -120,9 +163,9 @@ def prepare(admin_dsn, approved_uses=()):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("action", nargs="?", choices=("serve", "password", "seed-configured"), default="serve")
+    parser.add_argument("action", nargs="?", choices=("serve", "password", "seed-configured", "rename-coordinator"), default="serve")
     parser.add_argument("hospital", nargs="?", choices=tuple(HOSPITALS))
-    parser.add_argument("--account", choices=("judge", "reviewer"), default="judge",
+    parser.add_argument("--account", choices=("coordinator", "judge", "reviewer"),
                         help="Account to update with the password action")
     parser.add_argument("--port", type=int, default=8040)
     parser.add_argument("--data-dir", type=Path, default=DEFAULT_STATE)
@@ -141,7 +184,7 @@ def main():
             for hospital in hospitals:
                 seed(hospital)
             return
-        if args.action == "password":
+        if args.action in ("password", "rename-coordinator"):
             if not args.hospital or not (folder / "postmaster.pid").exists():
                 parser.error("Start the private hospital demo, then select a hospital slug.")
             pid, data_dir, _, port, socket, *_ = (folder / "postmaster.pid").read_text().splitlines()
@@ -149,8 +192,13 @@ def main():
                 parser.error("The demo cluster does not match this directory.")
             os.kill(int(pid), 0)
             dsn = make_conninfo(host=socket, port=port, user="coordinator", dbname=database_name(args.hospital))
-            set_demo_password(dsn, HOSPITALS[args.hospital][0], args.account, reset=True)
-            print(f"{args.account.title()} password updated. Sign in with username {args.account}.")
+            if args.action == "rename-coordinator":
+                changed = rename_demo_coordinator(dsn)
+                print("Coordinator renamed. Use the existing password." if changed else "Coordinator already uses this name.")
+                return
+            account = args.account or _coordinator_login(_demo_accounts(dsn))
+            set_demo_password(dsn, HOSPITALS[args.hospital][0], account, reset=True)
+            print(f"{account.title()} password updated. Sign in with username {account}.")
             return
         if os.getenv("DATABASE_URL") or os.getenv("WORKSPACE_HOSPITALS"):
             parser.error("The loopback demo requires its own private databases. Unset DATABASE_URL and WORKSPACE_HOSPITALS.")

@@ -1,4 +1,5 @@
 """Exercise the seeded correction and a second seeding pass through a staffed workspace."""
+from concurrent.futures import ThreadPoolExecutor
 from contextlib import ExitStack
 from io import BytesIO
 import json
@@ -8,6 +9,7 @@ import shutil
 import unittest
 from unittest.mock import patch
 
+import psycopg
 from fastapi.testclient import TestClient
 from pypdf import PdfReader
 
@@ -20,6 +22,56 @@ from bench.case_revision import temporary_database
 
 @unittest.skipUnless(shutil.which("initdb") and shutil.which("pg_ctl"), "requires PostgreSQL")
 class HospitalDemoTests(unittest.TestCase):
+    def test_coordinator_login_upgrade_preserves_password_and_historical_identity(self):
+        with ExitStack() as stack:
+            admin = stack.enter_context(temporary_database())
+            stack.enter_context(patch.dict(os.environ))
+            with patch("app.hospital_demo.set_demo_password", wraps=hospital_demo.set_demo_password) as provisioned:
+                with patch("sys.stdin.isatty", return_value=False):
+                    hospital_demo.prepare(admin)
+                self.assertEqual([call.args[2] for call in provisioned.call_args_list],
+                                 ["coordinator", "reviewer", "coordinator", "reviewer"])
+            dsn = os.environ["ZU_DEMO_CANAL_BRIDGE_DSN"]
+            password = secrets.token_urlsafe(32)
+            # Recreate the earlier installation with a signed-in account and a recorded clinical review.
+            with psycopg.connect(dsn) as db:
+                db.execute("DELETE FROM zeroupfront_demo.staff_accounts WHERE username='coordinator'")
+            provision(dsn, "judge", "Coordinator CB", password)
+            client = stack.enter_context(TestClient(build_platform(create_workspace)))
+            base = "/h/canal-bridge/api"
+            def login(who):
+                return client.post(base + "/access/login", json={"username": who, "password": password})
+            login("judge").raise_for_status()
+            case = base + "/discharge/D-CB-002"
+            client.post(case + "/approve", headers={"If-Match": '"1"'}, json={"reviewer": "Coordinator CB"}).raise_for_status()
+            with psycopg.connect(dsn) as db:
+                old = db.execute("SELECT password_hash FROM zeroupfront_demo.staff_accounts WHERE username='judge'").fetchone()
+            with patch("app.hospital_demo.set_demo_password") as new_account:
+                hospital_demo.prepare(admin)
+                new_account.assert_not_called()
+            self.assertEqual(hospital_demo._coordinator_login(hospital_demo._demo_accounts(dsn)), "judge")
+            client.get(case).raise_for_status()
+            with ThreadPoolExecutor(max_workers=2) as pool:
+                changed = list(pool.map(hospital_demo.rename_demo_coordinator, [dsn, dsn]))
+            self.assertEqual(sorted(changed), [False, True])
+            self.assertEqual(client.get(case).status_code, 401)
+            self.assertEqual(login("judge").status_code, 401)
+            login("coordinator").raise_for_status()
+            approved = client.get(case).json()
+            self.assertEqual(approved["reviewer_username"], "judge")
+            with psycopg.connect(dsn) as db:
+                self.assertEqual(db.execute("SELECT password_hash FROM zeroupfront_demo.staff_accounts WHERE username='coordinator'").fetchone(), old)
+                self.assertEqual(db.execute("SELECT username,outcome FROM zeroupfront_demo.access_audit WHERE capability='demo_account_rename'").fetchall(),
+                                 [("judge", "renamed_to_coordinator")])
+            # An independently provisioned account may never be silently overwritten.
+            provision(dsn, "judge", "Another coordinator", secrets.token_urlsafe(32))
+            with self.assertRaisesRegex(ValueError, "unused coordinator"):
+                hospital_demo.rename_demo_coordinator(dsn)
+            client.get(case).raise_for_status()
+            south = os.environ["ZU_DEMO_LAKESIDE_DSN"]
+            self.assertEqual(hospital_demo._demo_accounts(south),
+                             {"coordinator": "coordinator", "reviewer": "insurer"})
+
     def test_corrected_bill_and_history_survive_reseeding(self):
         with ExitStack() as stack:
             dsn = stack.enter_context(temporary_database())
@@ -29,10 +81,10 @@ class HospitalDemoTests(unittest.TestCase):
             stack.enter_context(patch.dict(os.environ, WORKSPACE_HOSPITALS=json.dumps(directory), TEST_HOSPITAL_DSN=dsn))
             hospital_demo.seed(hospital)
             password = secrets.token_urlsafe(32)
-            provision(dsn, "judge", "Demo coordinator", password)
+            provision(dsn, "coordinator", "Demo coordinator", password)
             client = stack.enter_context(TestClient(build_platform(create_workspace)))
             base = f"/h/{slug}/api"
-            self.assertEqual(client.post(base + "/access/login", json={"username":"judge","password":password}).status_code, 200)
+            self.assertEqual(client.post(base + "/access/login", json={"username":"coordinator","password":password}).status_code, 200)
             self.assertEqual(len(client.get(base + "/cases").json()), 2)
             self.assertEqual(len(client.get(base + "/discharge").json()), 4)
             claim = base + "/discharge/D-" + code + "-001"
@@ -63,13 +115,13 @@ class HospitalDemoTests(unittest.TestCase):
                 connections[key] = dsn
                 hospital = hospitals[slug] = Hospital(slug, name, dsn)
                 hospital_demo.seed(hospital)
-                provision(dsn, "judge", f"{code} coordinator", password)
+                provision(dsn, "coordinator", f"{code} coordinator", password)
             stack.enter_context(patch.dict(os.environ, WORKSPACE_HOSPITALS=json.dumps(directory), **connections))
             client = stack.enter_context(TestClient(build_platform(create_workspace)))
             for slug in directory:
                 base = f"/h/{slug}/api"
                 self.assertEqual(client.get(base + "/discharge").status_code, 401)
-                self.assertEqual(client.post(base + "/access/login", json={"username":"judge","password":password}).status_code, 200)
+                self.assertEqual(client.post(base + "/access/login", json={"username":"coordinator","password":password}).status_code, 200)
                 self.assertEqual(client.post(base + "/discharge/examples/pattaya_fx").status_code, 404)
 
             base = "/h/canal-bridge/api/discharge"
@@ -107,7 +159,7 @@ class HospitalDemoTests(unittest.TestCase):
                 self.assertEqual(response.status_code, 200, response.text)
                 saved = response.json()
                 version = saved["workflow_version"]
-                self.assertEqual(saved["events"][-1]["username"], "judge")
+                self.assertEqual(saved["events"][-1]["username"], "coordinator")
                 self.assertEqual(saved["events"][-1]["actor"], "CB coordinator")
                 if "bank_document" in details:
                     saved_source = saved["events"][-1]["source_url"]

@@ -12,7 +12,7 @@ npm --prefix web run build
 uv run --locked python -m app.hospital_demo
 ```
 
-On the first interactive launch, choose passwords for `judge` (hospital coordinator) and `reviewer` (Meridian Assist insurer) in each hospital. Both accounts use the same sign-in form. The prompts hide typed input. The app stores only salted password verifiers. On subsequent launches, the same accounts, original exhibits and saved revisions are available. Open the [hospital directory](http://127.0.0.1:8040/).
+On the first interactive launch, choose passwords for `coordinator` (hospital coordinator) and `reviewer` (Meridian Assist insurer) in each hospital. Both accounts use the same sign-in form. The prompts hide typed input. The app stores only salted password verifiers. On subsequent launches, the same accounts, original exhibits and saved revisions are available. Open the [hospital directory](http://127.0.0.1:8040/).
 
 For the optional digital guarantee reader in the fictional Canal Bridge workspace, add `--approve-openai-use canal-bridge/guarantee_fees` to the local serve command. This also requires the deployment AI switch and provider key. Both hospitals otherwise start with cloud document processing disabled.
 
@@ -22,6 +22,13 @@ To choose a new password, including after an unattended launch, leave the demo r
 uv run --locked python -m app.hospital_demo password canal-bridge
 uv run --locked python -m app.hospital_demo password lakeside
 uv run --locked python -m app.hospital_demo password canal-bridge --account reviewer
+```
+
+An older local installation can still sign in as `judge` after a restart. To switch that account to `coordinator`, run each command once while the local demo is running. The same password works under the new name. Existing coordinator sessions sign out, and earlier claim reviews retain the name recorded at the time.
+
+```sh
+uv run --locked python -m app.hospital_demo rename-coordinator canal-bridge
+uv run --locked python -m app.hospital_demo rename-coordinator lakeside
 ```
 
 | Encounter | What to try |
@@ -69,8 +76,8 @@ Before enabling a purpose for identifiable records, the hospital’s privacy lea
 For these **fictional hospitals only**, run `python -m app.hospital_demo seed-configured` in the configured container to populate the examples. In an interactive administrative shell with the same secrets, provision a separate staff login in each database. Each command prompts for the password. To enable a payer inbox, add an insurer reviewer to the hospital database and supply the exact payer name on its submitted packets.
 
 ```sh
-DATABASE_URL="$CANAL_DATABASE_URL" python -m app.staff_access add judge --name "Canal Bridge coordinator"
-DATABASE_URL="$LAKESIDE_DATABASE_URL" python -m app.staff_access add judge --name "Lakeside coordinator"
+DATABASE_URL="$CANAL_DATABASE_URL" python -m app.staff_access add coordinator --name "Canal Bridge coordinator"
+DATABASE_URL="$LAKESIDE_DATABASE_URL" python -m app.staff_access add coordinator --name "Lakeside coordinator"
 DATABASE_URL="$CANAL_DATABASE_URL" python -m app.staff_access add reviewer --name "Meridian Assist reviewer" --insurer "Meridian Assist"
 ```
 
@@ -97,7 +104,7 @@ Choose **Canal Bridge** for the walkthrough. **Lakeside** has its own sign-in, s
 | Sign in as | What opens | What to try |
 | --- | --- | --- |
 | Signed out | Hospital directory and sign-in | Choose a hospital. Its case queue requires a login. |
-| `judge` | Hospital coordinator desk | Open Amelia Morgan (ZU-0248), inspect the clause on page 12, attach the signed sample and review the insurer form. Submitting the reviewed form delivers that revision to the payer inbox. |
+| `coordinator` | Hospital coordinator desk | Open Amelia Morgan (ZU-0248), inspect the clause on page 12, attach the signed sample and review the insurer form. Submitting the reviewed form delivers that revision to the payer inbox. |
 | `reviewer` | Meridian Assist insurer desk | Open the received packet after the coordinator submits it. A separate browser window in private mode lets the presenter keep both desks open. |
 | `finance` | Assigned reconciliation | Inspect payer amounts, recorded credits and the outstanding balance for the assigned Pattaya case in that hospital. |
 
