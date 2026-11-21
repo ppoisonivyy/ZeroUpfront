@@ -1,0 +1,64 @@
+{
+  "baseline_sha256": "03150efda99737bb8663385e62aad5089c5f02723bde124db78e5a96b7b875fc",
+  "review_source": "Independent reread of the pinned OPM brochure before seeing any model outputs. No model-visible inputs or answer values changed. Arrays are AND requirements containing OR alternatives. A page may satisfy more than one requirement.",
+  "amendments": [
+    {
+      "id": "us01",
+      "original_required": [
+        [
+          24
+        ]
+      ],
+      "adjusted_required": [
+        [
+          24,
+          35,
+          76
+        ],
+        [
+          24,
+          131
+        ]
+      ],
+      "reason": "The US benefit reduction also appears on pp. 35/76 and the overseas hospital exception on p. 131. Physical p. 24 alone satisfies both requirements."
+    },
+    {
+      "id": "us13",
+      "original_required": [
+        [
+          78,
+          156,
+          157
+        ]
+      ],
+      "adjusted_required": [
+        [
+          76,
+          77,
+          156,
+          157
+        ]
+      ],
+      "reason": "Page 78 refers to an overnight inpatient setting and does not establish the observation-only rule. Pages 76 and 77 explicitly classify observation services as outpatient; pp. 156/157 directly explain overnight observation."
+    },
+    {
+      "id": "us14",
+      "original_required": [
+        [
+          132
+        ]
+      ],
+      "adjusted_required": [
+        [
+          131,
+          132
+        ],
+        [
+          132,
+          139
+        ]
+      ],
+      "reason": "Page 131 independently states Standard has no overseas deductible. Page 139 independently states the one-year overseas pharmacy filing deadline. Page 132 gives both."
+    }
+  ]
+}
