@@ -6,14 +6,20 @@ import "./finance.css";
 
 type Entry = {
   case_id: string; revision: number; current: boolean; currency: string | null;
+  payer_outcome: "confirmed" | "partial" | "declined" | "query" | null;
   approved_minor: number | null; credited_minor: number | null; outstanding_minor: number | null;
   receipt_count: number; last_receipt_id: number | null;
-  status: "awaiting_decision" | "outstanding" | "settled" | "reconciliation_required";
+  status: "query" | "declined" | "awaiting_decision" | "outstanding" | "settled" | "reconciliation_required";
 };
 type Page = { items: Entry[]; page: number; has_more: boolean };
 const labels = {
   awaiting_decision: "Awaiting payer decision", outstanding: "Outstanding",
   settled: "Settled", reconciliation_required: "Review credits",
+  query: "Payer requested information", declined: "Payer declined",
+};
+
+const writtenOutcomes = {
+  confirmed: "Approved", partial: "Partially approved", declined: "Declined", query: "More information requested",
 };
 
 export function FinanceLedger() {
@@ -47,7 +53,8 @@ export function FinanceLedger() {
         <div className="work-inbox finance-list">{result.items.map(entry => <article key={entry.case_id + ":" + entry.revision}>
           <header><div><h2>{entry.case_id}</h2><p>Revision {entry.revision} · {entry.current ? "Current" : "Historical"}</p></div>
             <strong className={"claim-pill " + (entry.status === "settled" ? "state-staff_reviewed" : "state-needs_review")}>{labels[entry.status]}</strong></header>
-          <dl><div><dt>Payer approved</dt><dd>{minorMoney(entry.approved_minor, entry.currency)}</dd></div>
+          <dl><div><dt>Latest written reply</dt><dd>{entry.payer_outcome ? writtenOutcomes[entry.payer_outcome] : "None recorded"}</dd></div>
+            <div><dt>Payer approved</dt><dd>{minorMoney(entry.approved_minor, entry.currency)}</dd></div>
             <div><dt>Recorded credits</dt><dd>{entry.receipt_count ? minorMoney(entry.credited_minor, entry.currency) : "None recorded"}</dd></div>
             <div><dt>Outstanding</dt><dd>{minorMoney(entry.outstanding_minor, entry.currency)}</dd></div></dl>
           {entry.last_receipt_id !== null && <small>{entry.receipt_count} recorded {entry.receipt_count === 1 ? "credit" : "credits"} · Latest ledger entry #{entry.last_receipt_id}</small>}

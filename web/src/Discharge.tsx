@@ -149,6 +149,7 @@ function ClaimDetail({
   )
     return (
       <ClaimMutation
+        key={[claim.id, claim.revision, claim.workflow_version, panel].join("/")}
         claim={claim}
         pinned={pinned}
         action={panel as ClaimAction | "approve"}
@@ -480,6 +481,10 @@ function ClaimDetail({
               . Review prior revisions to reconcile them.
             </p>
           )}
+          {claim.follow_up && <p className="notice">
+            {claim.follow_up.assigned ? `Follow-up owner: ${claim.follow_up.owner} · Due ${claim.follow_up.due}` :
+              "Follow-up unassigned. Record an owner and due date when preparing the response."}
+          </p>}
           {claim.payer_decision ||
           Object.keys(claim.paid_by_currency || {}).length > 0 ? (
             <dl className="settlement-summary">

@@ -13,6 +13,7 @@ import shutil
 import unittest
 from unittest.mock import patch
 
+import psycopg
 from fastapi.testclient import TestClient
 from pypdf import PdfReader
 from PIL import Image, ImageDraw
@@ -401,6 +402,8 @@ class DischargeApiTests(unittest.TestCase):
         self.assertEqual(self.event(path, 1, 0, "patient_statement", confirmation | {"confirmed": "false"}).status_code, 422)
         verified = self.event(path, 1, 0, "patient_statement", confirmation).json()
         original = verified["events"][-1]["data"]
+        self.assertEqual((original["hospital"], original["case_id"], original["revision"]),
+                         (case["facility"], case["id"], 1))
         self.assertIsNone(original["approved_minor"])
         self.assertIsNone(original["patient_fx_minor"])
         self.assertEqual(verified["reviewed_patient_statement"]["reviewer"], "Hospital finance")
@@ -409,6 +412,18 @@ class DischargeApiTests(unittest.TestCase):
         sent = self.event(path, 1, 1, "submission", {"reference": "S-1", "channel": "Portal"}).json()
         self.assertIsNone(sent["reviewed_patient_statement"])
         self.assertEqual(sent["events"][0]["data"], original)
+
+    def test_legacy_statement_gets_identity_from_its_own_reviewed_revision(self):
+        path, case = self.new("aligned")
+        self.approve(path, 1).raise_for_status()
+        confirmation = {"confirmed": "true", "contact": "Billing", "next_update": "2026-11-27"}
+        self.event(path, 1, 0, "patient_statement", confirmation).raise_for_status()
+        # Previously reviewed statements predate the hospital/case fields in the saved snapshot.
+        with psycopg.connect(os.environ["DATABASE_URL"]) as db:
+            db.execute("""UPDATE zeroupfront_demo.discharge_events SET data=data-'case_id'-'hospital'
+                          WHERE case_id=%s AND revision=1 AND kind='patient_statement'""", (case["id"],))
+        older = self.client.get(path).json()["reviewed_patient_statement"]
+        self.assertEqual((older["hospital"], older["case_id"]), (case["facility"], case["id"]))
 
     def test_pattaya_statement_preserves_insurer_shortfall_and_invalidates_after_topup(self):
         path, case = self.new("pattaya_fx")

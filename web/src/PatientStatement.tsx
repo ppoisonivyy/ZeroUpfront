@@ -21,6 +21,9 @@ function rowsFor(facts: PatientStatementFacts): Row[] {
   const amount = (en: string, th: string, n: number | null, currency: string | null): Row =>
     n == null || !currency ? { en, th, value: pending, thaiValue: thaiPending } : { en, th, value: minorMoney(n, currency) };
   const rows = [
+    { en: "Hospital", th: "โรงพยาบาล", value: facts.hospital },
+    { en: "Case reference", th: "เลขอ้างอิงเคส", value: facts.case_id },
+    { en: "Packet revision", th: "ฉบับที่ของเอกสาร", value: String(facts.revision) },
     { en: "Status with insurer", th: "สถานะการประสานงานกับบริษัทประกัน", value: status?.[0] || pending, thaiValue: status?.[1] || thaiPending },
     amount("Approved by insurer", "ยอดที่บริษัทประกันอนุมัติ", facts.approved_minor, facts.approved_currency),
     amount("Patient share stated in the packet", "ส่วนที่ระบุให้ผู้ป่วยรับผิดชอบตามเอกสาร", facts.patient_share_minor, facts.currency),
@@ -32,7 +35,7 @@ function rowsFor(facts: PatientStatementFacts): Row[] {
   return rows;
 }
 
-function downloadCopy(rows: Row[], revision: number) {
+function downloadCopy(rows: Row[], reviewed: PatientStatementFacts) {
   const copy = [
     "Patient financial update", ...rows.map(r => r.en + ": " + r.value),
     "", "สรุปสถานะค่าใช้จ่ายสำหรับผู้ป่วย", ...rows.map(r => r.th + ": " + (r.thaiValue || r.value)),
@@ -40,7 +43,8 @@ function downloadCopy(rows: Row[], revision: number) {
   const url = URL.createObjectURL(new Blob(["\uFEFF" + copy.join("\n") + "\n"], { type: "text/plain;charset=utf-8" }));
   const a = document.createElement("a");
   a.href = url;
-  a.download = "financial-update-r" + revision + ".txt";
+  const safePart = (value: string) => value.replace(/[^\p{L}\p{N}_-]+/gu, "-").slice(0, 80);
+  a.download = `financial-update-${safePart(reviewed.hospital)}-${safePart(reviewed.case_id)}-r${reviewed.revision}.txt`;
   a.click();
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
@@ -86,7 +90,7 @@ export function PatientStatement({ claim, facts, onUpdated, reload }: {
                 setError("The case changed. Reload and review the current financial update before downloading.");
                 return;
               }
-              downloadCopy(rows, claim.revision);
+              downloadCopy(rows, reviewed);
             } catch (err) {
               setError(err instanceof Error ? err.message : "Unable to verify the current update.");
             } finally {

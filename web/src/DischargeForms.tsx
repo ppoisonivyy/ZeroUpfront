@@ -221,6 +221,8 @@ export function ClaimMutation({
     [busy, setBusy] = useState(false),
     [error, setError] = useState("");
   const followUp = claim.payer_decision;
+  const [draftDigest, setDraftDigest] = useState("");
+  const [fileOrigin, setFileOrigin] = useState<"external" | "workspace">("external");
   const payerReply = [...claim.events].reverse().find(event => event.kind === "reply");
   const [draft, setDraft] = useState(() => {
     const ref = payerReply?.data.reference || "the latest written decision";
@@ -239,6 +241,32 @@ Please confirm receipt and the date we can expect your written response.`;
   const needsMoney =
     action === "payment" ||
     (action === "reply" && ["partial", "confirmed"].includes(outcome));
+  async function downloadDraft() {
+    if (busy || !payerReply) return;
+    setBusy(true);
+    setError("");
+    try {
+      const res = await api(claimPath(claim.id) + "/follow-up-draft", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "If-Match": '"' + claim.revision + '"' },
+        body: JSON.stringify({ text: draft, payer_event_id: payerReply.id, workflow_version: claim.workflow_version }),
+      });
+      const digest = res.headers.get("X-Draft-SHA256");
+      if (!digest) throw new Error("The downloaded response is missing its document reference.");
+      const url = URL.createObjectURL(await res.blob());
+      setDraftDigest(digest);
+      setFileOrigin("workspace");
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = claim.id + "-r" + claim.revision + "-reply-" + payerReply.id + ".pdf";
+      link.click();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Unable to download this correspondence.");
+    } finally {
+      setBusy(false);
+    }
+  }
   return (
     <section className="form-wrap">
       <div className="page-title">
@@ -268,6 +296,11 @@ Please confirm receipt and the date we can expect your written response.`;
           body.set("action", action);
           body.set("workflow_version", String(claim.workflow_version));
           body.set("actor", name);
+          if (needsOwner) body.set("assign_follow_up", "true");
+          if (action === "supplement" && payerReply) {
+            body.set("payer_event_id", String(payerReply.id));
+            if (fileOrigin === "workspace" && draftDigest) body.set("draft_sha256", draftDigest);
+          }
           if (action === "approve")
             headers.set("Content-Type", "application/json");
           setBusy(true);
@@ -316,9 +349,10 @@ Please confirm receipt and the date we can expect your written response.`;
           )}
           {action === "supplement" && <>
             <label className="stack-field"><span>Editable follow-up draft</span>
-              <textarea rows={7} value={draft} onChange={e => setDraft(e.target.value)} />
+              <textarea rows={7} maxLength={8000} value={draft} onChange={e => setDraft(e.target.value)} />
             </label>
-            <p className="hint">Review the original payer decision, edit the draft, and send it through the approved payer channel. Saving below records what was actually sent.</p>
+            <button type="button" className="secondary" disabled={busy || !draft.trim()} onClick={() => void downloadDraft()}>Download edited response PDF</button>
+            <p className="hint">Review the original payer decision and send the response through the approved payer channel. Attach the exact PDF you sent to record it here.</p>
           </>}
           {(action === "submission" || action === "supplement") && (
             <>
@@ -380,6 +414,12 @@ Please confirm receipt and the date we can expect your written response.`;
             </>
           )}
           {action === "supplement" && <>
+            <label className="stack-field"><span>Source of sent PDF</span>
+              <select name="file_origin" value={fileOrigin} onChange={e => setFileOrigin(e.target.value as "external" | "workspace")}>
+                <option value="external">Prepared outside ZeroUpfront · staff-verified</option>
+                <option value="workspace">Downloaded ZeroUpfront response · verify exact file</option>
+              </select>
+            </label>
             <label className="upload-field"><strong>Exact PDF sent to insurer</strong>
               <input type="file" name="file" accept="application/pdf,.pdf" required />
             </label>

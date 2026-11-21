@@ -99,6 +99,7 @@ class Detail(Summary):
     workflow_version: int
     allowed_actions: list[str]
     payer_decision: dict | None
+    follow_up: dict | None = None
     settlement_status: str
     paid_by_currency: dict[str, int]
     case_paid_by_currency: dict[str, int]
@@ -565,7 +566,28 @@ def export(request: Request, ident: str, revision: Annotated[int, Query(ge=1)]):
     return _pdf(data, f"{ident}-r{revision}-discharge-request.pdf", "attachment")
 
 
+class FollowupDraft(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    workflow_version: int = Field(ge=0)
+    payer_event_id: int = Field(gt=0)
+    text: str = Field(min_length=1, max_length=8000)
+
+
+@router.post("/{ident}/follow-up-draft", response_class=Response, responses=PDF)
+def followup_draft(request: Request, ident: str, draft: FollowupDraft, if_match: Match = None):
+    revision = _revision(if_match)
+    content = store.followup_pdf(request.app.state.dsn, ident, revision, draft.workflow_version,
+                                 draft.payer_event_id, draft.text)
+    response = _pdf(content, f"{ident}-r{revision}-reply-{draft.payer_event_id}.pdf", "attachment")
+    response.headers["X-Draft-SHA256"] = store.document_digest(content)
+    return response
+
+
 class Workflow(BaseModel):
+    file_origin: Literal["workspace", "external"] | None = None
+    draft_sha256: str | None = Field(default=None, pattern="^[a-f0-9]{64}$")
+    assign_follow_up: bool = False
+    payer_event_id: int | None = Field(default=None, gt=0)
     action: Literal["submission", "reply", "payment", "supplement", "patient_statement"]
     workflow_version: int = Field(ge=0)
     target_revision: int | None = Field(default=None, ge=1)

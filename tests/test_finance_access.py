@@ -62,7 +62,7 @@ class FinanceAccessTests(unittest.TestCase):
         self.assertIn("no-store", result.headers["cache-control"])
         expected = {"case_id": self.case, "revision": 1, "current": True, "currency": "THB",
                     "approved_minor": 23900000, "credited_minor": 23870000, "outstanding_minor": 30000,
-                    "receipt_count": 1, "status": "outstanding"}
+                    "receipt_count": 1, "status": "outstanding", "payer_outcome": "confirmed"}
         (row,) = result.json()["items"]
         self.assertIsInstance(row.pop("last_receipt_id"), int)
         self.assertEqual(row, expected)
@@ -87,6 +87,25 @@ class FinanceAccessTests(unittest.TestCase):
         self.assertEqual(self.client.get(endpoint).status_code, 401)
         self.assertEqual(self.login(user)["role"], "finance")
         self.assertEqual(self.client.post("/api/access/logout").status_code, 200)
+
+    def test_latest_written_nonmonetary_outcomes_remain_visible(self):
+        user = "finance-nonmonetary"
+        with patch.dict(os.environ, WORKSPACE_AUTH_MODE="local"):
+            claim = self.client.post("/api/discharge/examples/aligned").json()["id"]
+        provision(self.dsn, user, "Finance", self.password, role="finance")
+        assign_case(self.dsn, user, claim)
+        self.login(user)
+        for version, outcome in enumerate(("query", "declined"), start=1):
+            with psycopg.connect(self.dsn) as db:
+                db.execute("""INSERT INTO zeroupfront_demo.discharge_events
+                    (case_id,revision,version,kind,actor,data) VALUES (%s,1,%s,'reply','Staff',%s)""",
+                    (claim, version, Jsonb({"outcome": outcome, "terms": "restricted letter text"})))
+            response = self.client.get("/api/finance/reconciliation")
+            (entry,) = response.json()["items"]
+            self.assertEqual((entry["payer_outcome"], entry["status"]), (outcome, outcome))
+            self.assertIsNone(entry["approved_minor"])
+            self.assertIsNone(entry["outstanding_minor"])
+            self.assertNotIn("restricted letter text", response.text)
 
     def test_unknown_decisions_and_historical_receipts_remain_separate(self):
         user = "finance-history"

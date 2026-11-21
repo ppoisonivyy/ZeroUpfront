@@ -10,6 +10,8 @@ export const dischargeRoles = {
 export type DischargeRole = keyof typeof dischargeRoles;
 export type ClaimAction = "submission" | "reply" | "payment" | "supplement";
 export type PatientStatementFacts = {
+  case_id: string;
+  hospital: string;
   revision: number;
   insurer_status: string;
   currency: string | null;
@@ -50,6 +52,7 @@ export type DischargeClaim = {
   settlement_status: string;
   case_paid_by_currency?: Record<string, number>;
   paid_by_currency: Record<string, number>;
+  follow_up?: { assigned: boolean; owner: string | null; due: string | null } | null;
   payer_decision: {
     outcome: string;
     owner?: string;

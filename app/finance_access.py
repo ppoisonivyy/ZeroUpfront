@@ -30,7 +30,12 @@ def _balance(row):
         row["credited_minor"] = None
         status = "reconciliation_required"
     elif amount is None:
-        status = "reconciliation_required" if row["receipt_count"] else "awaiting_decision"
+        if row["receipt_count"]:
+            status = "reconciliation_required"
+        elif row["payer_outcome"] in {"declined", "query"}:
+            status = row["payer_outcome"]
+        else:
+            status = "awaiting_decision"
     elif paid > amount:
         status = "reconciliation_required"
     else:
@@ -57,11 +62,13 @@ def reconciliation(dsn, username, page):
                     WHERE e.case_id=c.id AND e.revision=r.revision AND e.kind IN ('reply','payment')))
                 ORDER BY c.id,r.revision DESC LIMIT %s OFFSET %s
             )
-            SELECT s.*,decision.currency,decision.approved_minor,credits.receipt_count,credits.last_receipt_id,
+            SELECT s.*,decision.payer_outcome,decision.currency,decision.approved_minor,credits.receipt_count,credits.last_receipt_id,
                    credits.credited_minor, credits.matched_currency
             FROM selected s
             LEFT JOIN LATERAL (
-                SELECT data->>'currency' AS currency,
+                SELECT CASE WHEN data->>'outcome' IN ('confirmed','partial','declined','query')
+                            THEN data->>'outcome' END AS payer_outcome,
+                       data->>'currency' AS currency,
                        CASE WHEN data->>'outcome' IN ('partial','confirmed')
                             THEN (data->>'amount_minor')::bigint END AS approved_minor
                 FROM zeroupfront_demo.discharge_events
