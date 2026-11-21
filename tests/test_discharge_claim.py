@@ -4,13 +4,19 @@ import io
 import json
 from pathlib import Path
 from tempfile import TemporaryDirectory
+from types import SimpleNamespace
 import unittest
+from unittest.mock import Mock
 
+import httpx
+from openai import APIConnectionError, AuthenticationError, RateLimitError
+from PIL import Image
 from pypdf import PdfReader, PdfWriter
+from reportlab.lib.utils import ImageReader
 from reportlab.pdfgen.canvas import Canvas
 
 from app.discharge_claim import ROOT, discharge_packet_bytes, evaluate_discharge, load_discharge_fixture
-from app.document_text import contains_quote
+from app.document_text import Transcript, contains_quote
 from fixtures.discharge import build
 
 
@@ -151,6 +157,38 @@ class DischargeClaimTests(unittest.TestCase):
         result = evaluate_discharge(*load_discharge_fixture("share_mismatch"))
         finding = next(f for f in result["findings"] if f["code"] == "share_mismatch")
         self.assertEqual({a["role"] for a in finding["sources"]}, {"bill", "letter"})
+
+    def test_partial_transcription_keeps_other_pages_but_provider_errors_propagate(self):
+        meta, originals, names = load_discharge_fixture()
+        summary = PdfWriter()
+        summary.add_page(PdfReader(io.BytesIO(originals["summary"])).pages[0])
+        raster = io.BytesIO()
+        c = Canvas(raster, invariant=1)
+        c.drawImage(ImageReader(Image.new("L", (60, 40), 100)), 30, 20)
+        c.showPage()
+        c.save()
+        summary.add_page(PdfReader(io.BytesIO(raster.getvalue())).pages[0])
+        stream = io.BytesIO()
+        summary.write(stream)
+        raw = {**originals, "summary": stream.getvalue()}
+        client = Mock()
+        for grade in ("partial", "unreadable"):
+            client.responses.parse.return_value = SimpleNamespace(status="completed",
+                output_parsed=Transcript(legibility=grade, text="Uncertain amount or date"))
+            result = evaluate_discharge(meta, raw, names, ocr_client=client)
+            finding = next(f for f in result["findings"] if f["code"] == "unreadable_summary")
+            self.assertEqual([(r["page"], r["method"]) for r in finding["sources"]], [(2, "unreadable")])
+            self.assertEqual(result["status"], "needs_review")
+            source = next(s for s in result["sources"] if s["role"] == "summary")
+            self.assertTrue(any(a["page"] == 1 and a["quote"].startswith("Performed procedure:") for a in source["anchors"]))
+            self.assertFalse(any("Uncertain" in a["quote"] for a in source["anchors"]))
+        req = httpx.Request("POST", "https://api.openai.com/v1/responses")
+        for error in (AuthenticationError("auth", response=httpx.Response(401, request=req), body=None),
+                      RateLimitError("rate", response=httpx.Response(429, request=req), body=None),
+                      APIConnectionError(request=req)):
+            client.responses.parse.side_effect = error
+            with self.assertRaises(type(error)):
+                evaluate_discharge(meta, raw, names, ocr_client=client)
 
 
 if __name__ == "__main__":

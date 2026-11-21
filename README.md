@@ -5,7 +5,7 @@ ZeroUpfront helps hospital coordinators prepare preauthorization requests and ch
 ## Start here
 
 - [Discharge claim workflow and comparison with preauthorization](docs/discharge-workflow.md)
-- [Discharge screening and settlement test results](docs/discharge-journey-results.md)
+- [Discharge screening and settlement test results](docs/discharge-journey-results.md) and [live OpenAI OCR on the scanned discharge summary](docs/discharge-ocr.md)
 - [Pre-admission claim-failure scenarios and coordinator actions](docs/claim-journey-results.md)
 - [Build, verify and operate the staff release](docs/deployment.md)
 - [Color preference research and worklist palette](docs/workspace-colors.md)

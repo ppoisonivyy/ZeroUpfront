@@ -11,7 +11,7 @@ from pypdf import PdfReader
 from pypdf.errors import PyPdfError
 
 from .check_fixtures import Evidence, ROOT, precheck
-from .document_text import Document, Page, contains_identifier, contains_quote, normalized, ocr_page
+from .document_text import Document, IncompleteTranscription, Page, contains_identifier, contains_quote, normalized, ocr_page
 
 ROLES = ("policy", "plan", "estimate")
 MAX_FILE_BYTES = 24 * 1024 * 1024
@@ -89,12 +89,20 @@ def _read(raw, filename, client, cached):
         for number, source in enumerate(reader.pages, 1):
             extra_content |= bool(source.get("/Annots"))
             native = source.extract_text() or ""
-            scan = bool(source.images.keys()) or not native.strip() or "\ufffd" in native
+            images = bool(source.images.keys())
+            scan = images or not native.strip() or "\ufffd" in native
             ocr = None
             if scan:
                 ocr = cache.get(str(number))
-                if ocr is None and client is not None:
-                    ocr = ocr_page(source, number, client)
+                contents = source.get_contents()
+                blank = not images and not native.strip() and (contents is None or not contents.get_data().strip())
+                if ocr is None and client is not None and not blank:
+                    try:
+                        ocr = ocr_page(source, number, client)
+                    except IncompleteTranscription:
+                        # Retain the rest of the packet and the exact unreadable physical page.
+                        # Network, authorization and rate-limit errors still propagate to the API.
+                        ocr = None
                 if ocr is None:
                     unreadable.append(number)
                     # A selectable heading on an image-only exhibit cannot verify its body.
