@@ -26,7 +26,7 @@ At 10,000 cases the first page transferred **8,504 bytes**, compared with **3,38
 
 All 760 timed requests passed their correctness checks. The harness verified each case ID, member, encounter, revision, preparation status and payer status returned by the full collection. It also checked the page order, queue counts and search result identities against the cases it had submitted independently. Original billed PDFs matched byte-for-byte. A corrected bill advanced the revision while preserving the earlier hold. The first 100 cases took 0.56 seconds to seed and the additional 9,900 took 49.05 seconds, including their revision and workflow requests.
 
-The browser comparison measured navigation, rendering and searching on the restored corpus. [Desktop and mobile results](ux-redesign.md#browser-checks)
+The browser comparison measured navigation, rendering and searching on the restored corpus. [Desktop and mobile results](ux-redesign.md#browser-checks) · [Separate process and CPU scaling trials](scaling.md)
 
 ## Dataset, reproduction and restore
 

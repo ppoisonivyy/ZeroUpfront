@@ -15,7 +15,7 @@ from pydantic import BaseModel, ConfigDict, Field, StringConstraints, field_vali
 from app import workspace_store as store
 from app import discharge_store
 from app.discharge_api import router as discharge_router
-from app.workspace_http_common import INTAKE_BYTES, _actor, _pdf, _read_upload, _revision, ocr_service_error
+from app.workspace_http_common import INTAKE_BYTES, MultipartBodyLimit, _actor, _pdf, _read_upload, _revision, ocr_service_error
 from app.case_workflow import validate_attachment
 from app.staff_access import install_access, initialize_access
 from app.workspace_documents import CASE_INSURERS, evaluate_estimate, packet_bytes, seed_cases
@@ -143,13 +143,16 @@ async def lifespan(app):
 
 
 app = FastAPI(title="ZeroUpfront coordinator API", version="1.1", lifespan=lifespan)
+app.add_middleware(MultipartBodyLimit)
+# Register access last so a request passes authentication before it consumes spool space.
 install_access(app)
 app.include_router(discharge_router)
 
 
 @app.exception_handler(store.WorkspaceError)
 async def workspace_error(request, exc):
-    return JSONResponse(status_code=exc.status, content={"detail": str(exc)})
+    headers = {"Retry-After": str(exc.retry_after)} if exc.retry_after is not None else None
+    return JSONResponse(status_code=exc.status, content={"detail": str(exc)}, headers=headers)
 
 
 @app.get("/api/cases", response_model=list[Summary])
@@ -210,11 +213,13 @@ def create_case(request: Request, policy: Annotated[UploadFile, File()], plan: A
         inputs = {k: v for k, v in metadata.items() if k != "id"}
         payload = json.dumps([inputs, digests, names, ocr], sort_keys=True, ensure_ascii=False).encode()
         request_key = (getattr(request.state, "username", None) or "local", idempotency_key, store.document_digest(payload))
-        previous = store.previous_intake(dsn, request_key)
-        if previous:
-            return previous
-    result = _intake(metadata, documents, names, ocr)
-    return store.create_case(dsn, result, documents, request_key)
+    with store.coordinate_ocr(dsn, "admission", request_key, ocr) as db:
+        if request_key:
+            previous = store.previous_intake(db, request_key)
+            if previous:
+                return previous
+        result = _intake(metadata, documents, names, ocr)
+        return store.create_case(db, result, documents, request_key)
 
 
 @app.post("/api/examples/{scenario}", response_model=Case, status_code=201)

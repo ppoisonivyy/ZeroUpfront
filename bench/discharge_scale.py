@@ -300,15 +300,11 @@ def profile(client, claims, count, workers):
 
     def worklist(group, page, search="", selected=None):
         page_size = 25
-        response = client.get(
-            BASE + "/worklist",
-            params={
-                "page": page,
-                "page_size": page_size,
-                "queue": group,
-                "search": search,
-            },
-        )
+        params = {"page": page, "page_size": page_size, "queue": group}
+        if search:
+            response = client.post(BASE + "/worklist/search", json={**params, "search": search})
+        else:
+            response = client.get(BASE + "/worklist", params=params)
         result = ok(response)
         selection = groups[group] if selected is None else selected
         batch = selection[(page - 1) * page_size : page * page_size]

@@ -66,7 +66,8 @@ class DischargeApiTests(unittest.TestCase):
 
     def test_worklist_pagination_search_counts_and_current_revision(self):
         def worklist(**params):
-            response = self.client.get(ROOT + "/worklist", params=params)
+            response = (self.client.post(ROOT + "/worklist/search", json=params) if "search" in params
+                        else self.client.get(ROOT + "/worklist", params=params))
             self.assertEqual(response.status_code, 200, response.text)
             return response.json()
 
@@ -114,12 +115,15 @@ class DischargeApiTests(unittest.TestCase):
         case.raise_for_status()
         endpoint = ROOT + "/worklist"
         for term in ("ชิก_q7", "บิล%7", "ถการให", "ทุนไท"):
-            data = self.client.get(endpoint, params={"search": term}).json()
+            data = self.client.post(endpoint + "/search", json={"search": term}).json()
             self.assertEqual([row["id"] for row in data["items"]], [case.json()["id"]])
         for term in ("ชิก%77", "บิล_77", "Wrist%fixation"):
-            self.assertEqual(self.client.get(endpoint, params={"search": term}).json()["total"], 0)
-        for invalid in ({"page": 0}, {"page_size": 0}, {"page_size": 101}, {"queue": "missing"}, {"search": "a" * 251}):
+            self.assertEqual(self.client.post(endpoint + "/search", json={"search": term}).json()["total"], 0)
+        for invalid in ({"page": 0}, {"page_size": 0}, {"page_size": 101}, {"queue": "missing"}):
             self.assertEqual(self.client.get(endpoint, params=invalid).status_code, 422)
+
+        self.assertEqual(self.client.post(endpoint + "/search", json={"search": "a" * 251}).status_code, 422)
+        self.assertEqual(self.client.get(endpoint, params={"search": "fictional-member"}).status_code, 422)
 
     def test_worklists_preserve_large_integer_minor_units_from_stored_revisions(self):
         import psycopg
@@ -131,7 +135,7 @@ class DischargeApiTests(unittest.TestCase):
                           SET evidence=jsonb_set(evidence, '{bill_total_minor}', to_jsonb(%s::numeric))
                           WHERE case_id=%s AND revision=1""", (str(amount), case["id"]))
         legacy = next(row for row in self.client.get(ROOT).json() if row["id"] == case["id"])
-        result = self.client.get(ROOT + "/worklist", params={"search": case["id"]}).json()
+        result = self.client.post(ROOT + "/worklist/search", json={"search": case["id"]}).json()
         for row in (legacy, result["items"][0]):
             self.assertIs(type(row["bill_total_minor"]), int)
             self.assertEqual(row["bill_total_minor"], amount)

@@ -6,7 +6,7 @@ from decimal import Decimal, InvalidOperation
 import psycopg
 from psycopg.types.json import Jsonb
 
-from app.workspace_store import WorkspaceError, _save_document, document_digest
+from app.workspace_store import WorkspaceError, _save_document, _writing, document_digest, lock_intake
 
 
 SCHEMA = """
@@ -258,20 +258,27 @@ def _write(db, ident, rev, evidence, raw, names):
         )
 
 
+def previous_intake(dsn, request_key):
+    actor, key, digest = request_key
+    with _writing(dsn) as db:
+        row = db.execute(
+            """SELECT digest,case_id FROM zeroupfront_demo.discharge_intake_requests
+               WHERE actor=%s AND request_key=%s""", (actor, key),
+        ).fetchone()
+        if not row:
+            return None
+        if row[0] != digest:
+            raise WorkspaceError(409, "That intake key already identifies a different discharge packet.")
+        return _detail(db, row[1], 1)
+
+
 def create(dsn, ident, evidence, raw, names, prior=None, request_key=None):
-    with psycopg.connect(dsn) as db:
+    with _writing(dsn) as db:
         if request_key:
-            actor, key, digest = request_key
-            db.execute("SELECT pg_advisory_xact_lock(hashtext(%s),hashtext(%s))", (actor, key))
-            row = db.execute(
-                """SELECT digest,case_id FROM zeroupfront_demo.discharge_intake_requests
-                                WHERE actor=%s AND request_key=%s""",
-                (actor, key),
-            ).fetchone()
-            if row:
-                if row[0] != digest:
-                    raise WorkspaceError(409, "That intake key already identifies a different discharge packet.")
-                return _detail(db, row[1], 1)
+            lock_intake(db, "discharge", request_key)
+            existing = previous_intake(db, request_key)
+            if existing:
+                return existing
         prior_rev = None
         if prior:
             row = db.execute(

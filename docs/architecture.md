@@ -4,6 +4,8 @@ Pre-arrival architecture study · 21 November 2026
 
 A hospital coordinator has a treatment plan, estimate and policy. The most useful screen answers three questions in order. What holds up this request? Where is the evidence? What can I do next? The original pre-arrival rehearsal followed a missing estimate through correction and staff review. The current demo starts with a duplicate discharge bill line and keeps the pre-arrival queue accessible. [Discharge walkthrough](../README.md#run-the-demo) The insurer owns the eventual guarantee of payment (GOP). Keep the hospital's pre-check result and the insurer's response as separate fields throughout.
 
+The deployable release uses a database per hospital with shared sessions across its API processes. Capacity tests, encryption boundaries and jurisdiction decisions for the current release are documented together. [Scaling measurements](scaling.md) · [Security audit](security-and-encryption.md) · [Regional privacy](privacy-by-jurisdiction.md)
+
 ## Original stack recommendations and current implementation
 
 | Layer | Original recommendation | Scaling considerations |

@@ -19,6 +19,8 @@ The workspace lets hospital staff reconcile an inpatient discharge claim against
 
 The live hospital app adopts the team’s DM Sans typography, forest-green case header, horizontal navigation and document-first review layout. The standalone hospital and insurer design prototype demonstrates pre-arrival review and the guarantee handoff with synthetic cases. It embeds the project’s Z002 documents, Solar icons and the Archivo, DM Sans and IBM Plex Mono fonts. Both HTML pages include the asset notices. [Prototype and review guide](workspace-review/README.md)
 
+The team also built repeatable 10,000-claim database, API process and CPU-quota benchmarks, and tested search privacy, request-size controls and certificate-verified database transport. The single-hospital release and these synthetic rehearsals are the scope of the security evidence. [Benchmarks](scaling.md) · [Security controls](security-and-encryption.md)
+
 ## What we used
 
 - **Software and services.** React, TypeScript, Vite, Mozilla PDF.js, Lucide, FastAPI, PostgreSQL, pypdf and ReportLab provide application and PDF infrastructure. OpenAI Responses provides optional transcription and second reads. The separate policy experiments used OpenAI embeddings and hosted retrieval. Codex also assisted development and presentation work. [Component, asset and license register](../THIRD_PARTY.md)

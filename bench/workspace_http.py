@@ -24,14 +24,15 @@ EXHIBITS = ROOT / "fixtures/cases/Z002"
 
 
 @contextmanager
-def server(dsn, enable_ocr):
+def server(dsn, enable_ocr, *, auth_mode="local"):
     # Hand the already-bound loopback socket to Uvicorn so no other program can claim the ephemeral port.
     with socket.socket() as bound:
         bound.bind(("127.0.0.1", 0))
         port = bound.getsockname()[1]
         args = [sys.executable, "-m", "uvicorn", "app.workspace_api:app", "--fd", str(bound.fileno()),
                 "--log-level", "error", "--no-access-log"]
-        env = dict(os.environ, DATABASE_URL=dsn, WORKSPACE_AUTH_MODE="local", WORKSPACE_ENABLE_OCR="1" if enable_ocr else "0")
+        env = dict(os.environ, DATABASE_URL=dsn, WORKSPACE_AUTH_MODE=auth_mode, WORKSPACE_ENABLE_OCR="1" if enable_ocr else "0")
+        ready = "/api/cases" if auth_mode == "local" else "/api/access/session"
         with subprocess.Popen(args, cwd=ROOT, env=env, pass_fds=(bound.fileno(),)) as process:
             try:
                 with httpx.Client(base_url=f"http://127.0.0.1:{port}", timeout=210, trust_env=False) as client:
@@ -40,7 +41,7 @@ def server(dsn, enable_ocr):
                         if process.poll() is not None:
                             raise RuntimeError("Uvicorn exited before startup.")
                         try:
-                            if client.get("/api/cases", timeout=1).is_success:
+                            if client.get(ready, timeout=1).is_success:
                                 break
                         except httpx.TransportError:
                             pass

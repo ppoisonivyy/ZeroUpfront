@@ -63,13 +63,21 @@ def smoke(image, postgres, cert_dir):
     check(["openssl", "req", "-x509", "-newkey", "rsa:2048", "-nodes", "-days", "1",
            "-subj", "/CN=127.0.0.1", "-addext", "subjectAltName=IP:127.0.0.1",
            "-out", str(cert), "-keyout", str(key)])
+    db_cert, db_key = cert_dir / "db-cert.pem", cert_dir / "db-key.pem"
+    check(["openssl", "req", "-x509", "-newkey", "rsa:2048", "-nodes", "-days", "1",
+           "-subj", f"/CN={db}", "-addext", f"subjectAltName=DNS:{db}",
+           "-out", str(db_cert), "-keyout", str(db_key)])
     # Docker binds individual files from this private temporary directory into the non-root container.
     key.chmod(0o444)
     check(["docker", "network", "create", network])
     containers = []
     try:
         check(["docker", "run", "-d", "--name", db, "--network", network,
-               "-e", "POSTGRES_PASSWORD", postgres], env=env)
+               "-v", f"{db_cert}:/db-cert.pem:ro", "-v", f"{db_key}:/source-key.pem:ro",
+               "-e", "POSTGRES_PASSWORD", "--entrypoint", "sh", postgres, "-ec",
+               "install -o postgres -g postgres -m 0600 /source-key.pem /tmp/db-key.pem && "
+               "exec docker-entrypoint.sh postgres -c ssl=on -c ssl_cert_file=/db-cert.pem "
+               "-c ssl_key_file=/tmp/db-key.pem"], env=env)
         containers.append(db)
         for _ in range(60):
             ready = subprocess.run(["docker", "exec", db, "pg_isready", "-h", "127.0.0.1", "-U", "postgres"],
@@ -80,11 +88,12 @@ def smoke(image, postgres, cert_dir):
         else:
             raise RuntimeError("Disposable PostgreSQL did not start")
         check(["docker", "run", "-d", "--name", web, "--network", network, "--read-only",
-               "--tmpfs", "/tmp:rw,noexec,nosuid,size=128m", "-e", "DATABASE_URL",
+               "--tmpfs", "/tmp:rw,noexec,nosuid,size=256m", "-e", "DATABASE_URL",
+               "-e", "PGSSLROOTCERT=/db-trust.pem", "-v", f"{db_cert}:/db-trust.pem:ro",
                "-v", f"{cert}:/tls-cert.pem:ro", "-v", f"{key}:/tls-key.pem:ro",
                "-p", "127.0.0.1::8080", image, "uvicorn", "app.workspace_server:app",
                "--host", "0.0.0.0", "--port", "8080", "--ssl-keyfile", "/tls-key.pem",
-               "--ssl-certfile", "/tls-cert.pem"], env=env)
+               "--ssl-certfile", "/tls-cert.pem", "--no-access-log"], env=env)
         containers.append(web)
         address = check(["docker", "port", web, "8080/tcp"])
         with httpx.Client(base_url="https://" + address, verify=ssl.create_default_context(cafile=cert), timeout=10) as client:
@@ -97,6 +106,19 @@ def smoke(image, postgres, cert_dir):
                 time.sleep(1)
             else:
                 raise RuntimeError("The application did not become ready")
+            tls_version = check(["docker", "exec", web, "python", "-c",
+                "import os, psycopg; "
+                "db = psycopg.connect(os.environ['DATABASE_URL']); "
+                "assert db.info.get_parameters()['sslmode'] == 'verify-full'; "
+                "print(db.execute('SELECT version FROM pg_stat_ssl WHERE pid=pg_backend_pid() AND ssl').fetchone()[0])"])
+            assert tls_version in {"TLSv1.2", "TLSv1.3"}, tls_version
+            # The web certificate is unrelated to the database trust anchor.
+            check(["docker", "exec", web, "python", "-c",
+                   "import os, psycopg\n"
+                   "try: psycopg.connect(os.environ['DATABASE_URL'], sslrootcert='/tls-cert.pem')\n"
+                   "except psycopg.OperationalError as err:\n"
+                   "    assert 'certificate verify failed' in str(err), 'Unexpected connection failure'\n"
+                   "else: raise SystemExit('Untrusted database certificate was accepted')"])
             assert client.get("/healthz").status_code == 204
             assert 'id="root"' in client.get("/").text
             assert client.get("/api/access/session").json()["mode"] == "staff"
@@ -114,7 +136,7 @@ def smoke(image, postgres, cert_dir):
             assert client.post("/api/access/logout").status_code == 200
             assert client.get("/api/discharge").status_code == 401
             assert client.get(source_url).status_code == 401
-            print("Passed TLS staff login, discharge intake, reviewed four-source export, logout and protected PDF access.")
+            print(f"Passed HTTPS staff login, certificate-verified PostgreSQL {tls_version}, discharge intake, reviewed four-source export, logout and protected PDF access.")
     finally:
         for container in reversed(containers):
             subprocess.run(["docker", "rm", "-fv", container], stdout=subprocess.DEVNULL, check=False)
