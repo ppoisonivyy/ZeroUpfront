@@ -151,7 +151,8 @@ app.include_router(discharge_router)
 
 @app.exception_handler(store.WorkspaceError)
 async def workspace_error(request, exc):
-    return JSONResponse(status_code=exc.status, content={"detail": str(exc)})
+    headers = {"Retry-After": str(exc.retry_after)} if exc.retry_after is not None else None
+    return JSONResponse(status_code=exc.status, content={"detail": str(exc)}, headers=headers)
 
 
 @app.get("/api/cases", response_model=list[Summary])
@@ -212,11 +213,13 @@ def create_case(request: Request, policy: Annotated[UploadFile, File()], plan: A
         inputs = {k: v for k, v in metadata.items() if k != "id"}
         payload = json.dumps([inputs, digests, names, ocr], sort_keys=True, ensure_ascii=False).encode()
         request_key = (getattr(request.state, "username", None) or "local", idempotency_key, store.document_digest(payload))
-        previous = store.previous_intake(dsn, request_key)
-        if previous:
-            return previous
-    result = _intake(metadata, documents, names, ocr)
-    return store.create_case(dsn, result, documents, request_key)
+    with store.coordinate_ocr(dsn, "admission", request_key, ocr) as db:
+        if request_key:
+            previous = store.previous_intake(db, request_key)
+            if previous:
+                return previous
+        result = _intake(metadata, documents, names, ocr)
+        return store.create_case(db, result, documents, request_key)
 
 
 @app.post("/api/examples/{scenario}", response_model=Case, status_code=201)

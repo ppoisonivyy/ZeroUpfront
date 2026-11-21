@@ -1,6 +1,6 @@
 """PostgreSQL storage for the isolated synthetic coordinator workspace."""
 from hashlib import sha256
-from contextlib import nullcontext
+from contextlib import contextmanager, nullcontext
 
 import psycopg
 from psycopg.types.json import Jsonb
@@ -47,9 +47,10 @@ CREATE TABLE IF NOT EXISTS zeroupfront_demo.intake_requests (
 
 
 class WorkspaceError(Exception):
-    def __init__(self, status, message):
+    def __init__(self, status, message, *, retry_after=None):
         super().__init__(message)
         self.status = status
+        self.retry_after = retry_after
 
 
 def document_digest(pdf):
@@ -58,6 +59,33 @@ def document_digest(pdf):
 
 def _writing(dsn):
     return nullcontext(dsn) if isinstance(dsn, psycopg.Connection) else psycopg.connect(dsn)
+
+
+def lock_intake(db, scope, request_key):
+    actor, key, _ = request_key
+    args = (scope + "/" + actor, key)
+    if db.execute("SELECT pg_try_advisory_xact_lock(hashtext(%s),hashtext(%s))", args).fetchone()[0]:
+        return
+    # Fast digital writes can finish and replay. A slow OCR owner must not occupy a second worker indefinitely.
+    previous_ms = int(db.execute("SELECT setting FROM pg_settings WHERE name='lock_timeout'").fetchone()[0])
+    wait_ms = min(previous_ms or 1000, 1000)
+    db.execute("SELECT set_config('lock_timeout', %s, true)", (str(wait_ms),))
+    try:
+        db.execute("SELECT pg_advisory_xact_lock(hashtext(%s),hashtext(%s))", args)
+    except psycopg.errors.LockNotAvailable as exc:
+        raise WorkspaceError(409, "This intake is still processing. Retry the same packet and key shortly.",
+                             retry_after=1) from exc
+    db.execute("SELECT set_config('lock_timeout', %s, true)", (str(previous_ms),))
+
+
+@contextmanager
+def coordinate_ocr(dsn, scope, request_key, ocr):
+    if not ocr or request_key is None:
+        yield dsn
+        return
+    with psycopg.connect(dsn) as db:
+        lock_intake(db, scope, request_key)
+        yield db
 
 
 def _save_document(db, pdf):
@@ -212,7 +240,7 @@ def _previous_intake(db, request_key):
 
 
 def previous_intake(dsn, request_key):
-    with psycopg.connect(dsn) as db:
+    with _writing(dsn) as db:
         return _previous_intake(db, request_key)
 
 
@@ -221,7 +249,7 @@ def create_case(dsn, evidence, documents, request_key=None):
     case_id = evidence["id"]
     with _writing(dsn) as db:
         if request_key:
-            db.execute("SELECT pg_advisory_xact_lock(hashtext(%s),hashtext(%s))", request_key[:2])
+            lock_intake(db, "admission", request_key)
             existing = _previous_intake(db, request_key)
             if existing:
                 return existing

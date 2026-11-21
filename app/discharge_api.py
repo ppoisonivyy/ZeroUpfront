@@ -12,6 +12,7 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from app import discharge_store as store
 from app import payer_ai_reader as ai_reader
+from app.workspace_store import coordinate_ocr
 from app.case_workflow import validate_attachment
 from app.workspace_http_common import _actor, _pdf, _read_upload, _revision, accept_files, ocr_service_error
 
@@ -190,7 +191,6 @@ def intake(
     if as_of:
         meta["as_of"] = as_of.isoformat()
     raw, names = _files(dict(bill=bill, summary=summary, letter=letter, records=records))
-    result = _evaluate(meta, raw, names, ocr)
     key = None
     if idempotency_key:
         metadata = {k: v for k, v in meta.items() if k != "id"}
@@ -201,7 +201,13 @@ def intake(
             idempotency_key,
             store.document_digest(encoded),
         )
-    return store.create(request.app.state.dsn, ident, result, raw, names, prior_case_id or None, key)
+    with coordinate_ocr(request.app.state.dsn, "discharge", key, ocr) as db:
+        if key:
+            previous = store.previous_intake(db, key)
+            if previous:
+                return previous
+        result = _evaluate(meta, raw, names, ocr)
+        return store.create(db, ident, result, raw, names, prior_case_id or None, key)
 
 
 @router.post("/examples/{scenario}", response_model=Detail, status_code=201)
