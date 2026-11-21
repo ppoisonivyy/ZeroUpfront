@@ -11,6 +11,7 @@ ZeroUpfront helps a hospital's international patient department prepare a clause
 - [Context sizing and token counts](docs/context-budget.md)
 - [Coordinator application design, revision contracts and three-person build plan](docs/application-design.md)
 - [Coordinator screen walkthrough and product design references](docs/coordinator-ux.md)
+- [Team journey compared with Thai hospital and insurer workflows](docs/planned-admission-flow.md)
 - [Stack, architecture and product research](docs/architecture.md)
 - [Original PDFs, reviewed JSON rules and source citations](docs/policy-representation.md)
 - [OpenAI hosting, retrieval and credit scope](docs/cloud-rag.md)
