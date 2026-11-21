@@ -8,9 +8,9 @@ ZeroUpfront helps hospital staff catch missing evidence before an inpatient insu
 
 Amelia Morgan is a fictional patient at Canal Bridge Demo Hospital. Her knee arthroscopy estimate is **THB 128,000**, within her fictional Meridian Assist plan’s **THB 150,000** limit. The hospital still needs a signed medical report before it can submit her request.
 
-**1. Find the missing signature.** On case **ZU-0248**, the hospital coordinator opens the cited policy clause. It says the treating physician must sign the report and specify the indication and planned procedure.
+**1. Find the missing signature.** On case **ZU-0248**, the coordinator opens physical page 12. The highlight marks the words requiring the treating physician’s signature, indication and planned procedure on the original policy.
 
-![Hospital review of Amelia’s request with the original policy clause open](docs/figures/amelia-rule.png)
+![Amelia’s missing report beside the highlighted signature requirement on original policy page 12](docs/figures/amelia-rule.png)
 
 **2. Review the corrected request.** Attaching the signed report creates revision 2. The coordinator previews the insurer form, checks the supporting PDFs and marks that revision reviewed before submitting it.
 
