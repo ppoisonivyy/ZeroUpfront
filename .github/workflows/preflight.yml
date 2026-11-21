@@ -22,6 +22,7 @@ jobs:
           cache-dependency-path: web/package-lock.json
       - run: npm ci
       - run: npm run build
+      - run: node --test scripts/citation-match.test.mjs
 
   synthetic-preflight:
     runs-on: ubuntu-latest

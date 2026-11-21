@@ -68,7 +68,7 @@ def _normalized(text):
     return " ".join(unicodedata.normalize("NFC", text).split())
 
 
-def verify(reading, pages):
+def verify(reading, pages, *, transcribed_pages=()):
     categories = {"exchange_difference", "bank_fees"}
     if len(reading.clauses) != 2 or {item.category for item in reading.clauses} != categories:
         return _review("The reader did not resolve both fee categories. Review the original guarantee.")
@@ -91,6 +91,7 @@ def verify(reading, pages):
             continue
         role = PARTY_TERMS.get(item.payer)
         evidence = item.model_dump(exclude={"state", "definition"})
+        evidence["method"] = "ocr" if item.page in transcribed_pages else "digital"
         if role and not re.search(role, quote, re.I):
             link = item.definition
             if not link or not 1 <= link.page <= len(pages):
@@ -110,7 +111,7 @@ def verify(reading, pages):
                                      definition, re.I)):
                 pending.append(f"{name}: the named party could not be linked to its role on the cited pages.")
                 continue
-            evidence["definition"] = link.model_dump()
+            evidence["definition"] = {**link.model_dump(), "method": "ocr" if link.page in transcribed_pages else "digital"}
         findings.append(evidence)
     if pending:
         return _review(" ".join(pending) + " Staff must review the original before assigning responsibility.", findings)
@@ -147,4 +148,4 @@ def read(original):
                     "detail": "high", "file_data": "data:application/pdf;base64," + base64.b64encode(original).decode()}]}])
     if response.status != "completed" or response.output_parsed is None:
         return _review("The reader returned no complete assessment. Inspect the original guarantee.")
-    return verify(response.output_parsed, pages)
+    return verify(response.output_parsed, pages, transcribed_pages={index + 1 for index in scans})

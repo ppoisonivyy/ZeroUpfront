@@ -75,7 +75,7 @@ function PacketView({ packet: initial, root, insurer, refresh }: { packet: Packe
   const rule = packet.rule;
   const historical = packet.revision < packet.current_revision;
   const waiting = packet.status === "waiting_for_insurer";
-  const ruleSource: Source = { role: "policy", label: "Insurer rule " + (rule.clause || ""), url: rule.source_url, page: rule.page, quote: rule.quote };
+  const ruleSource: Source = { role: "policy", label: "Insurer rule " + (rule.clause || ""), url: rule.source_url, page: rule.page, quote: rule.verified ? rule.quote : "", method: rule.verified ? "digital" : "unverified" };
   const draftSource: Source | null = packet.draft_url ? {
     role: "draft", label: packet.insurer + " form " + packet.form_edition, url: packet.draft_url, page: 1, quote: "",
     recordedSummary: waiting ? "The request form submitted by the hospital." : "Inpatient request prepared for staff review.",
