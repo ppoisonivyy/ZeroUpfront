@@ -4,6 +4,8 @@ ZeroUpfront helps a hospital's international patient department prepare a clause
 
 ## Start here
 
+- [US policy accuracy and field-specific verification](docs/us-hybrid-decision.md)
+- [Same-case replacement during a live OCR request](docs/same-case-revision.md) and [encounter, lease and export trials](docs/case-revision-guards.md)
 - [Benchmark comparison and preprocessing recommendation](docs/benchmark-comparison.md)
 - [Context sizing and token counts](docs/context-budget.md)
 - [Coordinator application design, revision contracts and three-person build plan](docs/application-design.md)

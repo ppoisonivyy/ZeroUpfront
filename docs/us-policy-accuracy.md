@@ -2,6 +2,8 @@
 
 The source is the OPM-hosted *2026 Blue Cross and Blue Shield Service Benefit Plan*, brochure RI 71-005. This comparison answers coordinator questions about the published Standard and Basic options. Both arms received the same page-numbered native text and used the same high-reasoning GPT-6.2 Astra model, instructions and structured answer schema. Each question ran in its own fresh API request, with no other questions, answer keys, previous answers or case records in context. [Official PDF](https://www.opm.gov/healthcare-insurance/healthcare/plan-information/plans/pdf/2026/brochures/71-005.pdf) · [Frozen questions and physical page groups](../bench/us_policy_questions.json)
 
+The [field-specific comparison](us-hybrid-decision.md) provides the stricter audit of where each individual value is supported.
+
 ## Protocol
 
 Eighteen authored scenarios were paired in English and Thai. Sixteen ask answerable questions about US and overseas authorization, direct billing, skilled nursing, transportation, deadlines, appeals, catastrophic limits, hearing aids, therapy, equipment, dentistry, observation, prescriptions and enrollment rates. Two deliberately ask for unavailable case-specific financial facts. Both languages ask about the same English policy. Neither the translations nor the 72 model calls constitute 72 independent policy scenarios.
