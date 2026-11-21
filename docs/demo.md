@@ -26,8 +26,18 @@ In this earlier recording of the discharge interface, pause at **0:13** to read 
 Use the same practice claim. Save the one-page fictional reply to your computer for step 2. It identifies member `EXAMPLE-2402`, encounter `EXAMPLE-VISIT-42`, and payer reference `REPLY-2`. [Download the fictional payer reply (PDF)](figures/demo-payer-reply.pdf?raw=1)
 
 1. Choose **Back to claim**, then **Record claim submission**. Enter `Payer portal rehearsal` as the channel and `PORTAL-DC-42` as the reference. Enter the recorder's name and choose **Save record**. The insurer disposition changes to **Sent to insurer**.
-2. Choose **Record payer reply**, enter `REPLY-2`, and select **Partially confirmed**. For the written terms, enter “We partially confirm THB 80,000 for this discharge claim.” Attach the downloaded PDF, confirm the encounter, and enter `80000` and `THB`. Enter the recorder's name and save. The decision amount appears alongside **No payment recorded**.
+2. Choose **Record payer reply**, enter `REPLY-2`, and select **Partially confirmed**. For the written terms, enter “We partially confirm THB 80,000 for this discharge claim.” Attach the downloaded PDF, confirm the encounter, and enter `80000` and `THB`. Set a follow-up owner and due date, then save. The decision amount appears alongside **No payment recorded**.
 3. Choose **Record payment received**. Record `50000` in `THB`, reference `REMIT-1`, with a recorder name and a note such as “Simulated remittance.” Settlement shows **Partially paid**. Repeat with `30000` and `REMIT-2`. The two receipts total the payer's THB 80,000 decision, and settlement changes to **Paid**.
+
+## Human review after a payer reply
+
+In the staffed demo, **Discharge claims → VISIT-CB-002** opens a complete synthetic packet. A coordinator reviews it and records its submission before logging a written payer reply. The following actions apply to that discharge case. Amelia’s separate pre-arrival request can remain pending throughout.
+
+| What happened | What the coordinator does | What stays on file |
+| --- | --- | --- |
+| The insurer queried an item or issued a partial or declined decision | Open **Record payer reply**, enter the payer reference and written terms, attach the matching PDF, and name the follow-up owner and deadline. | The original payer document and its disposition are available on that revision. |
+| The hospital answered or appealed | Open **Prepare query answer** or **Prepare appeal**. Check the original decision and correct the draft against the cited evidence. After transmission through the hospital’s approved channel, record the channel, reference and exact outgoing PDF. | A distinct record of what the hospital sent. A subsequent decision still comes from the payer. |
+| A patient needs a financial update | Choose **Review patient update**, check the figures in English or Thai, enter the public billing contact and next update date, and save the reviewed copy. | A bilingual statement with reviewed figures. Posting a later receipt requires another review before a current copy can be downloaded. |
 
 ## Pattaya FX rehearsal
 
@@ -41,7 +51,9 @@ Bangkok Hospital Pattaya publishes a THB 239,000 multifocal lens replacement pac
 
 The original settlement walkthrough includes two screenshots for comparison. [Earlier funding screen](figures/pattaya-funding.png) · [Earlier shortfall screen](figures/pattaya-settlement-shortfall.jpg)
 
-The market-data lookup is free and requires no key. The optional original-letter read uses the server’s OpenAI project credentials, `WORKSPACE_ENABLE_AI_REVIEW=1` and the configured `OPENAI_MODEL`. For scanned originals, enable `WORKSPACE_ENABLE_OCR=1` for independent page transcription. Staff can inspect the PDF whenever either service is unavailable. The reader is advisory and leaves the ledger untouched. Actual trading and remittance require a contracted provider and confirmation of the beneficiary credit.
+A finance reviewer can inspect the balance of an assigned case. The hospital coordinator records the receiving-bank evidence and reviews the patient statement. [Finance access and assignments](deployment.md#configure-the-service)
+
+The market-data lookup is free and requires no key. The optional original-letter read uses the server’s OpenAI project credentials, `WORKSPACE_ENABLE_AI_REVIEW=1` and the configured `OPENAI_MODEL`. For scanned originals, enable `WORKSPACE_ENABLE_OCR=1` for independent page transcription. Staff can inspect the PDF whenever either service is unavailable. In the multi-hospital app the hospital must also authorize that use. [Per-hospital cloud settings](hospital-workspaces.md#hospital-approval-for-external-document-processing) Actual trading and remittance require a contracted provider and confirmation of the beneficiary credit.
 
 ### How the guarantee reader was checked
 

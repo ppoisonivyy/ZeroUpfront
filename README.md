@@ -34,7 +34,7 @@ npm --prefix web run build
 uv run --locked python -m app.hospital_demo
 ```
 
-Open the hospital directory and select **Canal Bridge**. The first interactive launch prompts for separate passwords for `judge` (hospital coordinator) and `reviewer` (insurer) in each hospital. If the host has already set up the demo, use the credentials they provide privately. [Local directory](http://127.0.0.1:8040/) · [Accounts and password reset](docs/hospital-workspaces.md)
+Open the hospital directory and select **Canal Bridge**, then open **Pre-arrival cases** for Amelia. The first interactive launch prompts for separate passwords for `judge` (hospital coordinator) and `reviewer` (insurer) in each hospital. If the host has already set up the demo, use the credentials they provide privately. [Local directory](http://127.0.0.1:8040/) · [Accounts and password reset](docs/hospital-workspaces.md)
 
 | Another case to try | What to look for |
 | --- | --- |
@@ -47,7 +47,7 @@ OpenAI can transcribe scanned pages, read Thai or English guarantee wording abou
 
 ## Human review after discharge
 
-When a payer asks a question or declines a claim, the coordinator can record the follow-up owner, due date and the exact reply sent. A coordinator reviews the Thai/English patient statement before sharing it. New receipts trigger another review. Finance staff can read the balance for an assigned case. [Discharge and settlement guide](docs/demo.md)
+When a payer asks a question or declines a claim, the coordinator can record the follow-up owner, due date and the exact reply sent. A coordinator reviews the Thai/English patient statement before sharing it. New receipts trigger another review. Finance staff can read the balance for an assigned case. [Discharge follow-up guide](docs/demo.md#human-review-after-a-payer-reply)
 
 ## What we measured
 
