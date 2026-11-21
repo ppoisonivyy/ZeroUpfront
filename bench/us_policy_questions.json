@@ -1,0 +1,461 @@
+{
+  "source": {
+    "url": "https://www.opm.gov/healthcare-insurance/healthcare/plan-information/plans/pdf/2026/brochures/71-005.pdf",
+    "sha256": "e5b371dbff81c71808da05fb2a4e2bad7b11c39bb3b49fdee1505c043111a7c1",
+    "physical_pages": 168,
+    "title": "2026 Blue Cross and Blue Shield Service Benefit Plan (Standard and Basic), RI 71-005"
+  },
+  "questions": [
+    {
+      "id": "us01",
+      "en": "The Plan is primary. Compare two medically necessary ordinary inpatient hospital stays, one scheduled in the US and the other in Bangkok. Neither involves residential treatment or skilled nursing. What reduction applies if nobody contacts the Plan for the US precertification, and does the Bangkok admission also require precertification?",
+      "th": "แผนนี้เป็นผู้จ่ายหลัก การนอนโรงพยาบาลตามนัดสองครั้งมีความจำเป็นทางการแพทย์ ครั้งหนึ่งในสหรัฐฯ อีกครั้งในกรุงเทพฯ ทั้งคู่ไม่ใช่สถานบำบัดแบบพักอาศัยหรือสถานพยาบาลผู้ป่วยพักฟื้น หากไม่มีใครติดต่อเพื่อขออนุมัติล่วงหน้าสำหรับครั้งในสหรัฐฯ สิทธิประโยชน์จะลดลงกี่ดอลลาร์ และครั้งในกรุงเทพฯ ต้องขออนุมัติล่วงหน้าด้วยหรือไม่",
+      "fields": {
+        "reduction_usd": {
+          "type": "integer",
+          "description": "US inpatient benefit reduction in dollars",
+          "expected": 500
+        },
+        "bangkok_precert": {
+          "type": "boolean",
+          "description": "Precertification required for the Bangkok admission",
+          "expected": false
+        }
+      },
+      "required": [
+        [
+          24
+        ]
+      ],
+      "answerable": true,
+      "rationale": "Section 3 supplies both the domestic reduction and the ordinary foreign hospital exception on the same page."
+    },
+    {
+      "id": "us02",
+      "en": "For covered inpatient facility care at a civilian Bangkok hospital, compare Basic and Standard. GeoBlue arranged direct billing before the Basic admission. What is that Basic member's facility cost-share in dollars? Does Standard require a facility cost-share when GeoBlue did not arrange direct billing?",
+      "th": "กรณีค่าบริการสถานพยาบาลผู้ป่วยในที่อยู่ในความคุ้มครอง ณ โรงพยาบาลพลเรือนในกรุงเทพฯ GeoBlue จัดให้วางบิลโดยตรงก่อนการรับสมาชิก Basic เข้ารักษา สมาชิกต้องร่วมจ่ายค่าสถานพยาบาลกี่ดอลลาร์ และกรณีสมาชิก Standard ที่ไม่ได้จัดวางบิลโดยตรงต้องร่วมจ่ายค่าสถานพยาบาลหรือไม่",
+      "fields": {
+        "basic_member_usd": {
+          "type": "integer",
+          "description": "Basic member share in USD",
+          "expected": 0
+        },
+        "standard_costshare": {
+          "type": "boolean",
+          "description": "Standard member facility cost-share applies",
+          "expected": false
+        }
+      },
+      "required": [
+        [
+          131
+        ]
+      ],
+      "answerable": true,
+      "rationale": "The overseas facility rule distinguishes an arranged Basic admission from Standard facility care."
+    },
+    {
+      "id": "us03",
+      "en": "A Standard member without Medicare Part A needs short-term inpatient skilled nursing in Thailand with an expected return home. Is precertification required, and what is the annual maximum number of covered facility days? Would an ordinary Bangkok acute hospital admission generally need that same precertification?",
+      "th": "สมาชิก Standard ที่ไม่มี Medicare Part A ต้องเข้าพักในสถานพยาบาลที่ให้การพยาบาลเฉพาะทางระยะสั้นในไทย โดยคาดว่าจะกลับบ้านได้ ต้องขออนุมัติก่อนเข้าไหม แผนครอบคลุมได้สูงสุดกี่วันต่อปี และการเข้าโรงพยาบาลเฉียบพลันทั่วไปในกรุงเทพฯ ต้องขออนุมัติแบบเดียวกันหรือไม่",
+      "fields": {
+        "snf_precert": {
+          "type": "boolean",
+          "description": "Skilled nursing facility precertification required",
+          "expected": true
+        },
+        "annual_days": {
+          "type": "integer",
+          "description": "Annual maximum days for this SNF benefit",
+          "expected": 30
+        },
+        "ordinary_precert": {
+          "type": "boolean",
+          "description": "Ordinary overseas hospital precertification generally required",
+          "expected": false
+        }
+      },
+      "required": [
+        [
+          85
+        ],
+        [
+          24,
+          131
+        ]
+      ],
+      "answerable": true,
+      "rationale": "The SNF table supplies the cap and the overseas SNF rule. Section 3 or 5(i) independently establishes the ordinary overseas hospital exception."
+    },
+    {
+      "id": "us04",
+      "en": "An overseas member proposes non-emergency air transport past the nearest hospital capable of providing adequate treatment purely to get to a preferred city. Does the flight require prior approval, and does the Plan cover the extra transport to the more distant hospital?",
+      "th": "สมาชิกอยู่ต่างประเทศ เสนอใช้เครื่องบินรับส่งแบบไม่ฉุกเฉินเลยโรงพยาบาลที่ใกล้ที่สุดซึ่งรักษาได้เพียงพอ เพื่อไปเมืองที่ต้องการ ต้องขออนุมัติเที่ยวบินล่วงหน้าไหม และแผนครอบคลุมค่าพาไปไกลกว่านั้นหรือไม่",
+      "fields": {
+        "prior_approval": {
+          "type": "boolean",
+          "description": "Prior approval required for non-emergency air transport",
+          "expected": true
+        },
+        "extra_transport": {
+          "type": "boolean",
+          "description": "Transport beyond the nearest adequately equipped hospital covered",
+          "expected": false
+        }
+      },
+      "required": [
+        [
+          24,
+          88,
+          131
+        ],
+        [
+          89,
+          132
+        ]
+      ],
+      "answerable": true,
+      "rationale": "Preapproval for non-emergency air transport and the overseas nearest-equipped-hospital restriction are distinct source requirements."
+    },
+    {
+      "id": "us05",
+      "en": "A domestic emergency admission meets the brochure's life-threatening standard and the member went home the next day. Within how many business days following the day of admission must someone notify the Plan, and can a missed deadline still attract a penalty after discharge?",
+      "th": "มีการรับเป็นผู้ป่วยในฉุกเฉินในสหรัฐฯ ซึ่งเข้าเกณฑ์เสี่ยงต่อชีวิต สมาชิกกลับบ้านวันรุ่งขึ้น ต้องแจ้งแผนภายในกี่วันทำการนับถัดจากวันรับเข้า และถ้าแจ้งช้าแม้กลับบ้านแล้วอาจมีค่าปรับหรือไม่",
+      "fields": {
+        "notify_business_days": {
+          "type": "integer",
+          "description": "Business days following admission day",
+          "expected": 2
+        },
+        "possible_penalty": {
+          "type": "boolean",
+          "description": "Missing notification deadline can attract a penalty",
+          "expected": true
+        }
+      },
+      "required": [
+        [
+          28
+        ]
+      ],
+      "answerable": true,
+      "rationale": "The emergency-admission paragraph specifies business days and continued notice obligations after discharge."
+    },
+    {
+      "id": "us06",
+      "en": "An ongoing course of care has been approved. The extension request is also urgent. What minimum advance notice in hours before the approval expires qualifies it for the expedited extension decision, and what is the decision time in hours from receipt?",
+      "th": "การรักษาต่อเนื่องได้รับอนุมัติแล้วและต้องขอต่อเวลาอย่างเร่งด่วน ต้องยื่นก่อนสิ้นสุดระยะอนุมัติอย่างน้อยกี่ชั่วโมงจึงเข้าเกณฑ์เร่งด่วน และแผนต้องตัดสินภายในกี่ชั่วโมงนับจากรับคำขอ",
+      "fields": {
+        "advance_hours": {
+          "type": "integer",
+          "description": "Minimum hours before expiration",
+          "expected": 24
+        },
+        "decision_hours": {
+          "type": "integer",
+          "description": "Decision time after receipt in hours",
+          "expected": 24
+        }
+      },
+      "required": [
+        [
+          28,
+          29
+        ]
+      ],
+      "answerable": true,
+      "rationale": "Both sections describe the same urgent concurrent-care extension timing."
+    },
+    {
+      "id": "us07",
+      "en": "For a post-service claim, how many days does the Plan ordinarily take to notify the claimant of its initial decision? If the member then disputes that decision, within how many months of its date must they submit their written initial reconsideration request to the Plan?",
+      "th": "เมื่อยื่นเคลมหลังรับบริการแล้ว ตามปกติแผนต้องแจ้งผลครั้งแรกภายในกี่วัน หากสมาชิกคัดค้าน ต้องส่งคำร้องเป็นลายลักษณ์อักษรเพื่อให้แผนทบทวนครั้งแรกภายในกี่เดือนนับจากวันที่มีคำตัดสิน",
+      "fields": {
+        "initial_days": {
+          "type": "integer",
+          "description": "Ordinary initial decision time in days",
+          "expected": 30
+        },
+        "appeal_months": {
+          "type": "integer",
+          "description": "Deadline to request initial reconsideration in months",
+          "expected": 6
+        }
+      },
+      "required": [
+        [
+          138
+        ],
+        [
+          140
+        ]
+      ],
+      "answerable": true,
+      "rationale": "Initial post-service processing and filing for reconsideration have different time units and are in different sections."
+    },
+    {
+      "id": "us08",
+      "en": "A Standard Self Only enrollee uses Preferred providers. What is the annual catastrophic maximum in USD on eligible cost-sharing? Does a penalty for failure to obtain precertification count toward that maximum?",
+      "th": "สมาชิก Standard แบบ Self Only ใช้ผู้ให้บริการ Preferred วงเงินค่าใช้จ่ายร่วมจ่ายสะสมสูงสุดต่อปีสำหรับรายการที่นับได้คือกี่ดอลลาร์ และค่าปรับจากการไม่ขออนุมัติก่อนเข้ารักษานับรวมไหม",
+      "fields": {
+        "maximum_usd": {
+          "type": "integer",
+          "description": "Annual Preferred Self Only maximum in USD",
+          "expected": 6000
+        },
+        "penalty_counts": {
+          "type": "boolean",
+          "description": "Precertification penalty accumulates toward the ceiling",
+          "expected": false
+        }
+      },
+      "required": [
+        [
+          35
+        ]
+      ],
+      "answerable": true,
+      "rationale": "The catastrophic protection page gives the maximum and the list of expenses excluded from it."
+    },
+    {
+      "id": "us09",
+      "en": "For an ordinary hearing aid, compare the scheduled benefit of a 15-year-old and a 42-year-old. What is the dollar limit for each, how many calendar years is each benefit cycle, and is prior approval required?",
+      "th": "เครื่องช่วยฟังทั่วไปสำหรับสมาชิกอายุ 15 ปีและ 42 ปี กำหนดวงเงินกี่ดอลลาร์ต่อคน รอบสิทธิของแต่ละคนกี่ปีปฏิทิน และต้องขออนุมัติก่อนหรือไม่",
+      "fields": {
+        "child_usd": {
+          "type": "integer",
+          "description": "Child benefit limit in USD",
+          "expected": 2500
+        },
+        "adult_usd": {
+          "type": "integer",
+          "description": "Adult benefit limit in USD",
+          "expected": 2500
+        },
+        "child_years": {
+          "type": "integer",
+          "description": "Child benefit cycle in calendar years",
+          "expected": 1
+        },
+        "adult_years": {
+          "type": "integer",
+          "description": "Adult benefit cycle in calendar years",
+          "expected": 5
+        },
+        "approval": {
+          "type": "boolean",
+          "description": "Prior approval required",
+          "expected": true
+        }
+      },
+      "required": [
+        [
+          58
+        ]
+      ],
+      "answerable": true,
+      "rationale": "The non-implanted hearing-aid row distinguishes pediatric and adult benefit frequencies and includes approval."
+    },
+    {
+      "id": "us10",
+      "en": "For Standard and Basic members receiving physical, occupational and speech therapy, what is each option's combined visit limit per person per calendar year?",
+      "th": "สมาชิก Standard และ Basic รับกายภาพบำบัด กิจกรรมบำบัด และแก้ไขการพูด แต่ละแผนกำหนดจำนวนครั้งรวมของทั้งสามบริการต่อคนต่อปีปฏิทินเท่าไร",
+      "fields": {
+        "standard_visits": {
+          "type": "integer",
+          "description": "Standard combined annual visits",
+          "expected": 75
+        },
+        "basic_visits": {
+          "type": "integer",
+          "description": "Basic combined annual visits",
+          "expected": 50
+        }
+      },
+      "required": [
+        [
+          55,
+          81
+        ]
+      ],
+      "answerable": true,
+      "rationale": "The professional therapy table and outpatient facility table repeat both combined limits."
+    },
+    {
+      "id": "us11",
+      "en": "An insured person needs a speech-generating device. What annual USD device limit appears in the DME schedule, and is ordinary computer communication equipment covered by the same DME list when it is not a speech-generating device?",
+      "th": "ผู้เอาประกันจำเป็นต้องใช้อุปกรณ์สังเคราะห์เสียงพูด ตารางอุปกรณ์การแพทย์คงทนกำหนดวงเงินต่อปีกี่ดอลลาร์ และคอมพิวเตอร์สื่อสารทั่วไปที่ไม่ใช่อุปกรณ์สังเคราะห์เสียงพูดได้รับความคุ้มครองตามรายการนี้ด้วยหรือไม่",
+      "fields": {
+        "device_usd": {
+          "type": "integer",
+          "description": "Speech-generating device limit per calendar year in USD",
+          "expected": 1250
+        },
+        "ordinary_computer": {
+          "type": "boolean",
+          "description": "Ordinary computer communication equipment covered on this basis",
+          "expected": false
+        }
+      },
+      "required": [
+        [
+          60
+        ]
+      ],
+      "answerable": true,
+      "rationale": "The DME row and exclusion on the same page distinguish speech-generating devices from other communication aids."
+    },
+    {
+      "id": "us12",
+      "en": "Following a blow to the mouth, a domestic member asks about the plan's accidental dental injury benefit. Can an otherwise sound tooth previously restored only with a composite filling satisfy the sound-natural-tooth definition? Can a tooth previously restored with a crown satisfy that definition? Can the Plan request a treatment plan when processing the claim?",
+      "th": "หลังถูกกระแทกที่ปาก สมาชิกที่รักษาในสหรัฐฯ จะขอใช้สิทธิอุบัติเหตุทางทันตกรรม ฟันที่สภาพดีตามเงื่อนไขอื่นและเคยอุดด้วยคอมโพสิตเพียงอย่างเดียวเข้าเกณฑ์ฟันธรรมชาติสภาพดีได้ไหม ฟันที่เคยครอบฟันเข้าเกณฑ์ไหม และแผนขอดูแผนการรักษาในการพิจารณาเคลมได้หรือไม่",
+      "fields": {
+        "composite_qualifies": {
+          "type": "boolean",
+          "description": "Otherwise qualifying composite-restored tooth can meet the definition",
+          "expected": true
+        },
+        "crown_qualifies": {
+          "type": "boolean",
+          "description": "Previously crowned tooth can meet the definition",
+          "expected": false
+        },
+        "treatment_plan": {
+          "type": "boolean",
+          "description": "Plan can require the treatment plan",
+          "expected": true
+        }
+      },
+      "required": [
+        [
+          123,
+          160
+        ],
+        [
+          122,
+          137
+        ]
+      ],
+      "answerable": true,
+      "rationale": "The tooth definition and documentary requirements for an accidental dental claim are separate."
+    },
+    {
+      "id": "us13",
+      "en": "A patient was kept overnight in a US hospital for observation. No physician wrote an inpatient admission order. Under the stated definition should the coordinator classify the stay as inpatient?",
+      "th": "ผู้ป่วยอยู่สังเกตอาการที่โรงพยาบาลในสหรัฐฯ ข้ามคืน ไม่มีคำสั่งแพทย์รับเป็นผู้ป่วยใน ตามนิยามในเอกสาร ผู้ประสานงานควรจัดเป็นผู้ป่วยในหรือไม่",
+      "fields": {
+        "inpatient": {
+          "type": "boolean",
+          "description": "Classify this observation-only stay as inpatient",
+          "expected": false
+        }
+      },
+      "required": [
+        [
+          78,
+          156,
+          157
+        ]
+      ],
+      "answerable": true,
+      "rationale": "The inpatient/outpatient and observation passages distinguish an overnight room from a physician order."
+    },
+    {
+      "id": "us14",
+      "en": "A Standard member is outside the US and buys a covered prescription from a local pharmacy, outside the FEP Medicare drug program. Does the Standard calendar-year deductible apply? How many years from the fill date are allowed for timely filing of the overseas pharmacy claim?",
+      "th": "สมาชิก Standard ที่ไม่ได้อยู่ในโครงการยา FEP Medicare ซื้อยาตามใบสั่งที่คุ้มครองจากร้านยาในต่างประเทศ ต้องเสียค่าเสียหายส่วนแรกประจำปีของ Standard หรือไม่ และยื่นเคลมยาต่างประเทศได้ภายในกี่ปีนับจากวันที่จ่ายยา",
+      "fields": {
+        "deductible": {
+          "type": "boolean",
+          "description": "Standard calendar-year deductible applies to this purchase",
+          "expected": false
+        },
+        "filing_years": {
+          "type": "integer",
+          "description": "Timely filing window in years from fill date",
+          "expected": 1
+        }
+      },
+      "required": [
+        [
+          132
+        ]
+      ],
+      "answerable": true,
+      "rationale": "The overseas pharmacy and submission paragraphs together provide deductible treatment and fill-date deadline."
+    },
+    {
+      "id": "us15",
+      "en": "For a Basic member overseas who has primary Medicare Part B and an APO address with a valid US ZIP code, a US-licensed prescriber with an NPI issues a prescription. If the destination country prohibits importing prescriptions from any other country, can the Mail Service program ship the drug there?",
+      "th": "สมาชิก Basic ที่อยู่ต่างประเทศ มี Medicare Part B เป็นผู้จ่ายหลัก มีที่อยู่ APO พร้อมรหัสไปรษณีย์สหรัฐฯ แพทย์ซึ่งมีใบอนุญาตในสหรัฐฯ และมี NPI เป็นผู้สั่งยา หากประเทศปลายทางห้ามนำเข้ายาตามใบสั่งจากทุกประเทศอื่น โครงการส่งยาทางไปรษณีย์จัดส่งที่นั่นได้ไหม",
+      "fields": {
+        "can_ship": {
+          "type": "boolean",
+          "description": "Can this program ship under these circumstances",
+          "expected": false
+        }
+      },
+      "required": [
+        [
+          133
+        ]
+      ],
+      "answerable": true,
+      "rationale": "The overseas mail-order provision retains the destination-law condition despite a valid military address."
+    },
+    {
+      "id": "us16",
+      "en": "For a 2026 nationwide Basic Self Plus One enrollment, what is its enrollment code and the employee's biweekly share in US cents? Use the published rate table before any employer-specific variation.",
+      "th": "การสมัครแบบ Basic Self Plus One ทั่วประเทศในปี 2026 รหัสสมัครคืออะไร และพนักงานจ่ายส่วนของตนทุกสองสัปดาห์เป็นจำนวนกี่เซนต์สหรัฐฯ ให้ใช้ตารางอัตราที่ประกาศก่อนการปรับเฉพาะนายจ้าง",
+      "fields": {
+        "enrollment_code": {
+          "type": "integer",
+          "description": "Numeric enrollment code",
+          "expected": 113
+        },
+        "employee_cents": {
+          "type": "integer",
+          "description": "Employee biweekly contribution in whole US cents",
+          "expected": 31925
+        }
+      },
+      "required": [
+        [
+          168
+        ]
+      ],
+      "answerable": true,
+      "rationale": "Use the Basic Self Plus One row, employee share column, and convert dollars to whole cents."
+    },
+    {
+      "id": "us17",
+      "en": "What exact amount in USD did the insurer guarantee to the Bangkok hospital for fictional case BX-7184 before discharge?",
+      "th": "สำหรับเคสสมมติ BX-7184 บริษัทประกันออกหนังสือรับรองการจ่ายเงินให้โรงพยาบาลในกรุงเทพฯ เป็นจำนวนกี่ดอลลาร์ก่อนจำหน่ายผู้ป่วย",
+      "fields": {
+        "guaranteed_usd": {
+          "type": "integer",
+          "description": "Amount the insurer guaranteed for this admission in USD",
+          "expected": null
+        }
+      },
+      "required": [],
+      "answerable": false,
+      "rationale": "The policy describes a guarantee workflow but contains no case-specific insurer letter."
+    },
+    {
+      "id": "us18",
+      "en": "For fictional Standard Self Only member MX-4108, how many US dollars of eligible cost-sharing have already been credited to the member's Preferred catastrophic maximum this calendar year?",
+      "th": "สำหรับสมาชิกสมมติ MX-4108 แผน Standard แบบ Self Only ปีปฏิทินนี้ ระบบได้นับค่าใช้จ่ายที่เข้าเกณฑ์สะสมเข้าวงเงินสูงสุดสำหรับ Preferred ไปแล้วกี่ดอลลาร์",
+      "fields": {
+        "credited_usd": {
+          "type": "integer",
+          "description": "Member's actual accumulated eligible cost-sharing in USD",
+          "expected": null
+        }
+      },
+      "required": [],
+      "answerable": false,
+      "rationale": "The maximum is published. An individual member's running balance requires case or payer records."
+    }
+  ]
+}
