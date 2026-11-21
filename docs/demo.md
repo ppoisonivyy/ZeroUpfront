@@ -6,6 +6,14 @@ In the two-hospital demo, sign in to Canal Bridge as a hospital coordinator, ope
 
 ## Discharge claim
 
+### Live file upload
+
+For a short presentation, start with Amelia. Her policy is already on file and **Attach signed sample report** supplies the missing document. To demonstrate a file from disk, open **Discharge claims → D-CB-001 → Correct packet documents** in Canal Bridge. Select the final itemized bill slot and upload the matching corrected synthetic bill. The original bill remains in revision history.
+
+In a disposable rehearsal, uploading D-CB-002’s bill to D-CB-001 saved a held revision with both member and encounter mismatches and blocked staff approval. Uploading the correct D-CB-001 bill next produced a reviewable revision. For a new pre-arrival policy or rider, start a new intake with the policy, plan and estimate. An unfamiliar endorsement can require staff review. The existing estimate replacement action applies to the estimate only.
+
+### Duplicate pharmacy charge
+
 A hospital coordinator is preparing the final claim for a fictional wrist-fracture admission. The payer letter sets a THB 90,000 ceiling. The hospital's bill states THB 87,500, and one pharmacy charge appears twice. Can you find the original entry, correct the packet, and see exactly what the hospital would send?
 
 Start the local coordinator workspace, then open **Discharge claims**. The digital practice case includes all four source PDFs and runs without an API key. [Setup and local workspace link](../README.md#run-the-demo) · [Earlier discharge walkthrough (MP4)](figures/discharge-walkthrough.mp4?raw=1) · [View the animation (GIF)](figures/discharge-walkthrough.gif)
