@@ -13,7 +13,7 @@ from openai import APIError, OpenAI
 from pydantic import BaseModel, ConfigDict, Field, StringConstraints, field_validator
 
 from app import workspace_store as store
-from app import discharge_store
+from app import discharge_store, preclaims
 from app.discharge_api import router as discharge_router
 from app.workspace_http_common import INTAKE_BYTES, MultipartBodyLimit, _actor, _pdf, _read_upload, _revision, ocr_service_error
 from app.case_workflow import validate_attachment
@@ -54,6 +54,9 @@ class Summary(HistoryEntry):
     member: str
     admission_date: str
     intake: bool = False
+    patient: str | None = None
+    workflow_stage: str | None = None
+    input_kind: str | None = None
     insurer_status: str = "not_sent"
     latest_event_kind: str | None = None
     open_hold_count: int = 0
@@ -140,6 +143,7 @@ async def lifespan(app):
         seeds.append((case, _documents(case_id, estimate)))
     store.initialize(dsn, seeds)
     discharge_store.initialize(dsn)
+    preclaims.initialize(dsn)
     initialize_access(dsn)
     app.state.dsn = dsn
     app.state.hospital_name = hospital.name if hospital else os.getenv("WORKSPACE_HOSPITAL_NAME", "").strip()
@@ -156,7 +160,7 @@ async def workspace_error(request, exc):
 
 @router.get("/api/cases", response_model=list[Summary])
 def cases(request: Request):
-    return store.list_cases(request.app.state.dsn)
+    return preclaims.summaries(request.app.state.dsn) + store.list_cases(request.app.state.dsn)
 
 
 @router.get("/api/cases/{case_id}", response_model=Case)
@@ -403,6 +407,7 @@ def create_workspace(hospital=None):
     install_access(workspace)
     if hospital:
         workspace.add_middleware(HospitalContext, hospital=hospital)
+    workspace.include_router(preclaims.router)
     workspace.include_router(discharge_router)
     workspace.include_router(router)
     return workspace

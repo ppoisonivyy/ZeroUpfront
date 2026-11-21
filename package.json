@@ -1,0 +1,11 @@
+{
+  "name": "zeroupfront-demo-recorder",
+  "private": true,
+  "scripts": {
+    "demo:record": "playwright test --config demo/playwright.config.ts"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.65.1",
+    "@xterm/xterm": "6.0.0"
+  }
+}

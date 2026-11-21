@@ -5,6 +5,8 @@ export type PacketStatus =
   | "ready_for_review"
   | "staff_reviewed";
 export type CaseSummary = {
+  patient?: string;
+  input_kind?: string;
   id: string;
   procedure: string;
   insurer: string;

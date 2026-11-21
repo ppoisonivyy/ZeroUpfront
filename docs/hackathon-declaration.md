@@ -8,7 +8,9 @@ The team’s preparation pack dated 18 November described the product idea. On 2
 
 ## What the team built
 
-The workspace lets hospital staff reconcile an inpatient discharge claim against its original documents. The recorded example uses a fictional admission and a repeated pharmacy charge. A coordinator finds the duplicate on the invoice, reviews a corrected revision and exports the reviewed packet. The longer rehearsal records a simulated payer decision and two partial receipts. [Recorded walkthrough](figures/discharge-walkthrough.gif) · [Full rehearsal](demo.md)
+The 30-second demo follows a fictional patient, Amelia Morgan. The team created the Meridian Assist policy, sample report and MA-IP-01 form, implemented the page-verified signature check, and connected the reviewed revision to a separately authenticated insurer inbox. A Playwright recording shows the running release and a real payer-form regression. [Case screenshots](../README.md#coordinator-workspace) · [Recording and captions](../demo/README.md)
+
+The discharge workspace lets hospital staff reconcile an inpatient discharge claim against its original documents. The recorded example uses a fictional admission and a repeated pharmacy charge. A coordinator finds the duplicate on the invoice, reviews a corrected revision and exports the reviewed packet. The longer rehearsal records a simulated payer decision and two partial receipts. [Recorded walkthrough](figures/discharge-walkthrough.gif) · [Full rehearsal](demo.md)
 
 | Component | What we added to the existing tools | Evidence |
 | --- | --- | --- |
@@ -19,7 +21,7 @@ The workspace lets hospital staff reconcile an inpatient discharge claim against
 
 The Pattaya practice case adds a fictional baht guarantee, simulated bank funding and a receipt-by-receipt reconciliation of who owes the shortfall. The settlement desk links each new synthetic receipt to the receiving bank’s advice and preserves the confirmed quote ticket. The team integrated Frankfurter’s historical ECB reference directly into the funding screen and built an optional Thai/English original-letter reader with physical-page citation checks. The THB 239,000 public package price informed the fixture. The hospital, any real insurer, banks and trading venues did not provide the demo records. [Pattaya rehearsal and sources](demo.md#pattaya-fx-rehearsal)
 
-The live hospital app adopts the team’s DM Sans typography, forest-green case header, horizontal navigation and document-first review layout. The standalone hospital and insurer design prototype demonstrates pre-arrival review and the guarantee handoff with synthetic cases. It embeds the project’s Z002 documents, Solar icons and the Archivo, DM Sans and IBM Plex Mono fonts. Both HTML pages include the asset notices. [Prototype and review guide](workspace-review/README.md)
+The live hospital app adopts the team’s DM Sans typography, forest-green case header, horizontal navigation and document-first review layout. The team’s earlier standalone design study illustrates pre-arrival review and the guarantee handoff with synthetic cases. It embeds the project’s Z002 documents, Solar icons and the Archivo, DM Sans and IBM Plex Mono fonts. Both HTML pages include the asset notices. [Prototype and review guide](workspace-review/README.md)
 
 The team also built repeatable 10,000-claim database, API process and CPU-quota benchmarks, and tested search privacy, request-size controls and certificate-verified database transport. The team added a staffed multi-hospital directory, database-bound sessions and concurrent claim rehearsals. The test evidence covers synthetic data. [Hospital directory](hospital-workspaces.md) [Benchmarks](scaling.md) · [Security controls](security-and-encryption.md)
 

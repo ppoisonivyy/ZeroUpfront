@@ -13,7 +13,7 @@ from psycopg import sql
 from psycopg.conninfo import make_conninfo
 import uvicorn
 
-from app import discharge_store, pattaya_case, pattaya_workflow, staff_access, workspace_store
+from app import preclaims, discharge_store, pattaya_case, pattaya_workflow, staff_access, workspace_store
 from app.discharge_claim import evaluate_discharge, load_discharge_fixture
 from app.hospital_platform import Hospital, bind_database, configured_hospitals
 from app.intake_documents import evaluate_intake
@@ -41,6 +41,7 @@ def seed(hospital):
     intake, documents = exhibits("clean" if code == "CB" else "possible-exclusion")
     intake["id"] = "C-" + code + "-PLAN"
     workspace_store.initialize(hospital.dsn, [(evaluate_intake(intake, documents, NAMES), documents)])
+    preclaims.seed(hospital.dsn, name)
     discharge_store.initialize(hospital.dsn)
     staff_access.initialize_access(hospital.dsn)
     with psycopg.connect(hospital.dsn) as db:
@@ -79,17 +80,19 @@ def seed(hospital):
             pattaya_workflow.seed(db, ident, evidence, raw, names)
 
 
-def set_judge_password(dsn, name, *, reset=False):
+def set_demo_password(dsn, name, username, *, reset=False):
     if sys.stdin.isatty():
-        first = getpass(f"Choose a judge password for {name} (14–256 characters): ")
+        first = getpass(f"Choose a {username} password for {name} (14–256 characters): ")
         if first != getpass("Confirm password: "):
             raise ValueError("The entries differ.")
     elif reset:
-        raise ValueError("Set the judge password from an interactive terminal.")
+        raise ValueError("Set the password from an interactive terminal.")
     else:
         # An unattended launch leaves the account inaccessible until the operator sets a password.
         first = secrets.token_urlsafe(32)
-    staff_access.provision(dsn, "judge", "Demo coordinator", first, reset=reset)
+    reviewer = username == "reviewer"
+    staff_access.provision(dsn, username, "Meridian Assist reviewer" if reviewer else "Demo coordinator",
+                           first, reset=reset, insurer="Meridian Assist" if reviewer and not reset else None)
 
 
 def prepare(admin_dsn):
@@ -102,9 +105,10 @@ def prepare(admin_dsn):
             dsn = make_conninfo(admin_dsn, dbname=database)
             seed(Hospital(slug, name, dsn))
             with psycopg.connect(dsn) as db:
-                exists = db.execute("SELECT 1 FROM zeroupfront_demo.staff_accounts WHERE username=%s", ("judge",)).fetchone()
-            if not exists:
-                set_judge_password(dsn, name)
+                existing = {row[0] for row in db.execute("SELECT username FROM zeroupfront_demo.staff_accounts")}
+            for username in ("judge", "reviewer"):
+                if username not in existing:
+                    set_demo_password(dsn, name, username)
             variable = "ZU_DEMO_" + slug.upper().replace("-", "_") + "_DSN"
             os.environ[variable] = dsn
             directory[slug] = {"hospital_name": name, "database_url_env": variable}
@@ -115,6 +119,8 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("action", nargs="?", choices=("serve", "password", "seed-configured"), default="serve")
     parser.add_argument("hospital", nargs="?", choices=tuple(HOSPITALS))
+    parser.add_argument("--account", choices=("judge", "reviewer"), default="judge",
+                        help="Account to update with the password action")
     parser.add_argument("--port", type=int, default=8040)
     parser.add_argument("--data-dir", type=Path, default=DEFAULT_STATE)
     args = parser.parse_args()
@@ -135,8 +141,8 @@ def main():
                 parser.error("The demo cluster does not match this directory.")
             os.kill(int(pid), 0)
             dsn = make_conninfo(host=socket, port=port, user="coordinator", dbname=database_name(args.hospital))
-            set_judge_password(dsn, HOSPITALS[args.hospital][0], reset=True)
-            print("Judge password updated. Sign in with username judge.")
+            set_demo_password(dsn, HOSPITALS[args.hospital][0], args.account, reset=True)
+            print(f"{args.account.title()} password updated. Sign in with username {args.account}.")
             return
         if os.getenv("DATABASE_URL") or os.getenv("WORKSPACE_HOSPITALS"):
             parser.error("The loopback demo requires its own private databases. Unset DATABASE_URL and WORKSPACE_HOSPITALS.")

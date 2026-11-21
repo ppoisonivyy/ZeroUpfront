@@ -4,9 +4,9 @@ import { ArrowLeft, ArrowRight, Building2, Eye, EyeOff, Hospital, Layers } from 
 import { hospitalPrefix, sameOriginSource } from "./api";
 import "./auth.css";
 
-type Session = { mode: "local" | "staff"; actor: string | null; username?: string | null; hospital_name?: string };
+type Session = { role?: "hospital" | "insurer"; insurer?: string; mode: "local" | "staff"; actor: string | null; username?: string | null; hospital_name?: string };
 type Directory = { mode: "single" | "multi"; hospitals: { slug: string; name: string }[] };
-type Account = Session & { busy: boolean; problem: string; signOut: (switchHospital?: boolean) => Promise<void> };
+type Account = Session & { busy: boolean; problem: string; signOut: (switchHospital?: boolean, desk?: "hospital" | "insurer") => Promise<void> };
 const StaffSession = createContext<Account | null>(null);
 export function useStaffSession() {
   const value = useContext(StaffSession);
@@ -127,7 +127,7 @@ function SessionGate({ children }: { children: ReactNode }) {
     finally { updating.current = false; setBusy(false); }
   }
 
-  async function signOut(switchHospital = false) {
+  async function signOut(switchHospital = false, desk?: "hospital" | "insurer") {
     if (updating.current) return;
     updating.current = true;
     ++version.current;
@@ -136,6 +136,7 @@ function SessionGate({ children }: { children: ReactNode }) {
       const data = await readSession("logout", { method: "POST" });
       setSession(data);
       if (switchHospital) window.location.replace("/");
+      else if (desk) history.replaceState(null, "", location.pathname + (desk === "insurer" ? "#/insurer" : "#/cases"));
       else if (location.hash) history.replaceState(null, "", location.pathname);
     } catch { setProblem("Sign-out could not be confirmed. Please try again."); }
     finally { updating.current = false; setBusy(false); }
@@ -147,7 +148,7 @@ function SessionGate({ children }: { children: ReactNode }) {
       <div className="entry-heading">
         {hospitalPrefix && <a className="entry-back" href="/"><ArrowLeft size={15} />All hospitals</a>}
         {session.hospital_name && <p className="entry-hospital"><Hospital size={16} />{session.hospital_name}</p>}
-        <h1>Staff sign in</h1>
+        <h1>{location.hash.startsWith("#/insurer") ? "Insurer sign in" : "Staff sign in"}</h1>
       </div>
       <label className="entry-field">Username<input name="username" autoComplete="username" required autoCapitalize="none" spellCheck={false} maxLength={128}/></label>
       <div className="entry-field"><label htmlFor="staff-password">Password</label><div className="password-field">

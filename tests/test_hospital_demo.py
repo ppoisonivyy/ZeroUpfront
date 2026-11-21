@@ -33,7 +33,7 @@ class HospitalDemoTests(unittest.TestCase):
             client = stack.enter_context(TestClient(build_platform(create_workspace)))
             base = f"/h/{slug}/api"
             self.assertEqual(client.post(base + "/access/login", json={"username":"judge","password":password}).status_code, 200)
-            self.assertEqual(len(client.get(base + "/cases").json()), 1)
+            self.assertEqual(len(client.get(base + "/cases").json()), 2)
             self.assertEqual(len(client.get(base + "/discharge").json()), 4)
             claim = base + "/discharge/D-" + code + "-001"
             original = client.get(claim).json()

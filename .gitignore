@@ -11,3 +11,7 @@ __pycache__/
 
 # The unpacked synthetic corpus is versioned.
 /ZeroUpfront-training-samples.zip
+
+# Recorder dependencies and local video output
+/node_modules/
+/demo/zeroupfront-demo.mp4

@@ -1,0 +1,25 @@
+.preclaim-grid { align-items: start; }
+.preclaim-file { min-width: 0; }
+.preclaim-heading .preclaim-total { display: grid; gap: .2rem; text-align: end; color: #fff; }
+.preclaim-total strong { font-size: 1.45rem; }
+.preclaim-total span { font-size: .85rem; }
+.preclaim-body { display: grid; gap: 1rem; padding: clamp(15px, 2vw, 24px); }
+.preclaim-metadata { display: grid; grid-template-columns: 1fr 1fr; gap: .7rem; }
+.preclaim-metadata div { display: grid; overflow-wrap: anywhere; }
+.preclaim-metadata span { color: var(--muted); font-size: .79rem; }
+.preclaim-metadata strong { font-size: .92rem; }
+.preclaim-next { padding: 14px; border: 1px solid #b7d6c5; border-radius: 8px; background: #f0f7f2; }
+.preclaim-next.needs-document { border-color: #e2d4aa; background: #fffaed; }
+.preclaim-next h3 { display: flex; align-items: center; margin: 0 0 .45rem; gap: .4rem; font-size: 1rem; }
+.preclaim-next > strong { display: block; font-size: .92rem; }
+.preclaim-next p { margin: .35rem 0; line-height: 1.45; font-size: .88rem; }
+.preclaim-next button.text-action { display:inline-flex; align-items:center; gap:.4rem; padding:.4rem 0; background:none; border:0; cursor:pointer; }
+.preclaim-actions { display: flex; flex-wrap: wrap; gap: .5rem; }
+.preclaim-actions button { min-height: 42px; }
+.packet-files-title { margin: .25rem 0 -.5rem; font-size: .98rem; }
+.packet-files { border-top: 1px solid var(--line); }
+.packet-files button { display: flex; align-items: center; gap: .6rem; width: 100%; background: transparent; color: var(--action); border: 0; border-bottom: 1px solid var(--line); padding: .65rem .15rem; font: inherit; font-size: .88rem; text-align: start; }
+.packet-files button:hover, .packet-files button[aria-pressed=true] { background: #f3f7f2; }
+.packet-files button svg { flex: none; }
+.packet-files button svg:last-child { margin-left: auto; }
+@media(max-width:650px) { .preclaim-heading .preclaim-total { text-align: start; } }

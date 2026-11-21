@@ -124,6 +124,36 @@ class StaffAccessTest(unittest.TestCase):
             self.assertEqual(second.get("/api/discharge").status_code, 401)
             self.assertEqual(first.post("/api/access/logout").json(), {**public, "hospital_name": first_name})
 
+    def test_reviewer_scope_is_server_bound_and_survives_password_rotation(self):
+        username, payer = "meridian-reader", "Meridian Assist"
+        reviewer = {"username": username, "password": self.credential}
+        url = "/api/insurer/preclaims"
+        self.assertEqual(self.browser.get(url).status_code, 401)
+        provision(self.dsn, username, "Reviewer", self.credential, insurer=payer)
+        login = self.browser.post("/api/access/login", json={**reviewer, "insurer": "Other payer"})
+        self.assertEqual(login.status_code, 200)
+        self.assertEqual(login.json()["insurer"], payer)
+        self.assertEqual(login.json()["role"], "insurer")
+        state = self.browser.get("/api/access/session", headers={"X-Insurer": "Other payer"}).json()
+        self.assertEqual(state, login.json())
+        self.assertEqual(self.browser.get(url).status_code, 200)
+        self.assertEqual(self.browser.post(url, json={}).status_code, 403)
+        for path in ("/api/discharge", "/api/cases", "/api/cases/Z001/revisions/1/sources/policy"):
+            self.assertEqual(self.browser.get(path).status_code, 403, path)
+        self.assertEqual(self.browser.post("/api/cases/Z001/approve", json={}).status_code, 403)
+        rotated = secrets.token_urlsafe(32)
+        with self.assertRaises(ValueError):
+            provision(self.dsn, username, "Reviewer", rotated, reset=True, insurer="Other payer")
+        provision(self.dsn, username, "Reviewer", rotated, reset=True)
+        self.assertEqual(self.browser.get(url).status_code, 401)
+        login = self.browser.post("/api/access/login", json={**reviewer, "password": rotated})
+        self.assertEqual(login.json()["insurer"], payer)
+        self.assertIsNone(self.browser.post("/api/access/logout").json()["actor"])
+        provision(self.dsn, "hospital-review", "Hospital staff", self.credential)
+        self.browser.post("/api/access/login", json={**reviewer, "username": "hospital-review"})
+        self.assertEqual(self.browser.get(url, headers={"X-Insurer": payer}).status_code, 403)
+        self.assertEqual(self.browser.get("/api/cases").status_code, 200)
+
     def test_account_lockout_and_disable(self):
         provision(self.dsn, "shift", "Night shift", self.credential)
         credentials = {"username": "shift", "password": self.credential}

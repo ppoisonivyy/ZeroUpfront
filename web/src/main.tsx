@@ -34,6 +34,8 @@ import { CaseWorkflow, payerStatus } from "./CaseWorkflow";
 import { EvidenceReview } from "./EvidenceReview";
 import { AuthGate, useStaffSession } from "./Auth";
 import { OperationalHolds } from "./OperationalHolds";
+import { useResource } from "./useResource";
+import { PayerCase, InsurerInbox } from "./Preclaim";
 import "./style.css";
 import "./caseflow.css";
 import "./workspace.css";
@@ -45,6 +47,8 @@ type Route = {
   id: string;
   rev?: number;
   create?: boolean;
+  preclaim?: boolean;
+  inbox?: boolean;
   discharge?: boolean;
   prior?: string;
 };
@@ -67,35 +71,11 @@ function readRoute(): Route {
       prior: params.get("case") || undefined,
       rev,
     };
+  const preclaim = path.match(/^\/(preclaims|insurer)(?:\/([a-zA-Z0-9_-]+))?$/);
+  if (preclaim) return { id: preclaim[2] || "", preclaim: !!preclaim[2], inbox: preclaim[1] === "insurer", rev };
   if (path === "/new") return { id: "", create: true };
   const id = path.match(/^\/cases\/([a-zA-Z0-9_-]+)$/)?.[1] || "";
   return { id, rev };
-}
-function useResource<T>(url: string, epoch: number) {
-  const [result, set] = useState<{ key: string; data?: T; error?: string }>({
-    key: "",
-  });
-  const key = url + ":" + epoch;
-  useEffect(() => {
-    const controller = new AbortController();
-    api(url, { signal: controller.signal })
-      .then((r) => r.json())
-      .then((data) => {
-        if (!controller.signal.aborted) set({ key, data });
-      })
-      .catch((error) => {
-        if (!controller.signal.aborted)
-          set({
-            key,
-            error:
-              error instanceof Error
-                ? error.message
-                : "The case could not be loaded.",
-          });
-      });
-    return () => controller.abort();
-  }, [url, key]);
-  return key === result.key ? result : { key };
 }
 function Pill({ status }: { status: PacketStatus }) {
   return (
@@ -174,7 +154,7 @@ function Worklist({ epoch, retry }: { epoch: number; retry: () => void }) {
   const [term, setTerm] = useState("");
   const [filter, setFilter] = useState("all");
   const rows = (data || []).filter((c) => {
-    const found = [c.id, c.member, c.procedure, c.insurer].some((x) =>
+    const found = [c.id, c.member, c.procedure, c.insurer, c.patient || ""].some((x) =>
       x.toLocaleLowerCase().includes(term.trim().toLocaleLowerCase()),
     );
     if (!found) return false;
@@ -192,7 +172,7 @@ function Worklist({ epoch, retry }: { epoch: number; retry: () => void }) {
       <div className="page-title desk-heading">
         <div>
           <p className="section-label">Pre-arrival coordination</p>
-          <h1>Case worklist</h1>
+          <h1>Hospital work queue</h1>
           <p>Inpatient requests for a guarantee of payment.</p>
         </div>
         <a href="#/new" className="primary">
@@ -247,21 +227,21 @@ function Worklist({ epoch, retry }: { epoch: number; retry: () => void }) {
               <span>Find a case</span>
               <input
                 type="search"
-                placeholder="Case, member, procedure or insurer"
+                placeholder="Patient, case, procedure or insurer"
                 value={term}
                 onChange={(e) => setTerm(e.target.value)}
               />
             </label>
             <label className="stack-field">
-              <span>Work queue</span>
-              <select
+              <span id="queue-filter-label">Work queue</span>
+              <select aria-labelledby="queue-filter-label"
                 value={filter}
                 onChange={(e) => setFilter(e.target.value)}
               >
                 <option value="all">All cases</option>
                 <option value="attention">Needs evidence</option>
                 <option value="review">Ready for review</option>
-                <option value="insurer">With insurer</option>
+                <option value="insurer">Waiting for insurer</option>
               </select>
             </label>
           </div>
@@ -274,14 +254,14 @@ function Worklist({ epoch, retry }: { epoch: number; retry: () => void }) {
           ) : (
             <div className="worklist">
               {rows.map((c) => (
-                <a key={c.id} className="case-row" href={caseHref(c.id)}>
+                <a key={c.id} className="case-row" href={c.input_kind === "payer_preclaim" ? "#/preclaims/" + encodeURIComponent(c.id) : caseHref(c.id)}>
                   <span className="case-code" title={c.id}>
                     {c.id.length > 14
                       ? c.id.slice(0, 7) + "…" + c.id.slice(-4)
                       : c.id}
                   </span>
                   <span className="row-detail">
-                    <strong>{c.procedure}</strong>
+                    <strong>{c.patient ? c.patient + " · " : ""}{c.procedure}</strong>
                     <small>
                       {c.insurer} · {money(c.total)} ·{" "}
                       {displayDate(c.admission_date)}
@@ -292,9 +272,9 @@ function Worklist({ epoch, retry }: { epoch: number; retry: () => void }) {
                         {c.open_hold_count === 1 ? "hold" : "holds"}
                       </small>
                     )}
-                    {c.insurer_status && c.insurer_status !== "not_sent" && (
+                    {c.input_kind !== "payer_preclaim" && c.insurer_status && c.insurer_status !== "not_sent" && (
                       <small>
-                        {payerStatus(c.insurer_status)}
+                        {c.insurer_status === "submitted" ? "Waiting for insurer" : payerStatus(c.insurer_status)}
                         {c.latest_event_kind === "deposit"
                           ? " · Deposit recorded"
                           : c.latest_event_kind === "admission"
@@ -303,7 +283,7 @@ function Worklist({ epoch, retry }: { epoch: number; retry: () => void }) {
                       </small>
                     )}
                   </span>
-                  <Pill status={c.status} />
+                  {c.input_kind === "payer_preclaim" && c.workflow_stage === "waiting_for_insurer" ? <span className="pill good"><i />Waiting for insurer</span> : c.input_kind === "payer_preclaim" && c.workflow_stage === "needs_documents" ? <span className="pill warning"><i />Needs documents</span> : <Pill status={c.status} />}
                   <ChevronRight size={17} />
                 </a>
               ))}
@@ -892,6 +872,7 @@ function CaseView({
 }
 function App() {
   const session = useStaffSession();
+  const insurer = session.role === "insurer";
   const [route, setRoute] = useState<Route>(readRoute);
   const [epoch, setEpoch] = useState(0);
   const retry = () => setEpoch((n) => n + 1);
@@ -904,14 +885,14 @@ function App() {
     return () => window.removeEventListener("hashchange", change);
   }, []);
   useEffect(() => {
-    document.title = route.discharge
+    document.title = insurer ? "Insurer inbox · ZeroUpfront" : route.discharge
       ? "Discharge claims · ZeroUpfront"
       : route.id
         ? "Case " + route.id + " · ZeroUpfront"
         : route.create
           ? "Create a case · ZeroUpfront"
           : "Case worklist · ZeroUpfront";
-  }, [route.id, route.create, route.discharge]);
+  }, [route.id, route.create, route.discharge, insurer]);
   return (
     <>
       <a
@@ -927,25 +908,28 @@ function App() {
       <div className="app-layout">
         <header className="hospital-masthead">
           <div className="mast-inner">
-            <a href="#/discharge" className="mast-brand" aria-label="ZeroUpfront home">
+            <a href={insurer ? "#/insurer" : "#/discharge"} className="mast-brand" aria-label="ZeroUpfront home">
               <span className="mast-symbol"><Layers size={20} aria-hidden="true" /></span>
               ZeroUpfront
             </a>
-            <nav className="mast-nav" aria-label="Hospital workflows">
+            <nav className="mast-nav" aria-label="Desk workflows">
+              {insurer ? <a aria-current="page" href="#/insurer">Insurer inbox</a> : <>
               <a aria-current={route.discharge ? "page" : undefined} href="#/discharge">Discharge claims</a>
-              <a aria-current={!route.discharge ? "page" : undefined} href="#/cases">Pre-arrival cases</a>
+              <a aria-current={!route.discharge ? "page" : undefined} href="#/cases">Pre-arrival cases</a></>}
             </nav>
             <button className="mast-context" popoverTarget="workspace-context" title={session.hospital_name || "Hospital workspace"}>
-              <Hospital size={15} /><span>{session.hospital_name || "Hospital"}</span><ChevronDown size={13} />
+              <Hospital size={15} /><span>{(insurer && session.insurer) || session.hospital_name || "Hospital"}</span><ChevronDown size={13} />
             </button>
             <div id="workspace-context" className="workspace-context" popover="auto">
               <strong>{session.hospital_name || "Hospital workspace"}</strong>
               <span>{session.mode === "local" ? "Local rehearsal" : session.actor}</span>
               <nav aria-label="Workspace shortcuts" onClick={() => document.getElementById("workspace-context")?.hidePopover()}>
+                {insurer ? <a href="#/insurer">Insurer inbox <ChevronRight size={15} /></a> : <>
                 <a href="#/discharge">Discharge worklist <ChevronRight size={15} /></a>
-                <a href="#/cases">Pre-arrival worklist <ChevronRight size={15} /></a>
+                <a href="#/cases">Pre-arrival worklist <ChevronRight size={15} /></a></>}
               </nav>
               {session.mode === "staff" && <div className="account-actions">
+                <button disabled={session.busy} onClick={() => void session.signOut(false, insurer ? "hospital" : "insurer")}><LogOut size={15} />Switch to {insurer ? "hospital" : "insurer"} desk</button>
                 {hospitalPrefix && <button disabled={session.busy} onClick={() => void session.signOut(true)}>
                   <ArrowLeftRight size={15} />Switch hospital
                 </button>}
@@ -959,11 +943,11 @@ function App() {
         </header>
         <div className="app-content">
           <main id="main-content" tabIndex={-1}>
-        {(route.id || route.create) && (
+        {(insurer ? route.inbox && route.id : route.id || route.create) && (
           <nav className="breadcrumbs" aria-label="Breadcrumb">
-            <a href={route.discharge ? "#/discharge" : "#/cases"}>
+            <a href={insurer ? "#/insurer" : route.discharge ? "#/discharge" : "#/cases"}>
               <FolderOpen size={15} />
-              {route.discharge ? "Discharge worklist" : "Case worklist"}
+              {insurer ? "Insurer inbox" : route.discharge ? "Discharge worklist" : "Case worklist"}
             </a>
             {(route.id || route.create) && (
               <>
@@ -980,7 +964,9 @@ function App() {
             )}
           </nav>
         )}
-        {route.discharge ? (
+        {insurer ? (route.inbox && route.id ? <PayerCase key={route.id} id={route.id} revision={route.rev} insurer /> : <InsurerInbox />)
+         : route.preclaim && !route.inbox ? <PayerCase key={route.id} id={route.id} revision={route.rev} insurer={false} />
+         : route.discharge ? (
           <Suspense
             fallback={<p className="loading">Opening discharge workspace…</p>}
           >
@@ -991,7 +977,7 @@ function App() {
               revision={route.rev}
             />
           </Suspense>
-        ) : route.create ? (
+        ) : route.inbox ? <Worklist epoch={epoch} retry={retry} /> : route.create ? (
           <NewCase />
         ) : route.id ? (
           <CaseView

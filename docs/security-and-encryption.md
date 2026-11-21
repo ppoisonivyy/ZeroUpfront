@@ -2,6 +2,10 @@
 
 ZeroUpfront handles insurance identifiers, health records, financial decisions and original PDFs. Each hospital gets a dedicated database. A shared web service can route staff to their hospital, and a hospital can also run its own installation. A signed-in coordinator can see that hospital’s cases. A real pilot needs a hospital-approved access model and evidence from the selected host. The release and its benchmarks use synthetic records. [Hospital deployment](deployment.md) · [Country and recipient decisions](privacy-by-jurisdiction.md)
 
+## Who can open a submitted preauthorization?
+
+A coordinator signs in to the hospital queue. An insurer reviewer signs in with a separate account at that hospital. The server looks up the reviewer’s assigned payer for each request. The reviewer can read submitted revisions for that payer and the PDFs attached to those revisions. A replacement report, a draft, or another hospital’s submission requires its own authorized handoff. The reviewer inbox is read-only. Password resets preserve the assignment and revoke active sessions. [Access tests](../tests/test_staff_access.py) · [Handoff tests](../tests/test_preclaim_handoff.py)
+
 ## What protects each copy?
 
 | Data or connection | What the release does | What the hospital or host must establish |
