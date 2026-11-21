@@ -96,6 +96,6 @@ uv run --locked python bench/container_release.py
 
 ## Working together
 
-Update the public README and walkthrough in the same change whenever the demo, supported workflow or reported results change. Preserve first-run measurements when publishing a retest.
+Update the public README and walkthrough in the same change whenever the demo, supported workflow or reported results change. Keep the [build declaration](docs/hackathon-declaration.md) current when adding a deliverable or reusing another project, dataset or service. Preserve first-run measurements when publishing a retest.
 
 Branch from `main`, keep commits focused, and include the reproduction command or UI steps in each pull request. In the three-person team, the tech lead coordinates API contracts, integration and release checks. The other two owners can work in parallel on the coordinator experience and the data, fixtures and integrations. Ask the tech lead to review changes that cross those boundaries. A public GitHub link gives read access. Invite teammates as repository collaborators to let them push branches directly.
