@@ -23,6 +23,7 @@ uv run --locked python -m app.hospital_demo password lakeside
 
 | Encounter | What to try |
 | --- | --- |
+| VISIT-CB-FX or VISIT-LS-FX | Compare the dated FX reference with simulated bank funding, inspect the bilingual fee reader and reconcile a THB 300 short receipt. [Pattaya walkthrough](demo.md#pattaya-fx-rehearsal) |
 | VISIT-CB-001 or VISIT-LS-001 | Open the duplicate pharmacy charge and inspect page 2. Preview the corrected bill, confirm the encounter and save. Review the new revision, preview the attachments and open the reviewed export. The first bill remains in version history. |
 | VISIT-CB-002 or VISIT-LS-002 | Review a complete packet directly. Record the external submission and the payer’s response as separate events. |
 | VISIT-CB-003 or VISIT-LS-003 | Compare the final bill with the lower authorization ceiling in the payer letter. The hold calls for evidence or payer follow-up. |

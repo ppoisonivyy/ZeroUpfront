@@ -9,6 +9,7 @@ from unittest.mock import patch
 from openai import OpenAIError
 
 from app import pattaya_agents as agents
+from app import pattaya_case
 
 
 AI_ENV = {"OPENAI_API_KEY": "synthetic-test-key", "WORKSPACE_AUTH_MODE": "local",
@@ -25,7 +26,7 @@ def claim(booking=None, paid=0):
     return {
         "example_scenario": "pattaya_fx", "currency": "THB", "bill_total_minor": 23900000,
         "source_reported_cap_minor": 23900000, "source_reported_patient_share_minor": 0,
-        "payer_decision": {"currency": "THB", "amount_minor": 23900000, "outcome": "confirmed"},
+        "payer_decision": {"currency": "THB", "amount_minor": 23900000, "outcome": "confirmed", "terms": pattaya_case.TERMS},
         "events": events, "paid_by_currency": {"THB": paid} if paid else {}, "revision": 1,
         "workflow_version": len(events), "member": "PATIENT-PRIVATE", "id": "DISCHARGE-PRIVATE",
     }
@@ -97,6 +98,18 @@ class PattayaAgentTests(unittest.TestCase):
                 self.assertEqual(report["next_action"], "review")
                 self.assertIsNone(report["booked_quote"])
                 self.assertEqual(report["outstanding_minor"], 30000)
+
+    def test_unconfirmed_fee_terms_preserve_numeric_balance_and_withhold_liability(self):
+        for terms in (None, "Fee allocation will be agreed separately.", pattaya_case.TERMS + " Subject to amendment."):
+            with self.subTest(terms=terms):
+                case = claim("spot", 23870000)
+                case["payer_decision"]["terms"] = terms
+                result = agents.review(case)
+                self.assertEqual(result["guaranteed_minor"], 23900000)
+                self.assertEqual(result["outstanding_minor"], 30000)
+                self.assertIsNone(result["patient_fx_minor"])
+                self.assertIsNone(result["shortfall_owner"])
+                self.assertEqual(result["next_action"], "review")
 
     def test_unexpected_evidence_needs_finance_review(self):
         examples = []

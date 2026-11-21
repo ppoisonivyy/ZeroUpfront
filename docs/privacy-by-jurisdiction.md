@@ -51,3 +51,5 @@ A hospital in Bangkok treating a traveler with a US payer is a useful example. M
 | Release owner | Record policy version, source date, approving people, eligible operations and evidence from actual deployment tests. Leave optional external processing disabled for any unapproved flow. Recheck on a change to jurisdiction, vendor, data category, intended use, processing location or law. |
 
 **Review basis.** Sources were checked on November 21, 2026. This review used the public release and synthetic test data. Tenant contracts, host configuration, organizational procedures and local legal determinations require the participating hospital’s privacy officer and counsel.
+
+The fee-clause reader sends the latest applicable original payer decision to OpenAI only after staff invoke the labeled action and the deployment has enabled AI review. Image-bearing pages can require an additional transcription request when OCR is enabled. Apply the same hospital-specific processor, transfer and retention decision to this path. Frankfurter receives only a public currency pair, trade date and provider selection. [Funding and evidence flow](demo.md#pattaya-fx-rehearsal)

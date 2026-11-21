@@ -1,0 +1,307 @@
+{
+  "model": "gpt-6.2-sol",
+  "ocr_model": "gpt-6.2-astra",
+  "cases": 10,
+  "cases_passed": 10,
+  "categories": 20,
+  "categories_passed": 20,
+  "elapsed_seconds": 10.69,
+  "workers": 6,
+  "results": [
+    {
+      "case": "conflicting_bank_fee_pages",
+      "status": "needs_review",
+      "expected_status": "needs_review",
+      "passed": true,
+      "categories": {
+        "exchange_difference": {
+          "expected": [
+            "insurer",
+            1
+          ],
+          "observed": [
+            "insurer",
+            1
+          ],
+          "cites_expected_clause": true,
+          "passed": true
+        },
+        "bank_fees": {
+          "expected": null,
+          "observed": null,
+          "cites_expected_clause": null,
+          "passed": true
+        }
+      },
+      "seconds": 3.93
+    },
+    {
+      "case": "defined_english_roles",
+      "status": "cited",
+      "expected_status": "cited",
+      "passed": true,
+      "categories": {
+        "exchange_difference": {
+          "expected": [
+            "patient",
+            1
+          ],
+          "observed": [
+            "patient",
+            1
+          ],
+          "cites_expected_clause": true,
+          "passed": true
+        },
+        "bank_fees": {
+          "expected": [
+            "insurer",
+            1
+          ],
+          "observed": [
+            "insurer",
+            1
+          ],
+          "cites_expected_clause": true,
+          "passed": true
+        }
+      },
+      "seconds": 3.87
+    },
+    {
+      "case": "english_positive",
+      "status": "cited",
+      "expected_status": "cited",
+      "passed": true,
+      "categories": {
+        "exchange_difference": {
+          "expected": [
+            "insurer",
+            1
+          ],
+          "observed": [
+            "insurer",
+            1
+          ],
+          "cites_expected_clause": true,
+          "passed": true
+        },
+        "bank_fees": {
+          "expected": [
+            "insurer",
+            1
+          ],
+          "observed": [
+            "insurer",
+            1
+          ],
+          "cites_expected_clause": true,
+          "passed": true
+        }
+      },
+      "seconds": 3.67
+    },
+    {
+      "case": "english_silent",
+      "status": "needs_review",
+      "expected_status": "needs_review",
+      "passed": true,
+      "categories": {
+        "exchange_difference": {
+          "expected": null,
+          "observed": null,
+          "cites_expected_clause": null,
+          "passed": true
+        },
+        "bank_fees": {
+          "expected": null,
+          "observed": null,
+          "cites_expected_clause": null,
+          "passed": true
+        }
+      },
+      "seconds": 3.3
+    },
+    {
+      "case": "named_insurer_across_pages",
+      "status": "cited",
+      "expected_status": "cited",
+      "passed": true,
+      "categories": {
+        "exchange_difference": {
+          "expected": [
+            "insurer",
+            1
+          ],
+          "observed": [
+            "insurer",
+            1
+          ],
+          "cites_expected_clause": true,
+          "passed": true
+        },
+        "bank_fees": {
+          "expected": [
+            "insurer",
+            2
+          ],
+          "observed": [
+            "insurer",
+            2
+          ],
+          "cites_expected_clause": true,
+          "passed": true,
+          "cites_expected_role_definition": true
+        }
+      },
+      "seconds": 4.08
+    },
+    {
+      "case": "negated_without_assignee",
+      "status": "needs_review",
+      "expected_status": "needs_review",
+      "passed": true,
+      "categories": {
+        "exchange_difference": {
+          "expected": null,
+          "observed": null,
+          "cites_expected_clause": null,
+          "passed": true
+        },
+        "bank_fees": {
+          "expected": null,
+          "observed": null,
+          "cites_expected_clause": null,
+          "passed": true
+        }
+      },
+      "seconds": 3.25
+    },
+    {
+      "case": "negation_and_named_payer",
+      "status": "cited",
+      "expected_status": "cited",
+      "passed": true,
+      "categories": {
+        "exchange_difference": {
+          "expected": [
+            "insurer",
+            2
+          ],
+          "observed": [
+            "insurer",
+            2
+          ],
+          "cites_expected_clause": true,
+          "passed": true
+        },
+        "bank_fees": {
+          "expected": [
+            "patient",
+            1
+          ],
+          "observed": [
+            "patient",
+            1
+          ],
+          "cites_expected_clause": true,
+          "passed": true
+        }
+      },
+      "seconds": 3.41
+    },
+    {
+      "case": "thai_conditional",
+      "status": "needs_review",
+      "expected_status": "needs_review",
+      "passed": true,
+      "categories": {
+        "exchange_difference": {
+          "expected": [
+            "insurer",
+            1
+          ],
+          "observed": [
+            "insurer",
+            1
+          ],
+          "cites_expected_clause": true,
+          "passed": true
+        },
+        "bank_fees": {
+          "expected": null,
+          "observed": null,
+          "cites_expected_clause": null,
+          "passed": true
+        }
+      },
+      "seconds": 3.51
+    },
+    {
+      "case": "thai_image_scan",
+      "status": "cited",
+      "expected_status": "cited",
+      "passed": true,
+      "categories": {
+        "exchange_difference": {
+          "expected": [
+            "insurer",
+            1
+          ],
+          "observed": [
+            "insurer",
+            1
+          ],
+          "cites_expected_clause": true,
+          "passed": true
+        },
+        "bank_fees": {
+          "expected": [
+            "hospital",
+            1
+          ],
+          "observed": [
+            "hospital",
+            1
+          ],
+          "cites_expected_clause": true,
+          "passed": true
+        }
+      },
+      "seconds": 7.17
+    },
+    {
+      "case": "thai_split_pages",
+      "status": "cited",
+      "expected_status": "cited",
+      "passed": true,
+      "categories": {
+        "exchange_difference": {
+          "expected": [
+            "insurer",
+            1
+          ],
+          "observed": [
+            "insurer",
+            1
+          ],
+          "cites_expected_clause": true,
+          "passed": true
+        },
+        "bank_fees": {
+          "expected": [
+            "hospital",
+            2
+          ],
+          "observed": [
+            "hospital",
+            2
+          ],
+          "cites_expected_clause": true,
+          "passed": true
+        }
+      },
+      "seconds": 3.86
+    }
+  ]
+}

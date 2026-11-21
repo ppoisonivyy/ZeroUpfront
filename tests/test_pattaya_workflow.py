@@ -106,7 +106,10 @@ class PattayaWorkflowTests(unittest.TestCase):
                 self.assertEqual(booked.status_code, 200, booked.text)
                 self.assertEqual(booked.json()["events"][-1]["data"]["usd_minor"], cents)
                 self.assertEqual(booked.json()["settlement_status"], "unpaid")
-                self.assertEqual(self.review(path)["next_action"], "record_short")
+                with patch.dict(pattaya_agents.BANK_TERMS, {kind: ("35.50", "2026-11-27")}):
+                    report = self.review(path)
+                    self.assertEqual(report["booked_quote"]["usd_minor"], cents)
+                    self.assertEqual(report["next_action"], "record_short")
                 self.assertEqual(self.action(path, "record_topup", 3).status_code, 409)
                 credit = self.action(path, "record_short_credit", 3)
                 self.assertEqual(credit.status_code, 200, credit.text)

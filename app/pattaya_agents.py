@@ -9,6 +9,8 @@ from decimal import Decimal, ROUND_HALF_UP
 
 from openai import OpenAI, OpenAIError
 
+from app.pattaya_case import TERMS
+
 
 GUARANTEE_MINOR = 23_900_000
 SHORT_CREDIT_MINOR = 23_870_000
@@ -68,7 +70,8 @@ def _funding(case):
         trade, value, due = (date.fromisoformat(saved[key]) for key in ("trade_date", "value_date", "hospital_due_date"))
     except (KeyError, TypeError, ValueError):
         return None, False
-    if not trade <= value <= due or (instrument == "forward" and trade == value):
+    if (trade.isoformat() != TRADE_DATE or due.isoformat() != HOSPITAL_DUE_DATE
+            or not trade <= value <= due or (instrument == "forward" and trade == value)):
         return None, False
     ticket = _quote(instrument, rate, trade.isoformat(), value.isoformat(), due.isoformat())
     # Original tickets had an implicit buy-THB / sell-USD direction and THB 239,000 notional.
@@ -195,30 +198,34 @@ def review(case, *, use_model=False):
     """Compute a decision from the supplied immutable revision and its recorded events."""
     if case.get("example_scenario") != "pattaya_fx":
         raise ValueError("The Pattaya agents require the fictional Pattaya example.")
-    prices = quotes()
     guaranteed = _guarantee(case)
-    ticket, valid_booking = _funding(case)
-    booked = ticket["instrument"] if ticket else None
+    # This rehearsal recognizes only its authored guarantee. Other wording needs a sourced review.
+    fees_verified = guaranteed and case["payer_decision"].get("terms") == TERMS
+    patient_fx_minor = 0 if fees_verified else None
+    booking, valid_booking = _funding(case)
+    booked = booking["instrument"] if booking else None
+    prices = list(quotes().values())
     amounts = case["paid_by_currency"]
     paid = amounts.get("THB", 0)
     valid_currency = set(amounts) <= {"THB"}
     due = GUARANTEE_MINOR if guaranteed else 0
     outstanding = max(0, due - paid)
-    action = _settlement_step(guaranteed and valid_booking and valid_currency, booked, paid)
-    owner = "insurer" if guaranteed and valid_currency and outstanding else None
+    action = _settlement_step(fees_verified and valid_booking and valid_currency, booked, paid)
+    owner = "insurer" if fees_verified and valid_currency and outstanding else None
 
     trace = [
-        dict(agent="Guarantee agent", status="verified" if guaranteed else "review",
+        dict(agent="Guarantee", status="verified" if fees_verified else "review",
              summary=("The insurer guarantees THB 239,000 net. It covers FX differences and bank fees."
+                      if fees_verified else "The guarantee confirms the THB amount. Review who covers FX differences and bank fees."
                       if guaranteed else "The current guarantee, patient share or payer decision needs review."),
              evidence=f"Guarantee letter p. 1 · final bill p. 1 · {_latest_event(case, 'reply', 'Payer decision')}"),
-        dict(agent="Treasury agent", status=("review" if not valid_booking else "booked" if booked else "quoted"),
-             summary=("The saved bank ticket has inconsistent terms. Review the funding record."
-                      if not valid_booking else f"The simulated {booked} trade delivers THB 239,000 on {ticket['value_date']}."
+        dict(agent="Funding", status=("review" if not valid_booking else "booked" if booked else "quoted"),
+             summary=("The recorded booking terms are inconsistent. Review the funding record."
+                      if not valid_booking else f"The simulated {booked} trade delivers THB 239,000 on {booking['value_date']}."
                       if booked else "Compare the two simulated USD-to-THB quotes before recording a booking."),
              evidence=(_latest_event(case, "fx_booking", "Funding booking") if booked
                        else f"Simulated bank prices for {TRADE_DATE}")),
-        dict(agent="Reconciliation agent", status=action,
+        dict(agent="Hospital receipts", status=action,
              summary=(f"Hospital credits total {_thb(paid)}. " + (
                  "Finance review is required before another settlement step." if action == "review"
                  else f"{_thb(outstanding)} remains due from the insurer." if outstanding
@@ -228,14 +235,14 @@ def review(case, *, use_model=False):
     model_review = dict(status="not_requested", focus=None, summary="", tools=[])
     if use_model:
         facts = {
-            "read_guarantee": dict(verified=guaranteed, amount_minor=due, currency="THB", patient_fx_minor=0),
-            "compare_funding": dict(quotes=list(prices.values()), booking=booked, booked_quote=ticket, valid_booking=valid_booking),
+            "read_guarantee": dict(verified=fees_verified, amount_minor=due, currency="THB", patient_fx_minor=patient_fx_minor),
+            "compare_funding": dict(quotes=prices, booking=booked, booked_quote=booking, valid_booking=valid_booking),
             "reconcile_credits": dict(paid_minor=paid, outstanding_minor=outstanding, currency="THB",
                                      valid_currency=valid_currency, shortfall_owner=owner,
                                      expected_first_credit_minor=SHORT_CREDIT_MINOR),
         }
         model_review = _model_assessment(facts, action)
     return dict(revision=case["revision"], workflow_version=case["workflow_version"], hospital_due_date=HOSPITAL_DUE_DATE,
-                guaranteed_minor=due, paid_minor=paid, outstanding_minor=outstanding, patient_fx_minor=0,
-                shortfall_owner=owner, booking=booked, booked_quote=ticket, quotes=list(prices.values()), short_credit_minor=SHORT_CREDIT_MINOR,
+                guaranteed_minor=due, paid_minor=paid, outstanding_minor=outstanding, patient_fx_minor=patient_fx_minor,
+                shortfall_owner=owner, booking=booked, booked_quote=booking, quotes=prices, short_credit_minor=SHORT_CREDIT_MINOR,
                 next_action=action, trace=trace, model_enabled=model_enabled(), model_review=model_review)

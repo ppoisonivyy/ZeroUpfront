@@ -15,11 +15,8 @@ TERMS = ("The insurer guarantees net THB 239,000 to the hospital. The hospital p
          "The insurer bears exchange-rate changes and bank fees and must fund any payment shortfall.")
 
 
-def exhibits():
-    facility = FACILITY
+def exhibits(*, facility=FACILITY, member="DEMO-PATTAYA-239", encounter=ENCOUNTER):
     insurer = "Meridian Travel Cover (fictional)"
-    member = "DEMO-PATTAYA-239"
-    encounter = ENCOUNTER
     admission, discharge = "2026-11-18", "2026-11-19"
     dates = [f"Admission date: {admission}", f"Discharge date: {discharge}"]
     case = dict(member=member, encounter=encounter, facility=facility, insurer=insurer, procedure=PROCEDURE,
@@ -49,10 +46,10 @@ def exhibits():
     return case, raw, names
 
 
-def final_decision():
+def final_decision(*, facility=FACILITY, encounter=ENCOUNTER):
     return pdf(["FICTIONAL INSURER GUARANTEE | Pattaya practice case", "Final decision dated 19 November 2026",
-                "Meridian Travel Cover (fictional)", "Hospital: Pattaya Practice Hospital",
-                "Encounter: DEMO-LENS-239", "Covered procedure: " + PROCEDURE,
+                "Meridian Travel Cover (fictional)", f"Hospital: {facility}",
+                f"Encounter: {encounter}", "Covered procedure: " + PROCEDURE,
                 "Guaranteed net hospital payment: THB 239,000.00", "Agreed patient share: THB 0.00",
                 "Hospital payment due: 30 November 2026",
                 "The insurer funds exchange-rate changes and bank fees.",
@@ -94,7 +91,7 @@ class BankMessage:
         return pdf(lines)
 
 
-def bank_message(ident, kind):
+def bank_message(ident, kind, *, hospital_slug=None):
     # The sample receiving bank issues these facts independently of the hospital ledger.
     if kind == "instruction":
         leg, value_date, gross, fee, net = "SEND-01", "2026-11-30", 23_900_000, None, None
@@ -104,4 +101,10 @@ def bank_message(ident, kind):
         leg, value_date, gross, fee, net = "CREDIT-02", "2026-12-01", 30_000, 0, 30_000
     else:
         raise ValueError("Unknown practice bank document.")
-    return BankMessage(kind, ident, ENCOUNTER, FACILITY, f"SIM-{leg}-{ident}", value_date, "THB", gross, fee, net)
+    facility, encounter = FACILITY, ENCOUNTER
+    if hospital_slug is not None:
+        # The fictional bank uses the registered beneficiary for this seeded hospital.
+        from app.hospital_demo import HOSPITALS
+        facility, code = HOSPITALS[hospital_slug]
+        encounter = f"VISIT-{code}-FX"
+    return BankMessage(kind, ident, encounter, facility, f"SIM-{leg}-{ident}", value_date, "THB", gross, fee, net)

@@ -13,7 +13,7 @@ from psycopg import sql
 from psycopg.conninfo import make_conninfo
 import uvicorn
 
-from app import discharge_store, staff_access, workspace_store
+from app import discharge_store, pattaya_case, pattaya_workflow, staff_access, workspace_store
 from app.discharge_claim import evaluate_discharge, load_discharge_fixture
 from app.hospital_platform import Hospital, bind_database, configured_hospitals
 from app.intake_documents import evaluate_intake
@@ -70,6 +70,13 @@ def seed(hospital):
                 evidence["sample_bill_digest"] = workspace_store._save_document(db, corrected)
                 evidence["sample_bill_available"] = True
             discharge_store.create(db, ident, evidence, raw, names)
+
+        ident = f"D-{code}-PATTAYA"
+        if not db.execute("SELECT 1 FROM zeroupfront_demo.discharge_cases WHERE id=%s", (ident,)).fetchone():
+            meta, raw, names = pattaya_case.exhibits(facility=name, member=f"DEMO-{code}-239", encounter=f"VISIT-{code}-FX")
+            evidence = evaluate_discharge(dict(meta, id=ident), raw, names, _pattaya_fixture=True)
+            evidence["staff_practice_hospital"] = hospital.slug
+            pattaya_workflow.seed(db, ident, evidence, raw, names)
 
 
 def set_judge_password(dsn, name, *, reset=False):
