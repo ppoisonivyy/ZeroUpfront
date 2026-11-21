@@ -1,8 +1,8 @@
 # Discharge claim rehearsal
 
-On 2026-11-21, all 19 synthetic packet scenarios returned the expected screening status and required findings. Staff approval was blocked on all 18 unresolved packets. All uploaded originals were retrieved byte for byte. The app left the payable amount blank in every case.
+On 2026-11-21, all 22 synthetic packet scenarios returned the expected screening status and required findings. Staff approval was blocked on all 21 unresolved packets. All uploaded originals were retrieved byte for byte. The app left the payable amount blank in every case.
 
-Multipart intake and screening over local HTTP with PostgreSQL took 48 ms median and 56 ms p95 with 4 concurrent workers and one request per example. This measures small digital PDFs on the development machine. It excludes OCR, staff time and the payer response.
+Multipart intake and screening over local HTTP with PostgreSQL took 37 ms median and 51 ms p95 with 4 concurrent workers and one request per example. This measures small digital PDFs on the development machine. It excludes OCR, staff time and the payer response.
 
 | Uploaded example | Expected status | Observed status | Observed issues |
 | --- | --- | --- | --- |
@@ -25,6 +25,9 @@ Multipart intake and screening over local HTTP with PostgreSQL took 48 ms median
 | date_mismatch | needs_review | needs_review | date_mismatch |
 | missing_records | needs_review | needs_review | missing_records, missing_support |
 | unreadable_summary | needs_review | needs_review | unreadable_summary |
+| wrong_payer | needs_review | needs_review | payer_mismatch |
+| credit_before_charge | needs_review | needs_review | credit_before_charge |
+| discharge_in_future | needs_review | needs_review | discharge_in_future |
 
 ## One case from correction to payment
 
@@ -40,7 +43,7 @@ We uploaded each complete public plan brochure in place of the member-specific p
 
 | Uploaded brochure | Physical pages | Observed result | Time including approval attempt |
 | --- | --- | --- | --- |
-| us-opm-2026.pdf | 168 | Needs investigation, payable blank, approval HTTP 409 | 961 ms |
-| th-allianz-superior.pdf | 42 | Needs investigation, payable blank, approval HTTP 409 | 1112 ms |
+| us-opm-2026.pdf | 168 | Needs investigation, payable blank, approval HTTP 409 | 922 ms |
+| th-allianz-superior.pdf | 42 | Needs investigation, payable blank, approval HTTP 409 | 1060 ms |
 
 Use one `--policy-as-letter PATH` per local brochure to reproduce this check. It tests document-role confusion. Clause-level question accuracy has a separate [US](us-hybrid-decision.md) and [Thai](thai-public-eval.md) evaluation.

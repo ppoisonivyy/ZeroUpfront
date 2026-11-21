@@ -33,6 +33,8 @@ def upload(client, scenario, expectation):
     assert case["payable_minor"] is None and case["settlement_status"] == "unpaid"
     flags = {f["code"] for f in case["findings"]}
     assert set(expectation["required_findings"]) <= flags, (scenario, flags)
+    if scenario in {"wrong_payer", "stay_extension", "unapproved_procedure"}:
+        assert case["source_reported_cap_minor"] is None and case["source_reported_patient_share_minor"] is None
     for src in case["sources"]:
         raw = client.get(src["url"]).content
         assert raw == originals[src["role"]] and sha256(raw).hexdigest() == src["sha256"]

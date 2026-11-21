@@ -17,5 +17,8 @@
   "excess_credit": {"exhibits": {"bill":"excess_credit-bill.pdf"}, "status": "needs_review", "required_findings": ["excess_credit"]},
   "date_mismatch": {"exhibits": {"summary":"date_mismatch-summary.pdf"}, "status": "needs_review", "required_findings": ["date_mismatch"]},
   "missing_records": {"exhibits": {"records":null}, "status": "needs_review", "required_findings": ["missing_records"]},
-  "unreadable_summary": {"exhibits": {"summary":"unreadable_summary-summary.pdf"}, "status": "needs_review", "required_findings": ["unreadable_summary"]}
+  "unreadable_summary": {"exhibits": {"summary":"unreadable_summary-summary.pdf"}, "status": "needs_review", "required_findings": ["unreadable_summary"]},
+  "wrong_payer": {"exhibits": {"letter":"wrong_payer-letter.pdf"}, "status": "needs_review", "required_findings": ["payer_mismatch"]},
+  "credit_before_charge": {"exhibits": {"bill":"credit_before_charge-bill.pdf"}, "status": "needs_review", "required_findings": ["credit_before_charge"]},
+  "discharge_in_future": {"exhibits": {}, "as_of": "2026-12-11", "status": "needs_review", "required_findings": ["discharge_in_future"]}
 }

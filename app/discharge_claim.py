@@ -10,7 +10,7 @@ import re
 
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.styles import ParagraphStyle
-from reportlab.platypus import SimpleDocTemplate
+from reportlab.platypus import PageBreak, SimpleDocTemplate
 
 from .document_text import normalized
 from .finance import AMOUNT, money
@@ -78,7 +78,7 @@ def _meta(metadata):
     if (not _iso(result["admission_date"]) or not _iso(result["discharge_date"])
             or result["admission_date"] > result["discharge_date"]):
         raise ValueError("Provide the actual admission and discharge dates in chronological YYYY-MM-DD order.")
-    result["as_of"] = metadata.get("as_of") or result["discharge_date"]
+    result["as_of"] = metadata.get("as_of") or date.today().isoformat()
     if not _iso(result["as_of"]):
         raise ValueError("Use a YYYY-MM-DD review date.")
     return result
@@ -193,6 +193,7 @@ def _financial(fields, meta, review):
     gross = credit = 0
     amount_valid = True
     credited_per_charge = defaultdict(int)
+    charge_dates = {}
     for key in ("Charge", "Credit"):
         for entry in fields["bill"].get(key, []):
             parts = [part.strip() for part in entry.value.split("|")]
@@ -233,6 +234,7 @@ def _financial(fields, meta, review):
                                 fingerprints[signature], entry.ref, severity="review")
                 fingerprints[signature] = entry.ref
                 index[code] = (service, entry.ref, n[1])
+                charge_dates[code] = day
                 gross += n[1]
             else:
                 _, target, _, amount, reason = parts
@@ -247,6 +249,11 @@ def _financial(fields, meta, review):
                     amount_valid = False
                 elif (credited_per_charge[target] + n[1]) > charges[target][2]:
                     review.flag("excess_credit", OWNERS["bill"], "Credits exceed their referenced charge.", charges[target][1], entry.ref)
+                    amount_valid = False
+                if target in charge_dates and day < charge_dates[target]:
+                    review.flag("credit_before_charge", OWNERS["bill"],
+                                f"Credit {code} predates its linked charge {target}. Ask billing to confirm both dates.",
+                                charges[target][1], entry.ref)
                     amount_valid = False
                 credited_per_charge[target] += n[1]
                 index[code] = (reason, entry.ref, n[1])
@@ -293,23 +300,30 @@ def _financial(fields, meta, review):
     return next(iter(units), None), total, cap, letter_share
 
 
-def evaluate_discharge(metadata: dict, originals: dict[str, bytes], filenames: dict[str, str], *, ocr_client=None) -> dict:
+def evaluate_discharge(metadata: dict, originals: dict[str, bytes], filenames: dict[str, str], *, ocr_client=None,
+                       _saved_ocr=None) -> dict:
     """Screen original exhibits. An aligned packet is only ready for coordinator review."""
     meta = _meta(metadata)
     if not set(originals) <= set(ROLE_ORDER) or set(originals) != set(filenames):
         raise ValueError("Use bill, summary, letter and records roles, each with its own PDF filename.")
     review = Review()
     fields, sources = {role: {} for role in ROLE_ORDER}, []
+    ocr_cache, ocr_pages = {}, []
     for role in ROLE_ORDER:
         if role not in originals:
             review.flag("missing_" + role, OWNERS[role], f"Obtain the missing {TITLES[role].lower()}.")
             continue
-        doc, incomplete, transcribed, extra = _read(originals[role], pdf_filename(filenames[role]), ocr_client, {})
+        doc, incomplete, transcribed, extra = _read(originals[role], pdf_filename(filenames[role]), ocr_client,
+                                                   (_saved_ocr or {}).get(role, {}))
         fields[role], anchors = _extract(role, doc, meta, review)
         if incomplete:
             review.flag("unreadable_" + role, OWNERS[role], "Obtain a legible exhibit or opt in to OCR and check the original.",
                         *({"role": role, "page": p, "quote": "", "method": "unreadable"} for p in incomplete))
         if transcribed:
+            ocr_cache[role] = {"sha256": doc.sha256, "pages": transcribed}
+            for page_number, text in transcribed.items():
+                ocr_pages.append({"role": role, "page": int(page_number), "sha256": doc.sha256,
+                                  "transcript_sha256": hashlib.sha256(text.encode("utf-8")).hexdigest()})
             review.flag("verify_ocr", OWNERS[role], "Verify transcribed financial and clinical fields against the original scanned pages.",
                         *(r for r in anchors if r["method"] == "ocr"), severity="review")
         if extra:
@@ -326,6 +340,10 @@ def evaluate_discharge(metadata: dict, originals: dict[str, bytes], filenames: d
             value = _single(fields, role, name, review)
             if value and value.value != meta[key]:
                 review.flag("date_mismatch", OWNERS[role], f"The {role} {name.lower()} differs from the discharge encounter.", value.ref)
+    if meta["discharge_date"] > meta["as_of"]:
+        refs = [line.ref for line in fields["summary"].get("Discharge date", [])]
+        review.flag("discharge_in_future", OWNERS["summary"],
+                    "The recorded discharge is after the review date. Confirm the final dates before submitting.", *refs)
     proc_refs = []
     for role, key in (("letter", "Authorized procedure"), ("summary", "Performed procedure"), ("records", "Procedure record")):
         if fields[role]:
@@ -348,7 +366,8 @@ def evaluate_discharge(metadata: dict, originals: dict[str, bytes], filenames: d
                               ("Final review", "Payer reviews the actual bill, summary and supporting records.")):
             entry = _single(fields, "letter", key, review)
             if entry and entry.value != expected:
-                review.flag("unsupported_terms", OWNERS["letter"], "Verify the actual payer, letter status and applicable terms.", entry.ref)
+                code = "payer_mismatch" if key == "Payer" else "unsupported_terms"
+                review.flag(code, OWNERS["letter"], "Verify the actual payer, letter status and applicable terms.", entry.ref)
         dates = {}
         for name in ("Valid from", "Valid through", "Issued on"):
             entry = _single(fields, "letter", name, review)
@@ -384,6 +403,8 @@ def evaluate_discharge(metadata: dict, originals: dict[str, bytes], filenames: d
             if value and value.value != expected:
                 review.flag("clinical_review", OWNERS["summary"], "The discharge narrative needs a clinical read against the letter.", value.ref, severity="review")
     currency, total, cap, share = _financial(fields, meta, review)
+    if any(code in review.findings for code in ("payer_mismatch", "unsupported_terms", "stay_extension", "unapproved_procedure")):
+        cap, share = None, None
     if any(code in review.findings for code in ("member_mismatch", "encounter_mismatch", "facility_mismatch", "page_identity", "page_order")):
         currency, total, cap, share = None, None, None, None
     status = "needs_review" if review.findings else "ready_for_review"
@@ -391,8 +412,63 @@ def evaluate_discharge(metadata: dict, originals: dict[str, bytes], filenames: d
     return {**meta, "input_kind": "discharge", "status": status, "currency": currency, "sources": sources, "letter_kind": letter_kind,
             "bill_total_minor": total, "source_reported_cap_minor": cap,
             "source_reported_patient_share_minor": share, "payable_minor": None,
+            "ocr_pages": ocr_cache, "ocr_review_pages": ocr_pages,
             "insurer_decision": "unrecorded", "findings": findings, "checks": review.checks,
             "issues": [f["message"] for f in findings]}
+
+
+def discharge_ocr_review_pages(case: dict) -> list[dict]:
+    """Expose exact transcripts solely to the revision-bound staff verification endpoint."""
+    result = []
+    sources = {source["role"]: source for source in case.get("sources", [])}
+    for item in case.get("ocr_review_pages", []):
+        role, page = item["role"], item["page"]
+        cached = case.get("ocr_pages", {}).get(role, {})
+        text = cached.get("pages", {}).get(str(page))
+        if (not isinstance(text, str) or cached.get("sha256") != item["sha256"]
+                or sources.get(role, {}).get("sha256") != item["sha256"]
+                or hashlib.sha256(text.encode("utf-8")).hexdigest() != item["transcript_sha256"]):
+            raise ValueError("The scan or transcript differs from the page verification record.")
+        result.append({**item, "text": text})
+    return result
+
+
+def _verified_ocr_evidence(result, reviewer, pages, source_revision):
+    required = result.get("ocr_review_pages", [])
+    if not required or {f["code"] for f in result["findings"]} != {"verify_ocr"}:
+        raise ValueError("Only a complete packet whose sole open finding is OCR verification can be confirmed.")
+    if not isinstance(reviewer, str) or not reviewer.strip() or len(reviewer) > 120 or not reviewer.isprintable():
+        raise ValueError("Record the named staff member who checked the original scan.")
+    if type(source_revision) is not int or source_revision < 1:
+        raise ValueError("The scan verification must identify its source revision.")
+    if not isinstance(pages, list) or len(pages) != len(required):
+        raise ValueError("Confirm every transcribed physical page exactly once.")
+    supplied = {}
+    for row in pages:
+        if (not isinstance(row, dict) or set(row) != {"role", "page", "sha256", "transcript_sha256"}
+                or row.get("role") not in ROLE_ORDER or type(row.get("page")) is not int):
+            raise ValueError("Each confirmed page needs its role, physical page, file digest and transcript digest.")
+        supplied[(row["role"], row["page"])] = row
+    if len(supplied) != len(required) or any(supplied.get((r["role"], r["page"])) != r for r in required):
+        raise ValueError("A verified page is missing, repeated, stale or has the wrong file or transcript digest.")
+    record = {"reviewer": reviewer.strip(), "source_revision": source_revision, "pages": required}
+    return {**result, "status": "ready_for_review", "issues": [], "findings": [], "ocr_attestation": record,
+            "checks": [*result["checks"], {"code": "ocr_pages_confirmed", "message": "Staff compared each transcription with its original physical page.",
+                                           "sources": required}]}
+
+
+def confirm_discharge_ocr(case: dict, originals: dict[str, bytes], reviewer: str, pages: list[dict]) -> dict:
+    """Recheck frozen originals and accept a bounded, named attestation for a new revision."""
+    if case.get("status") != "needs_review" or {f["code"] for f in case.get("findings", [])} != {"verify_ocr"}:
+        raise ValueError("This revision has open findings beyond OCR or has already been verified.")
+    sources = {s["role"]: s for s in case.get("sources", [])}
+    if (set(sources) != set(ROLE_ORDER) or set(originals) != set(ROLE_ORDER)
+            or any(hashlib.sha256(originals[r]).hexdigest() != sources[r]["sha256"] for r in ROLE_ORDER)):
+        raise ValueError("The original PDFs do not match this revision's sources.")
+    discharge_ocr_review_pages(case)
+    result = evaluate_discharge(case, originals, {r: sources[r]["label"] for r in ROLE_ORDER},
+                                _saved_ocr=case.get("ocr_pages"))
+    return _verified_ocr_evidence(result, reviewer, pages, case.get("revision"))
 
 
 def load_discharge_fixture(scenario="aligned"):
@@ -405,7 +481,7 @@ def load_discharge_fixture(scenario="aligned"):
     originals = {role: (ROOT / name).read_bytes() for role, name in filenames.items()}
     return ({"id": "D-FICTIONAL", "member": "EXAMPLE-2402", "encounter": "EXAMPLE-VISIT-42",
              "procedure": "Wrist fracture fixation", "insurer": "Alder Transit Cover", "facility": "Canal Bridge Demo Hospital",
-             "admission_date": "2026-12-11", "discharge_date": "2026-12-13", "as_of": "2026-12-13"}, originals, filenames)
+             "admission_date": "2026-12-11", "discharge_date": "2026-12-13", "as_of": definition.get("as_of", "2026-12-13")}, originals, filenames)
 
 
 def discharge_packet_bytes(case: dict, originals: dict[str, bytes]) -> bytes:
@@ -424,7 +500,13 @@ def discharge_packet_bytes(case: dict, originals: dict[str, bytes]) -> bytes:
     if any(hashlib.sha256(originals[role]).hexdigest() != source_by_role[role]["sha256"] for role in ROLE_ORDER):
         raise ValueError("The saved PDF does not match this discharge revision.")
     names = {role: source_by_role[role]["label"] for role in ROLE_ORDER}
-    result = evaluate_discharge(case, originals, names)
+    result = evaluate_discharge(case, originals, names, _saved_ocr=case.get("ocr_pages"))
+    attestation = case.get("ocr_attestation")
+    if attestation:
+        source_revision = attestation.get("source_revision")
+        if type(source_revision) is not int or source_revision + 1 != revision:
+            raise ValueError("The scan verification does not belong to this reviewed discharge revision.")
+        result = _verified_ocr_evidence(result, attestation.get("reviewer"), attestation.get("pages"), source_revision)
     if result["status"] != "ready_for_review" or any(case.get(key) != result[key] for key in (
             "bill_total_minor", "currency", "source_reported_cap_minor", "source_reported_patient_share_minor", "payable_minor")):
         raise ValueError("The sources do not support a reviewed discharge packet.")
@@ -452,6 +534,14 @@ def discharge_packet_bytes(case: dict, originals: dict[str, bytes]) -> bytes:
         source = source_by_role[role]
         story.append(_paragraph(f"{TITLES[role]} / {name}, p. {source['page']} / {source['quote']}", body))
     story.append(_paragraph("The payer determines the final payable amount after reviewing the submitted claim.", body))
+    if attestation:
+        story.extend([PageBreak(), _paragraph("Scan verification record", title),
+                      _paragraph(f"Case {case['id']} / Reviewed claim revision {revision}", body),
+                      _paragraph(f"{attestation['reviewer']} compared each transcription with the original page in source revision {attestation['source_revision']}.", body)])
+        for page in result["ocr_attestation"]["pages"]:
+            story.extend([_paragraph(f"{names[page['role']]} / physical page {page['page']}", heading),
+                          _paragraph(f"Source PDF SHA-256 / {page['sha256']}", body),
+                          _paragraph(f"Transcript SHA-256 / {page['transcript_sha256']}", body)])
     buffer = io.BytesIO()
     SimpleDocTemplate(buffer, pagesize=A4, leftMargin=50, rightMargin=50, topMargin=49, bottomMargin=49,
                       title="Discharge claim review", author="ZeroUpfront", invariant=1).build(story)

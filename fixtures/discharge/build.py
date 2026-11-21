@@ -53,6 +53,8 @@ VARIANTS = {
     "unsupported_terms": ("letter", [(2, "Documented fixed patient share:", "Coinsurance: 20% after deductible")]),
     "excess_credit": ("bill", [(2, "Credit: CR01", EXHIBITS["bill"][1][2].replace("1,800", "3,900"))]),
     "date_mismatch": ("summary", [(1, "Discharge date:", "Discharge date: 2026-12-14")]),
+    "wrong_payer": ("letter", [(1, "Payer: ", "Payer: Orchard Travel Cover")]),
+    "credit_before_charge": ("bill", [(2, "Credit: CR01", EXHIBITS["bill"][1][2].replace("2026-12-13", "2026-12-11"))]),
     "unreadable_summary": ("summary", []),
 }
 
