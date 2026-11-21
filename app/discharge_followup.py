@@ -16,6 +16,8 @@ def is_generated(raw):
 
 
 def render(case, decision, text):
+    if not all(case.get(key) for key in ("facility", "insurer", "id", "revision", "encounter", "member")):
+        raise ValueError("The saved claim lacks correspondence identifiers. Verify the recipient and record an externally prepared PDF.")
     if not text.strip() or any(not ch.isprintable() and ch not in "\r\n\t" for ch in text):
         raise ValueError("Enter printable correspondence text.")
     if "[list only the relevant documents and page numbers]" in text:

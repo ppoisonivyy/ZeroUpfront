@@ -11,6 +11,7 @@ from unittest.mock import patch
 from fastapi.testclient import TestClient
 from pypdf import PdfReader, PdfWriter
 
+from app import discharge_followup
 from app.journey_examples import pdf
 from app.workspace_api import app
 from bench.case_revision import temporary_database
@@ -18,6 +19,11 @@ from bench.case_revision import temporary_database
 
 @unittest.skipUnless(shutil.which("initdb") and shutil.which("pg_ctl"), "requires disposable PostgreSQL")
 class PayerFollowupTests(unittest.TestCase):
+    def test_legacy_case_without_verified_recipient_can_use_external_correspondence(self):
+        old = {"id": "OLD", "revision": 1, "facility": "Example Hospital", "member": "EX-1", "encounter": "V-1"}
+        with self.assertRaisesRegex(ValueError, "externally prepared PDF"):
+            discharge_followup.render(old, {"id": 1, "data": {"outcome": "query", "reference": "Q-1"}}, "Answer.")
+
     def test_query_ownership_draft_binding_and_double_send(self):
         with ExitStack() as stack:
             dsn = stack.enter_context(temporary_database())
