@@ -14,8 +14,8 @@ type Assessment = { status: "cited" | "needs_review"; reason: string; findings: 
 const categories = { exchange_difference: "Exchange-rate differences", bank_fees: "Bank fees" };
 const payers = { insurer: "Insurer", patient: "Patient", hospital: "Hospital", other: "Another party", unclear: "Needs review" };
 
-function FeeReader({ path, revision, eventId, source, openLetter }: {
-  path: string; revision: number; eventId: number; source: Source; openLetter: (source: Source) => void;
+function FeeReader({ path, revision, eventId, source, openLetter, enabled }: {
+  enabled: boolean; path: string; revision: number; eventId: number; source: Source; openLetter: (source: Source) => void;
 }) {
   const [result, setResult] = useState<Assessment>();
   const [error, setError] = useState("");
@@ -46,8 +46,10 @@ function FeeReader({ path, revision, eventId, source, openLetter }: {
   return <section className="guarantee-fees" aria-label="Guarantee fee terms">
     <h3>Who covers the FX costs?</h3>
     <button type="button" className="text-action" onClick={() => openLetter(source)}><FileText size={14} />Open original payer letter</button>
-    <p>Reading the terms sends the original payer PDF to OpenAI to identify who covers exchange differences and bank fees in Thai or English.</p>
-    <button type="button" className="secondary" disabled={busy || !!result} onClick={() => void read()}>{busy ? "Reading the payer letter…" : "Read fee terms with OpenAI"}</button>
+    {enabled && <>
+      <p>Reading the terms sends the original payer PDF to OpenAI to identify who covers exchange differences and bank fees in Thai or English.</p>
+      <button type="button" className="secondary" disabled={busy || !!result} onClick={() => void read()}>{busy ? "Reading the payer letter…" : "Read fee terms with OpenAI"}</button>
+    </>}
     {error && <p role="alert" className="error-message">{error}</p>}
     {result && <div aria-live="polite" className="guarantee-fee-results">
       <strong>{result.status === "needs_review" ? "Terms need staff review" : "Check the cited terms"}</strong>
@@ -71,5 +73,5 @@ export function GuaranteeFees({ claim, openLetter }: { claim: DischargeClaim; op
   if (!reply?.source_url || (reply.data.outcome !== "confirmed" && reply.data.outcome !== "partial")) return null;
   const source = { role: "payer_decision", label: "Payer decision letter", url: reply.source_url, page: 1, quote: "" };
   return <FeeReader key={[claim.id, claim.revision, reply.id].join("/")} path={claimPath(claim.id) + "/guarantee-fees"}
-    revision={claim.revision} eventId={Number(reply.id)} source={source} openLetter={openLetter} />;
+    enabled={claim.guarantee_fee_read_enabled === true} revision={claim.revision} eventId={Number(reply.id)} source={source} openLetter={openLetter} />;
 }

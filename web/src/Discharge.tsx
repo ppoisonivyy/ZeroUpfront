@@ -10,13 +10,14 @@ import {
 } from "lucide-react";
 import { ClaimFindings } from "./ClaimFindings";
 import { ClaimPill, DischargeList } from "./DischargeQueue";
-import { api, displayDate, RequestError, type Source } from "./api";
+import { api, caseHref, displayDate, RequestError, type Source } from "./api";
 import { AttachmentList } from "./Attachments";
 import { SourceView } from "./SourceView";
 import { RecordedEvent } from "./CaseWorkflow";
 import { ClaimMutation, ClaimUpload } from "./DischargeForms";
 import DischargeOcr from "./DischargeOcr";
 import { GuaranteeFees } from "./GuaranteeFees";
+import { PatientStatement } from "./PatientStatement";
 import { PattayaSettlement } from "./PattayaSettlement";
 import { useStaffSession } from "./Auth";
 import { PayerSecondRead } from "./PayerSecondRead";
@@ -143,11 +144,12 @@ function ClaimDetail({
       />
     );
   if (
-    ["submission", "reply", "payment", "approve"].includes(panel) &&
+    ["submission", "reply", "payment", "supplement", "approve"].includes(panel) &&
     canRecord(panel)
   )
     return (
       <ClaimMutation
+        key={[claim.id, claim.revision, claim.workflow_version, panel].join("/")}
         claim={claim}
         pinned={pinned}
         action={panel as ClaimAction | "approve"}
@@ -276,9 +278,11 @@ function ClaimDetail({
       </div>
       {claim.prior_case_id && (
         <p className="prior-link">
-          <a href={"#/cases/" + encodeURIComponent(claim.prior_case_id)}>
-            View linked pre-arrival case
-          </a>
+          {claim.prior_revision && <>
+            <a href={caseHref(claim.prior_case_id, claim.prior_revision)}>Pre-arrival record linked to this claim · R{claim.prior_revision}</a>
+            {" · "}
+          </>}
+          <a href={caseHref(claim.prior_case_id)}>Current pre-arrival record</a>
         </p>
       )}
       {pinned && (
@@ -452,6 +456,10 @@ function ClaimDetail({
           />
         )}
       </div>
+      {!pinned && claim.patient_statement_facts && (
+        <PatientStatement key={claim.id + "/" + claim.revision + "/" + claim.workflow_version}
+          claim={claim} facts={claim.patient_statement_facts} onUpdated={onUpdated} reload={reload} />
+      )}
       <section className="panel workflow">
         <div className="panel-heading">
           <h2>
@@ -473,6 +481,10 @@ function ClaimDetail({
               . Review prior revisions to reconcile them.
             </p>
           )}
+          {claim.follow_up && <p className="notice">
+            {claim.follow_up.assigned ? `Follow-up owner: ${claim.follow_up.owner} · Due ${claim.follow_up.due}` :
+              "Follow-up unassigned. Record an owner and due date when preparing the response."}
+          </p>}
           {claim.payer_decision ||
           Object.keys(claim.paid_by_currency || {}).length > 0 ? (
             <dl className="settlement-summary">
@@ -532,6 +544,15 @@ function ClaimDetail({
                   delete data.fee_minor;
                   delete data.reference;
                 }
+                if (event.kind === "patient_statement") {
+                  return <RecordedEvent key={event.id} event={{ ...event, data: {
+                    revision: data.revision, contact: data.contact, next_update: data.next_update,
+                    patient_share: minorMoney(typeof data.patient_share_minor === "number" ? data.patient_share_minor : null, String(data.currency)),
+                    approved_by_insurer: minorMoney(typeof data.approved_minor === "number" ? data.approved_minor : null, String(data.approved_currency)),
+                    ...(typeof data.patient_fx_minor === "number" && { patient_fx_charge: minorMoney(data.patient_fx_minor, "THB") }),
+                    ...(typeof data.insurer_outstanding_minor === "number" && { still_owed_by_insurer: minorMoney(data.insurer_outstanding_minor, "THB") }),
+                  } }} index={i} />;
+                }
                 return <RecordedEvent key={event.id} event={{ ...event, data }} index={i} />;
               })}
             </ol>
@@ -544,11 +565,7 @@ function ClaimDetail({
           {!pattayaExample && claim.allowed_actions.some(canRecord) && (
             <div className="actions">
               {claim.allowed_actions
-                .filter(
-                  (a) =>
-                    canRecord(a) &&
-                    ["submission", "reply", "payment"].includes(a),
-                )
+                .filter((a): a is ClaimAction => a !== "patient_statement" && canRecord(a))
                 .map((a, i) => (
                   <button
                     className={i === 0 ? "primary" : "secondary"}
@@ -559,6 +576,7 @@ function ClaimDetail({
                       {
                         submission: "Record claim submission",
                         reply: "Record payer reply",
+                        supplement: claim.insurer_status === "query" ? "Prepare query answer" : "Prepare appeal",
                         payment: "Record payment received",
                       }[a]
                     }

@@ -89,6 +89,9 @@ export type CaseDetail = CaseSummary & {
   } | null;
 };
 
+export const caseHref = (id: string, revision?: number) =>
+  "#/cases/" + encodeURIComponent(id) + (revision ? "?revision=" + revision : "");
+
 export const statuses: Record<PacketStatus, string> = {
   needs_itemization: "Missing itemization",
   possible_exclusion: "Possible exclusion",

@@ -1,3 +1,4 @@
+import { useStaffSession } from "./Auth";
 import { useRef, useState } from "react";
 import { FilePlus2, Files, ClipboardList } from "lucide-react";
 import { api, type CaseDetail } from "./api";
@@ -21,6 +22,7 @@ export const intakeDocuments = [
 ] as const;
 
 export function NewCase() {
+  const { hosted_ocr_enabled } = useStaffSession();
   const [busy, setBusy] = useState(false),
     [error, setError] = useState("");
   const operation = useRef(crypto.randomUUID());
@@ -101,11 +103,11 @@ export function NewCase() {
               />
             </label>
           ))}
-          <label className="check-field">
+          {hosted_ocr_enabled && <label className="check-field">
             <input type="checkbox" name="ocr" value="true" />
             Allow OpenAI to process scanned pages of these files if OCR is
             needed.
-          </label>
+          </label>}
           <label className="check-field">
             <input type="checkbox" name="confirmed" value="true" required />I
             verified that these documents belong to the planned encounter and

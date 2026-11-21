@@ -44,6 +44,9 @@ def decide(action):
 
 
 class PattayaAgentTests(unittest.TestCase):
+    def setUp(self):
+        self.enterContext(patch.object(agents, "time", return_value=900))
+
     def test_fixed_guarantee_spot_or_forward_and_separate_receipts(self):
         self.assertEqual(agents.review(claim())["next_action"], "book")
         for instrument, usd in [("spot", 702941), ("forward", 686782)]:
@@ -71,14 +74,15 @@ class PattayaAgentTests(unittest.TestCase):
     def test_saved_tickets_and_legacy_tickets_keep_their_executed_price(self):
         original = agents.quotes()["forward"]
         original_schema = {"instrument", "rate_thb_per_usd", "trade_date", "value_date", "hospital_due_date", "usd_minor"}
-        for legacy in (False, True):
-            with self.subTest(legacy=legacy):
+        legacy_quote = agents._quote("forward", "34.80", original["trade_date"], original["value_date"], original["hospital_due_date"])
+        for saved, expected in [(original, original), (legacy_quote, legacy_quote),
+                                ({k: original[k] for k in original_schema}, legacy_quote)]:
+            with self.subTest(version=saved.get("quote_id", "unversioned")):
                 case = claim("forward", 23870000)
-                if legacy:
-                    case["events"][1]["data"] = {key: original[key] for key in original_schema}
+                case["events"][1]["data"] = saved
                 with patch.dict(agents.BANK_TERMS, forward=("35.00", "2026-11-27")):
                     report = agents.review(case)
-                self.assertEqual(report["booked_quote"], original)
+                self.assertEqual(report["booked_quote"], expected)
                 self.assertEqual(report["booked_quote"]["usd_minor"], 686782)
                 current = next(q for q in report["quotes"] if q["instrument"] == "forward")
                 self.assertEqual(current["usd_minor"], 682857)

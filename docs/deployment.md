@@ -1,6 +1,6 @@
 # Deploy the staff workspace
 
-The release serves the React app, the PDF viewer and the FastAPI API from one origin. Each hospital gets a dedicated PostgreSQL database. Hospital coordinators work within their institution. Its insurer accounts can read submitted pre-arrival packets addressed to their payer. A clean staff installation starts with empty queues. The published hackathon walkthrough uses a private loopback instance with synthetic examples. A container is available to build for a separately provisioned host. [Local demo](../README.md#run-the-demo)
+The release serves the React app, PDF viewer and FastAPI API from one origin. Each hospital has a dedicated PostgreSQL database. Coordinators review its cases, insurer reviewers read packets addressed to their payer, and finance accounts read the ledger for assigned discharge cases. A clean installation starts with empty queues. The hackathon demo runs on loopback with synthetic examples. [Run the demo](../README.md#run-the-demo)
 
 ## Build and verify
 
@@ -26,6 +26,19 @@ docker exec -it zeroupfront python -m app.staff_access add coordinator --name "C
 ```
 
 The account manager prompts for a passphrase. Use `reset` with `--name` to rotate it and revoke sessions, or `disable USERNAME` to disable access. Pass a staff member's own account at enrollment so the review ledger records the authenticated username. A session expires after eight hours.
+
+Create a restricted finance account and assign the discharge case ID from the coordinator worklist. Run the commands against the chosen hospital database. Replace the example case ID with the actual one.
+
+```sh
+python -m app.staff_access add finance-lee --name "Lee, hospital finance" --role finance
+python -m app.staff_access assign finance-lee --case D-CB-PATTAYA
+```
+
+To remove this assignment, run `python -m app.staff_access unassign finance-lee --case D-CB-PATTAYA`.
+
+Finance sign-in opens the assigned reconciliation ledger. It shows the written payer amount, recorded credits, outstanding amount and latest ledger reference for each revision. A new account has no assignments, and unassigning a case takes effect on the next request. Finance accounts cannot fetch clinical sources, run AI, export packets or change a claim. The hospital coordinator records the evidence through the existing claim workflow. Existing staff accounts keep the coordinator role. Resetting a passphrase preserves the role unless the administrator explicitly supplies `--role`.
+
+Each hospital’s `zeroupfront_demo.access_audit` records assigned ledger rows read, denied finance capabilities, and successful signed-in case-detail, original, export and AI-review route access. It stores the staff username, capability, outcome, time and, for released records, the case reference and available revision. The access event records the API result. Provider transmission and separate downstream recipient/disclosure records need their own evidence.
 
 Expose the service behind a TLS reverse proxy that preserves the original host and forwards the https scheme. Set `FORWARDED_ALLOW_IPS` to the trusted proxy address before starting the service. Restrict direct access to the app port to the proxy. Set an ingress body limit consistent with the 97 MiB aggregate application limit. Raw and parsed files can briefly occupy nearly 194 MiB per maximum-size upload. The example 256 MiB temporary mount is sized for a single such upload. Bound concurrent uploads and read time at ingress, and increase scratch and container memory together when admitting several uploads. Memory-backed scratch counts toward the container memory budget. Set the load balancer liveness path to `/healthz` and its database readiness path to `/readyz`. Both return 204 when healthy.
 

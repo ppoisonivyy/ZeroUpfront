@@ -1,14 +1,22 @@
 """Deployment-owned hospital directory and request context for dedicated databases."""
-from contextlib import AsyncExitStack, asynccontextmanager
+from contextlib import AsyncExitStack, ExitStack, asynccontextmanager, contextmanager
 from contextvars import ContextVar
 from dataclasses import dataclass, field
 import json
 import os
 import re
+from typing import Literal, get_args
+from urllib.parse import urlsplit
 
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
+from openai import DefaultHttpxClient
 import psycopg
 from psycopg.conninfo import conninfo_to_dict
+
+
+OpenAIUse = Literal["hosted_ocr", "payer_second_read", "guarantee_fees"]
+OPENAI_USES = get_args(OpenAIUse)
+OPENAI_BASE = "https://api.openai.com/v1"
 
 
 @dataclass(frozen=True)
@@ -16,6 +24,8 @@ class Hospital:
     slug: str
     name: str
     dsn: str = field(repr=False)
+    approved_openai_uses: frozenset[OpenAIUse] = frozenset()
+    approved_openai_base_url: str = OPENAI_BASE
 
     @property
     def prefix(self):
@@ -23,6 +33,44 @@ class Hospital:
 
 
 current_hospital = ContextVar("current_hospital", default=None)
+
+
+def hospital_allows(purpose: OpenAIUse):
+    hospital = current_hospital.get()
+    if hospital is None:
+        # The single-workspace deployment continues to use its own feature switches.
+        return True
+    actual_base = os.environ.get("OPENAI_BASE_URL", OPENAI_BASE).rstrip("/")
+    return purpose in hospital.approved_openai_uses and actual_base == hospital.approved_openai_base_url
+
+
+def require_disclosure(purpose: OpenAIUse):
+    if not hospital_allows(purpose):
+        raise HTTPException(403, "This external processing is not approved for this hospital and provider.")
+
+
+@contextmanager
+def disclosure_client(factory, purpose: OpenAIUse, **options):
+    """Bind each mounted hospital's document request to its approved receiver."""
+    require_disclosure(purpose)
+    hospital = current_hospital.get()
+    with ExitStack() as stack:
+        if hospital is not None:
+            transport = DefaultHttpxClient(follow_redirects=False)
+            stack.callback(transport.close)
+            options.update(base_url=hospital.approved_openai_base_url, http_client=transport)
+        yield stack.enter_context(factory(**options))
+
+
+def hosted_ocr_enabled():
+    return (hospital_allows("hosted_ocr") and os.getenv("WORKSPACE_ENABLE_OCR") == "1"
+            and bool(os.getenv("OPENAI_API_KEY", "").strip()))
+
+
+def require_hosted_ocr():
+    require_disclosure("hosted_ocr")
+    if not hosted_ocr_enabled():
+        raise HTTPException(503, "Cloud OCR is unavailable on this installation.")
 
 
 def hospital_path(path):
@@ -67,8 +115,26 @@ def configured_hospitals():
     for slug, config in registry.items():
         if not re.fullmatch(r"[a-z0-9]+(?:-[a-z0-9]+)*", slug) or len(slug) > 63:
             raise ValueError("Use a lowercase hospital slug of up to 63 letters, digits and single hyphens.")
-        if not isinstance(config, dict) or set(config) != {"hospital_name", "database_url_env"}:
+        required = {"hospital_name", "database_url_env"}
+        permitted = required | {"approved_openai_uses", "approved_openai_base_url"}
+        if not isinstance(config, dict) or not required <= config.keys() <= permitted:
             raise ValueError(f"Hospital {slug} requires hospital_name and database_url_env.")
+        uses = config.get("approved_openai_uses", [])
+        if (not isinstance(uses, list) or any(use not in OPENAI_USES for use in uses)
+                or len(set(uses)) != len(uses)):
+            raise ValueError(f"Hospital {slug} has an invalid or duplicate approved OpenAI use.")
+        endpoint = config.get("approved_openai_base_url", OPENAI_BASE)
+        if not isinstance(endpoint, str) or not endpoint.isprintable() or any(c.isspace() for c in endpoint):
+            raise ValueError(f"Hospital {slug} requires an HTTPS provider base URL.")
+        try:
+            parsed = urlsplit(endpoint)
+            valid_endpoint = (parsed.scheme == "https" and parsed.hostname
+                              and parsed.username is None and parsed.password is None
+                              and not (parsed.query or parsed.fragment))
+        except ValueError:
+            valid_endpoint = False
+        if not valid_endpoint:
+            raise ValueError(f"Hospital {slug} requires an HTTPS provider base URL.")
         name, env_name = config["hospital_name"], config["database_url_env"]
         if not isinstance(name, str) or not name.strip() or len(name) > 120 or not name.isprintable():
             raise ValueError(f"Hospital {slug} requires a printable display name of up to 120 characters.")
@@ -87,7 +153,7 @@ def configured_hospitals():
         if target in targets:
             raise ValueError("Each hospital requires a separate PostgreSQL database.")
         targets.add(target)
-        hospitals.append(Hospital(slug, name.strip(), dsn))
+        hospitals.append(Hospital(slug, name.strip(), dsn, frozenset(uses), endpoint.rstrip("/")))
     return hospitals
 
 

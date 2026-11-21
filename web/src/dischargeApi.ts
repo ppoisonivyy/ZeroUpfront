@@ -8,7 +8,19 @@ export const dischargeRoles = {
   records: "Supporting records",
 };
 export type DischargeRole = keyof typeof dischargeRoles;
-export type ClaimAction = "submission" | "reply" | "payment";
+export type ClaimAction = "submission" | "reply" | "payment" | "supplement";
+export type PatientStatementFacts = {
+  case_id: string;
+  hospital: string;
+  revision: number;
+  insurer_status: string;
+  currency: string | null;
+  patient_share_minor: number | null;
+  approved_minor: number | null;
+  approved_currency: string | null;
+  patient_fx_minor: number | null;
+  insurer_outstanding_minor: number | null;
+};
 export type ClaimFinding = {
   code: string;
   severity: string;
@@ -18,6 +30,7 @@ export type ClaimFinding = {
 };
 export type DischargeClaim = {
   ai_review_enabled?: boolean;
+  guarantee_fee_read_enabled?: boolean;
   staff_practice_hospital?: string | null;
   example_scenario?: string | null;
   id: string;
@@ -39,14 +52,22 @@ export type DischargeClaim = {
   settlement_status: string;
   case_paid_by_currency?: Record<string, number>;
   paid_by_currency: Record<string, number>;
+  follow_up?: { assigned: boolean; owner: string | null; due: string | null } | null;
   payer_decision: {
     outcome: string;
+    owner?: string;
+    follow_up_date?: string;
     amount_minor?: number;
     currency?: string;
   } | null;
   admission_date: string;
   discharge_date: string;
   prior_case_id?: string | null;
+  prior_revision?: number | null;
+  patient_statement_facts?: PatientStatementFacts | null;
+  reviewed_patient_statement?: (PatientStatementFacts & {
+    contact: string; next_update: string; reviewer: string; reviewed_at: string;
+  }) | null;
   currency: string | null;
   bill_total_minor: number | null;
   source_reported_cap_minor: number | null;
@@ -59,7 +80,7 @@ export type DischargeClaim = {
   reviewer: string | null;
   insurer_status: string;
   workflow_version: number;
-  allowed_actions: ClaimAction[];
+  allowed_actions: (ClaimAction | "patient_statement")[];
   events: (Omit<WorkflowEvent, "kind"> & { kind: string })[];
 };
 export type DischargeQueue = "all" | "needs" | "ready" | "payer";
@@ -95,6 +116,8 @@ export const claimPayerStatus = (status: string) =>
     not_sent: "Awaiting submission",
     submitted: "Sent to insurer",
     query: "Insurer query",
+    supplement_sent: "Query answered · awaiting insurer",
+    appeal_sent: "Appeal sent · awaiting insurer",
     partial: "Partially confirmed",
     confirmed: "Confirmed by insurer",
     declined: "Declined by insurer",

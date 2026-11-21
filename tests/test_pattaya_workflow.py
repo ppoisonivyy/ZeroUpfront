@@ -39,6 +39,9 @@ class PattayaExhibitsTests(unittest.TestCase):
 
 @unittest.skipUnless(shutil.which("initdb") and shutil.which("pg_ctl"), "requires disposable PostgreSQL")
 class PattayaWorkflowTests(unittest.TestCase):
+    def setUp(self):
+        self.enterContext(patch.object(pattaya_agents, "time", return_value=900))
+
     @classmethod
     def setUpClass(cls):
         stack = ExitStack()
@@ -86,6 +89,28 @@ class PattayaWorkflowTests(unittest.TestCase):
         self.assertEqual(report["outstanding_minor"], 30000)
         self.assertEqual(self.action(path, "record_topup", 4).json()["settlement_status"], "paid")
 
+    def test_expired_quote_and_recovery_when_booking_response_is_lost(self):
+        path, _ = self.new()
+        with patch.object(pattaya_agents, "time", return_value=599):
+            first = self.review(path)["quotes"][0]
+        with patch.object(pattaya_agents, "time", return_value=600):
+            expired = self.action(path, "book_spot", 2, quote_id=first["quote_id"])
+            self.assertEqual(expired.status_code, 409)
+            self.assertEqual(self.review(path)["next_action"], "book")
+            fresh = self.review(path)["quotes"][0]
+            self.assertNotEqual(first["quote_id"], fresh["quote_id"])
+            self.assertEqual(self.action(path, "book_spot", 2, quote_id=fresh["quote_id"]).status_code, 200)
+        # The desk did not receive the success response. Always inspect the saved trade first.
+        with patch.object(pattaya_agents, "time", return_value=1200):
+            recovered = self.client.get(path).json()
+            ticket = recovered["events"][-1]["data"]
+            self.assertEqual(ticket["bank_status"], "confirmed")
+            self.assertTrue(ticket["bank_trade_id"].startswith("SIM-FX-"))
+            self.assertEqual(self.review(path)["booked_quote"], fresh)
+            retried = self.action(path, "book_spot", 2, quote_id=fresh["quote_id"]).json()
+            self.assertEqual(recovered["events"], retried["events"])
+            self.assertEqual(retried["paid_by_currency"], {})
+
     def test_both_instruments_reach_paid_only_after_the_insurer_credit(self):
         for kind, cents in (("spot", 702941), ("forward", 686782)):
             with self.subTest(kind=kind):
@@ -114,6 +139,8 @@ class PattayaWorkflowTests(unittest.TestCase):
                 credit = self.action(path, "record_short_credit", 3)
                 self.assertEqual(credit.status_code, 200, credit.text)
                 self.assertEqual(credit.json()["settlement_status"], "partially_paid")
+                posting = credit.json()["events"][-1]
+                self.assertEqual(posting["data"]["shortfall_follow_up_owner"], posting["actor"])
                 report = self.review(path)
                 self.assertEqual((report["outstanding_minor"], report["shortfall_owner"], report["patient_fx_minor"]),
                                  (30_000, "insurer", 0))
@@ -220,7 +247,7 @@ class PattayaWorkflowTests(unittest.TestCase):
                                           json={"confirmed": True}).status_code, 404)
         with patch.dict(os.environ, WORKSPACE_AUTH_MODE="staff"):
             self.assertEqual(self.client.get(path + "/pattaya?revision=1").status_code, 401)
-            with patch("app.staff_access._staff", return_value=("finance", "Hospital finance", None)):
+            with patch("app.staff_access._staff", return_value=("desk", "Hospital coordinator", "coordinator", None)):
                 self.assertEqual(self.action(path, "record_short_credit", 3).status_code, 404)
                 self.assertEqual(self.client.get(path + "/pattaya?revision=1").status_code, 404)
                 self.assertEqual(self.client.get(path + "/pattaya/bank-documents/initial_credit?revision=1").status_code, 404)

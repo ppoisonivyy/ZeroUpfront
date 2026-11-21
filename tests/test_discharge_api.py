@@ -13,6 +13,7 @@ import shutil
 import unittest
 from unittest.mock import patch
 
+import psycopg
 from fastapi.testclient import TestClient
 from pypdf import PdfReader
 from PIL import Image, ImageDraw
@@ -352,6 +353,99 @@ class DischargeApiTests(unittest.TestCase):
         self.assertEqual(newer.json()["paid_by_currency"], {})
         self.assertEqual(self.client.get(archived["source_url"]).content, sent_pdf)
         self.assertEqual(self.client.get(path + "/export?revision=1").status_code, 412)
+
+    def test_follow_up_is_bound_to_written_decision_and_uploaded_revision(self):
+        path, _ = self.new("aligned")
+        self.approve(path, 1).raise_for_status()
+        self.event(path, 1, 0, "submission", {"reference": "S-1", "channel": "Portal"}).raise_for_status()
+        written = {"confirmed": "true", "terms": "Please review the attached terms.", "reference": "Q-1",
+                   "owner": "Evening coordinator", "follow_up_date": "2026-11-26"}
+        attachment = pdf(["Synthetic outbound packet, page 1."])
+        outgoing = {"confirmed": "true", "reference": "OUT-1", "channel": "Payer portal",
+                    "owner": "Weekend desk", "follow_up_date": "2026-11-27"}
+        self.assertEqual(self.event(path, 1, 1, "supplement", outgoing, attachment).status_code, 409)
+        query = self.event(path, 1, 1, "reply", written | {"outcome": "query"}, pdf(["Query."])).json()
+        self.assertEqual(query["payer_decision"]["owner"], written["owner"])
+        self.assertEqual(self.event(path, 1, 2, "supplement", outgoing).status_code, 422)
+        self.assertEqual(self.event(path, 1, 2, "supplement", outgoing | {"follow_up_date": "2026-02-31"}, attachment).status_code, 422)
+        sent = self.event(path, 1, 2, "supplement", outgoing, attachment).json()
+        recorded = sent["events"][-1]
+        self.assertEqual(sent["insurer_status"], "supplement_sent")
+        listing = self.client.post(ROOT + "/worklist/search", json={"search": sent["id"]}).json()["items"]
+        self.assertEqual(listing[0]["insurer_status"], "supplement_sent")
+        self.assertEqual((recorded["data"]["payer_event_id"], recorded["data"]["source_revision"]),
+                         (query["events"][-1]["id"], 1))
+        self.assertEqual(recorded["data"]["owner"], "Weekend desk")
+        self.assertEqual(self.client.get(recorded["source_url"]).content, attachment)
+        self.assertEqual(self.event(path, 1, 2, "supplement", outgoing, attachment).status_code, 409)
+        self.assertEqual(self.event(path, 1, 3, "supplement", outgoing, attachment).status_code, 409)
+        partial = self.event(path, 1, 3, "reply", written | {"outcome": "partial", "amount": "1200", "currency": "THB"},
+                             pdf(["Partial approval."])).json()
+        self.assertIn("supplement", partial["allowed_actions"])
+        appeal = self.event(path, 1, 4, "supplement", outgoing | {"reference": "OUT-2"}, attachment).json()
+        self.assertEqual(appeal["events"][-1]["data"]["response_kind"], "Appeal")
+        self.assertEqual(appeal["insurer_status"], "appeal_sent")
+        self.assertEqual(appeal["payer_decision"]["amount_minor"], 120000)
+        self.assertIn("payment", appeal["allowed_actions"])
+        approved = self.event(path, 1, 5, "reply", written | {"outcome": "confirmed", "amount": "1500", "currency": "THB"},
+                              pdf(["Revised approval."])).json()
+        self.assertNotIn("supplement", approved["allowed_actions"])
+        self.assertEqual([e["data"]["outcome"] for e in approved["events"] if e["kind"] == "reply"],
+                         ["query", "partial", "confirmed"])
+
+    def test_statement_requires_human_and_preserves_unknowns_and_reviewed_snapshot(self):
+        path, case = self.new("aligned")
+        confirmation = {"confirmed": "true", "contact": "Hospital billing desk", "next_update": "2026-11-27"}
+        self.assertIsNone(case["patient_statement_facts"])
+        self.assertEqual(self.event(path, 1, 0, "patient_statement", confirmation).status_code, 409)
+        self.approve(path, 1).raise_for_status()
+        self.assertEqual(self.event(path, 1, 0, "patient_statement", confirmation | {"confirmed": "false"}).status_code, 422)
+        verified = self.event(path, 1, 0, "patient_statement", confirmation).json()
+        original = verified["events"][-1]["data"]
+        self.assertEqual((original["hospital"], original["case_id"], original["revision"]),
+                         (case["facility"], case["id"], 1))
+        self.assertIsNone(original["approved_minor"])
+        self.assertIsNone(original["patient_fx_minor"])
+        self.assertEqual(verified["reviewed_patient_statement"]["reviewer"], "Hospital finance")
+        self.assertFalse({"member", "encounter", "procedure", "terms", "sources"} & original.keys())
+        self.assertEqual(self.event(path, 1, 0, "patient_statement", confirmation).status_code, 409)
+        sent = self.event(path, 1, 1, "submission", {"reference": "S-1", "channel": "Portal"}).json()
+        self.assertIsNone(sent["reviewed_patient_statement"])
+        self.assertEqual(sent["events"][0]["data"], original)
+
+    def test_legacy_statement_gets_identity_from_its_own_reviewed_revision(self):
+        path, case = self.new("aligned")
+        self.approve(path, 1).raise_for_status()
+        confirmation = {"confirmed": "true", "contact": "Billing", "next_update": "2026-11-27"}
+        self.event(path, 1, 0, "patient_statement", confirmation).raise_for_status()
+        # Previously reviewed statements predate the hospital/case fields in the saved snapshot.
+        with psycopg.connect(os.environ["DATABASE_URL"]) as db:
+            db.execute("""UPDATE zeroupfront_demo.discharge_events SET data=data-'case_id'-'hospital'
+                          WHERE case_id=%s AND revision=1 AND kind='patient_statement'""", (case["id"],))
+        older = self.client.get(path).json()["reviewed_patient_statement"]
+        self.assertEqual((older["hospital"], older["case_id"]), (case["facility"], case["id"]))
+
+    def test_pattaya_statement_preserves_insurer_shortfall_and_invalidates_after_topup(self):
+        path, case = self.new("pattaya_fx")
+        quotes = self.client.get(path + "/pattaya?revision=1").json()["quotes"]
+        def action(kind, case, **fields):
+            res = self.client.post(path + "/pattaya/actions", headers=match(1), json={"action": kind,
+                                   "confirmed": True, "workflow_version": case["workflow_version"], **fields})
+            self.assertEqual(res.status_code, 200, res.text)
+            return res.json()
+        case = action("book_spot", case, quote_id=next(q["quote_id"] for q in quotes if q["instrument"] == "spot"))
+        case = action("record_short_credit", case, bank_document="initial_credit")
+        response = self.event(path, 1, case["workflow_version"], "patient_statement",
+                              {"confirmed": "true", "contact": "Hospital billing desk", "next_update": "2026-12-02"})
+        self.assertEqual(response.status_code, 200, response.text)
+        reviewed = response.json()
+        facts = reviewed["reviewed_patient_statement"]
+        self.assertEqual((facts["patient_fx_minor"], facts["patient_share_minor"], facts["insurer_outstanding_minor"]),
+                         (0, 0, 30000))
+        final = action("record_topup", reviewed, bank_document="topup_credit")
+        self.assertIsNone(final["reviewed_patient_statement"])
+        self.assertEqual(final["patient_statement_facts"]["insurer_outstanding_minor"], 0)
+        self.assertEqual(final["events"][-2]["data"]["insurer_outstanding_minor"], 30000)
 
     def test_intake_retry_key_is_scoped_to_the_original_discharge_manifest(self):
         meta, raw, names = load_discharge_fixture()
