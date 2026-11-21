@@ -1,0 +1,115 @@
+{
+  "workload": "authenticated reviewed PDF export",
+  "clients": 8,
+  "workers": 4,
+  "postgres_cpu_quota": 2,
+  "container_memory_mib_each": 1024,
+  "requests_per_round": 96,
+  "docker_engine": "29.9.3",
+  "docker_vm_cpus": 8,
+  "api_image_id": "sha256:ec34ca57372793fa0a132317002d4f115fbbe03b37c0e3bcb78164ab1ded2f39",
+  "postgres_image_id": "sha256:5a5a84b19854a9ffaa54082c166ff4ec27473a361e496e5ea167f298f2da9722",
+  "rounds": [
+    {
+      "round": 1,
+      "api_cpu_quota": 1,
+      "requests": 96,
+      "p50_ms": 201.74,
+      "p95_ms": 309.05,
+      "requests_per_s": 36.85
+    },
+    {
+      "round": 1,
+      "api_cpu_quota": 2,
+      "requests": 96,
+      "p50_ms": 87.85,
+      "p95_ms": 142.99,
+      "requests_per_s": 87.5
+    },
+    {
+      "round": 1,
+      "api_cpu_quota": 4,
+      "requests": 96,
+      "p50_ms": 49.85,
+      "p95_ms": 74.94,
+      "requests_per_s": 149.73
+    },
+    {
+      "round": 2,
+      "api_cpu_quota": 2,
+      "requests": 96,
+      "p50_ms": 93.21,
+      "p95_ms": 112.41,
+      "requests_per_s": 86.89
+    },
+    {
+      "round": 2,
+      "api_cpu_quota": 4,
+      "requests": 96,
+      "p50_ms": 47.56,
+      "p95_ms": 78.54,
+      "requests_per_s": 150.92
+    },
+    {
+      "round": 2,
+      "api_cpu_quota": 1,
+      "requests": 96,
+      "p50_ms": 200.08,
+      "p95_ms": 307.09,
+      "requests_per_s": 38.45
+    },
+    {
+      "round": 3,
+      "api_cpu_quota": 4,
+      "requests": 96,
+      "p50_ms": 47.3,
+      "p95_ms": 91.34,
+      "requests_per_s": 141.58
+    },
+    {
+      "round": 3,
+      "api_cpu_quota": 1,
+      "requests": 96,
+      "p50_ms": 199.74,
+      "p95_ms": 308.66,
+      "requests_per_s": 37.9
+    },
+    {
+      "round": 3,
+      "api_cpu_quota": 2,
+      "requests": 96,
+      "p50_ms": 90.94,
+      "p95_ms": 157.93,
+      "requests_per_s": 87.96
+    }
+  ],
+  "postgres_version": "18.6 (Debian 18.6-1.pgdg13+2)",
+  "cells": [
+    {
+      "api_cpu_quota": 1,
+      "requests": 288,
+      "p50_ms": 200.26,
+      "p95_ms": 308.66,
+      "requests_per_s": 37.72
+    },
+    {
+      "api_cpu_quota": 2,
+      "requests": 288,
+      "p50_ms": 91.28,
+      "p95_ms": 142.99,
+      "requests_per_s": 87.45
+    },
+    {
+      "api_cpu_quota": 4,
+      "requests": 288,
+      "p50_ms": 48.52,
+      "p95_ms": 81.16,
+      "requests_per_s": 147.29
+    }
+  ],
+  "auth_checks": {
+    "anonymous_export": 401,
+    "logged_in_mode": "staff",
+    "logged_out_export": 401
+  }
+}
