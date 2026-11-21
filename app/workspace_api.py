@@ -13,6 +13,8 @@ from openai import APIError, OpenAI
 from pydantic import BaseModel, ConfigDict, Field, StringConstraints, field_validator
 
 from app import workspace_store as store
+from app import discharge_store
+from app.discharge_api import router as discharge_router
 from app.workspace_http_common import INTAKE_BYTES, _actor, _pdf, _read_upload, _revision
 from app.case_workflow import validate_attachment
 from app.staff_access import install_access, initialize_access
@@ -133,6 +135,7 @@ async def lifespan(app):
         estimate = (FIXTURES / "cases" / case_id / "estimate.pdf").read_bytes()
         seeds.append((case, _documents(case_id, estimate)))
     store.initialize(dsn, seeds)
+    discharge_store.initialize(dsn)
     initialize_access(dsn)
     app.state.dsn = dsn
     yield
@@ -140,6 +143,7 @@ async def lifespan(app):
 
 app = FastAPI(title="ZeroUpfront coordinator API", version="1.1", lifespan=lifespan)
 install_access(app)
+app.include_router(discharge_router)
 
 
 @app.exception_handler(store.WorkspaceError)
