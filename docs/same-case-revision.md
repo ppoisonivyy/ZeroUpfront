@@ -28,6 +28,26 @@ Two database connections and event barriers controlled completion order where ne
 
 All **280 repeated scenario trials and the additional live scan trial** passed. In the live trial, the V1 worker had already claimed its job and extracted the plan. The test held it at that point until the replacement was uploaded, checked and visible. It then transcribed the original image with Astra and completed V1. This exercises a genuinely late cloud result under a controlled schedule. The benchmark does not estimate how often this race occurs in a hospital.
 
+## Replacement during an outstanding cloud request
+
+A separate trial sent the original image-only estimate to Astra before accepting the replacement. The driver observed the HTTP/1.1 POST body write complete and the response-header read begin. It then submitted the real revised Z002 PDF while the original worker continued normally on its own connection. The transport trace excluded any proxy handshake. The clock below is local monotonic elapsed time from the completed POST body write. Tracing recorded no document contents or headers.
+
+| Event | Time |
+| --- | ---: |
+| Original estimate POST body write completed | 0.000 ms |
+| Original worker began waiting for response headers | 0.004 ms |
+| Replacement upload transaction started | 0.056 ms |
+| Replacement committed; head became V2, queued, with no decision | 0.703 ms |
+| V2 itemized result committed and passed its checks | 4.167 ms |
+| Original estimate response headers reached the client | 3,760.942 ms |
+| V1 worker returned after committing its historical record | 3,829.570 ms |
+
+The run made **one Responses request** with SDK retries disabled. V2 was already ready for review when the client received the V1 headers. V1 correctly retained its missing-itemization finding in history, and the subsequent current-case read still returned V2 and its THB 82,000 itemized estimate. The two cloud operations demonstrated in this report are separate trials. This transport trace establishes when the client finished writing and first received the response; it cannot determine when OpenAI started internal inference. The timed replacement covers the research CLI's acceptance of the local immutable PDF into the PostgreSQL case manifest. A browser upload and private object-store write are outside this trial. [In-flight test](../bench/case_revision_inflight.py)
+
+```sh
+uv run --locked --with 'psycopg[binary]==3.3.2' --env-file .env python bench/case_revision_inflight.py
+```
+
 ## Timing and interpretation
 
 | Operation | Observations | p50 | p95 |
