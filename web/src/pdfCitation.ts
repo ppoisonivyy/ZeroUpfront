@@ -62,6 +62,9 @@ export function locateCitation(items: Item[], rawQuote: string): Result {
   for (let pos = text.indexOf(quote); pos >= 0; pos = text.indexOf(quote, pos + 1)) {
     const before = text[pos - 1] ?? "", after = text[pos + quote.length] ?? "";
     if ((word.test(before) && word.test(quote[0])) || (word.test(after) && word.test(quote.at(-1)!))) continue;
+    // A numeric excerpt must not match only part of a decimal or grouped amount.
+    if ((/\d$/.test(quote) && /^[.,]\d/.test(text.slice(pos + quote.length, pos + quote.length + 2))) ||
+        (/^\d/.test(quote) && /\d[.,]$/.test(text.slice(Math.max(0, pos - 2), pos)))) continue;
     if (match >= 0) return { kind: "ambiguous" };
     match = pos;
   }

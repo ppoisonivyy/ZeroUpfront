@@ -18,6 +18,8 @@ test("rejects mismatches, duplicate quotes and substrings of longer words", () =
   assert.equal(locateCitation([item("not covered")], "fully covered").kind, "absent");
   assert.equal(locateCitation([item("not covered, not covered")], "not covered").kind, "ambiguous");
   assert.equal(locateCitation([item("unapproved")], "approved").kind, "absent");
+  assert.equal(locateCitation([item("THB 150,000.50")], "150,000").kind, "absent");
+  assert.equal(locateCitation([item("THB 150,000.50")], "000.50").kind, "absent");
   assert.equal(locateCitation([], "receipt").kind, "absent");
 });
 test("never joins adjacent columns, overlapping runs or distant paragraphs", () => {
