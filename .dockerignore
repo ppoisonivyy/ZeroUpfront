@@ -19,3 +19,4 @@ web/public/pdfjs/
 !fixtures/discharge/
 !fixtures/discharge/*.pdf
 !fixtures/discharge/*.json
+!fixtures/discharge/build.py

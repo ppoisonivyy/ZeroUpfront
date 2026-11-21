@@ -59,7 +59,7 @@ VARIANTS = {
 }
 
 
-def render(role, scenario="aligned"):
+def render(role, scenario="aligned", *, substitutions=()):
     stream = io.BytesIO()
     c = Canvas(stream, pagesize=A4, invariant=1)
     c.setTitle(TITLES[role])
@@ -76,6 +76,8 @@ def render(role, scenario="aligned"):
             for n, text in enumerate(words):
                 c.setFillColorRGB(*(0.08, 0.23, 0.26) if n == 0 else (0.13, 0.19, 0.21))
                 c.setFont("Helvetica-Bold" if n == 0 else "Helvetica", 19 if n == 0 else 10)
+                for old, new in substitutions:
+                    text = text.replace(old, new)
                 c.drawString(42, y, text)
                 y -= 35 if n == 0 else 24
             c.setFillColorRGB(0.25, 0.35, 0.37)
