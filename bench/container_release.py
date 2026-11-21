@@ -1,5 +1,6 @@
 """Start a built release and disposable PostgreSQL on Docker and exercise staff access."""
 import argparse
+from io import BytesIO
 import os
 import secrets
 import ssl
@@ -10,11 +11,46 @@ import time
 from uuid import uuid4
 
 import httpx
+from pypdf import PdfReader
+from reportlab.pdfgen.canvas import Canvas
 
 
 def check(cmd, *, env=None, stdin=None):
     return subprocess.run(cmd, env=env, input=stdin, text=True, check=True,
                           stdout=subprocess.PIPE, stderr=subprocess.PIPE).stdout.strip()
+
+
+def check_discharge(client):
+    # Use a past service date so the staff installation can screen a final bill today.
+    fixture = Path(__file__).resolve().parents[1] / "fixtures" / "discharge"
+    uploads = {}
+    for role in ("bill", "summary", "letter", "records"):
+        buffer = BytesIO()
+        canvas = Canvas(buffer)
+        for page in PdfReader(fixture / (role + ".pdf")).pages:
+            text = canvas.beginText(42, 780)
+            for line in page.extract_text().replace("2026-12-", "2025-12-").splitlines():
+                text.textLine(line)
+            canvas.drawText(text)
+            canvas.showPage()
+        canvas.save()
+        uploads[role] = (role + ".pdf", buffer.getvalue(), "application/pdf")
+    form = dict(member="EXAMPLE-2402", encounter="EXAMPLE-VISIT-42", procedure="Wrist fracture fixation",
+                insurer="Alder Transit Cover", facility="Canal Bridge Demo Hospital", admission_date="2025-12-11",
+                discharge_date="2025-12-13", confirmed="true")
+    response = client.post("/api/discharge", data=form, files=uploads, headers={"Idempotency-Key":"release-smoke"})
+    response.raise_for_status()
+    claim = response.json()
+    assert claim["status"] == "ready_for_review" and claim["payable_minor"] is None
+    path = "/api/discharge/" + claim["id"]
+    approved = client.post(path + "/approve", headers={"If-Match": '"1"'}, json={})
+    assert approved.json()["reviewer"] == "Release reviewer", approved.text
+    packet = client.get(path + "/export", params={"revision": 1})
+    packet.raise_for_status()
+    attachments = PdfReader(BytesIO(packet.content)).attachments
+    for name, content, _ in uploads.values():
+        assert list(attachments[name]) == [content]
+    return claim["sources"][0]["url"]
 
 
 def smoke(image, postgres, cert_dir):
@@ -74,9 +110,11 @@ def smoke(image, postgres, cert_dir):
             assert client.get("/api/cases").json() == []
             assert client.post("/api/examples/missing-estimate").status_code == 404
             assert client.get("/api/discharge").json() == []
+            source_url = check_discharge(client)
             assert client.post("/api/access/logout").status_code == 200
             assert client.get("/api/discharge").status_code == 401
-            print("Passed release checks for assets, readiness, staff login, empty worklists and logout.")
+            assert client.get(source_url).status_code == 401
+            print("Passed TLS staff login, discharge intake, reviewed four-source export, logout and protected PDF access.")
     finally:
         for container in reversed(containers):
             subprocess.run(["docker", "rm", "-fv", container], stdout=subprocess.DEVNULL, check=False)

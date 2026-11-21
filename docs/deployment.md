@@ -4,7 +4,7 @@ The release serves the React app, the PDF viewer and the FastAPI API from one or
 
 ## Build and verify
 
-From the repository root, with Docker, OpenSSL and uv installed, run the following. The smoke test starts its own temporary PostgreSQL container. It generates an ephemeral local TLS certificate and checks login, both empty worklists, health and logout, then removes its containers and network.
+From the repository root, with Docker, OpenSSL and uv installed, run the following. The smoke test starts its own temporary PostgreSQL container. It generates an ephemeral local TLS certificate and checks login, both empty worklists, an actual synthetic discharge upload, all four embedded originals in the reviewed export, health and logout, then removes its containers and network.
 
 ```sh
 docker build -t zeroupfront:release .
