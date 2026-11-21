@@ -1,6 +1,6 @@
 # Prospective confirmation of US payees and cents
 
-The first frozen holdout remains **10/11** for the requested field outcomes. Two changes followed: the FEP reader identifies a different named recipient when the encounter documents support the comparison, and the CMS reader cites the separate cents cell. On a newly frozen eight-packet panel, the current deterministic readers passed **5/5 payee outcomes and 3/3 amount comparisons** on their first run. Every target included a check against the original physical page. [Original holdout](payer-holdout.md) · [New frozen expectations](../bench/payer_confirmation_cases/gold.json) · [Observed findings and citations](../bench/payer_confirmation_cases/observed.json)
+The current FEP reader checks the named payment recipient against the encounter documents, and the CMS reader checks both dollar and cents cells. On a newly frozen eight-packet panel, the current deterministic readers passed **5/5 payee outcomes and 3/3 amount comparisons** on their first run. Every target included a check against the original physical page. [Original holdout](payer-holdout.md) · [New frozen expectations](../bench/payer_confirmation_cases/gold.json) · [Observed findings and citations](../bench/payer_confirmation_cases/observed.json)
 
 | New case | Expected decision | Observed evidence |
 | --- | --- | --- |
