@@ -1,8 +1,8 @@
 # Building the coordinator application
 
-Design for a three-person team, 21 November 2026. The first usable flow is one case that moves from a missing itemized estimate to a staff-reviewed, insurer-format request. The same case ID survives corrections. The insurer response remains a separate event. The current preparation branch contains CLI experiments and fixture checks. The web interface, shared API, upload service and PDF writer below are proposed build work.
+This 21 November 2026 design describes the proposed pre-arrival workflow and its scale-up targets. The released app serves pre-arrival and discharge cases, accepts multipart PDF uploads, preserves each revision and its original PDFs in PostgreSQL, and supports staff-reviewed export. The sequence below proposes object storage and a separate worker. Isolated benchmarks exercised revision and lease behavior. The current local demo starts on the discharge worklist. [Try the workspace](../README.md#run-the-demo) · [Release and deployment](deployment.md) · [Revision experiments](case-revision-guards.md)
 
-## From one upload to a reviewed request
+## Proposed staged upload and worker sequence
 
 ```mermaid
 sequenceDiagram
@@ -31,7 +31,7 @@ sequenceDiagram
 
 A staged object becomes a case exhibit only after finalization. Bind it to the encounter using an independently sourced encounter ID or explicit coordinator confirmation. A member ID alone can match two admissions. An ambiguous upload stays pending without changing the active estimate. The finalization transaction binds the immutable object, the active manifest, the superseded estimate and the durable job. If the client disappears after uploading, expire that unused upload. If it disappears after committing, a retry of the same operation key and payload returns the recorded revision. A reused key with different content fails. Revision conflicts require the coordinator to see the new active estimate before choosing which document to replace. [HTTP conditional requests](https://www.rfc-editor.org/rfc/rfc9110.html#name-if-match) · [PostgreSQL row locks](https://www.postgresql.org/docs/current/explicit-locking.html#LOCKING-ROWS)
 
-## Boundaries the team can build against
+## Proposed service contracts
 
 | Resource | Fields that determine correctness | Main consumer |
 | --- | --- | --- |
@@ -44,7 +44,7 @@ A staged object becomes a case exhibit only after finalization. Bind it to the e
 
 Authorize each resource in its hospital and case before returning an upload target, source page or export. Use a server-held project credential for AI calls. Only approved policy editions may be shared across cases in a searchable library. Store clinical documents privately and keep proposed OCR facts in their case's access scope. For the event use synthetic cases. Confirm deployment arrangements before processing identifiable records.
 
-| API operation | Contract visible to the client |
+| API operation | Contract in the proposed design |
 | --- | --- |
 | Create a case and read the queue | Return the case ID, current revision, document-processing state, review outcome and insurer response independently. Queue filters can identify cases needing staff action or waiting on an insurer. |
 | Begin upload; attach or replace an exhibit | The server chooses the storage location. Finalize with a strong current-revision precondition, operation key, role and optional replaced exhibit ID. Return the new revision and job, or a replayed result. A stale precondition yields HTTP 412. |
@@ -71,7 +71,7 @@ Authorize each resource in its hospital and case before returning an upload targ
 | Conflicting source, unclear digit or incomplete evidence | Show the unresolved field and linked pages, who can resolve it and what document would resolve it. An annotation can record what staff verified. |
 | Insurer replies, or the estimate changes after a letter | Open the insurer letter alongside the revision it covers. Show changed dates, procedure or amounts and let staff prepare a follow-up revision. |
 
-## Deployment and integration order
+## Original integration plan
 
 Start with one deployable Python codebase, a web process and a separately scalable worker, managed PostgreSQL, private versioned object storage and the OpenAI API. Serve the React/Vite UI and FastAPI endpoints from the same origin. PostgreSQL owns the revision write and queue entry in one transaction. Use short database leases and call the provider outside the transaction. Bound workers by the API project's token and request budgets. Observe queue age, failed or stale completions, invalid citations, unsupported assertions, reviewer corrections and time to a reviewable packet. Emit identifiers and timing to telemetry; keep claim text and monetary evidence in the authorized case records. [OpenAI rate limits](https://developers.openai.com/api/docs/guides/rate-limits) · [Earlier architecture and scaling rationale](architecture.md)
 

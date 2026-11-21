@@ -1,6 +1,6 @@
 # Deploy the staff workspace
 
-The release serves the React app, the PDF viewer and the FastAPI API from one origin. Each hospital gets a dedicated PostgreSQL database. Staff in that installation can access its cases. A clean staff installation starts with empty queues. Local rehearsal uses a private loopback instance and synthetic examples.
+The release serves the React app, the PDF viewer and the FastAPI API from one origin. Each hospital gets a dedicated PostgreSQL database. Staff in that installation can access its cases. A clean staff installation starts with empty queues. The published hackathon walkthrough uses a private loopback instance with synthetic examples. A container is available to build for a separately provisioned host. [Local demo](../README.md#run-the-demo)
 
 ## Build and verify
 
@@ -20,7 +20,7 @@ Supply a dedicated persistent PostgreSQL connection as the server-side secret `D
 ```sh
 docker run -d --name zeroupfront --read-only \
   --tmpfs /tmp:rw,noexec,nosuid,size=128m \
-  -p 127.0.0.1:8080:8080 -e DATABASE_URL -e WORKSPACE_HOSPITAL_NAME zeroupfront:release
+  -p 127.0.0.1:8080:8080 -e DATABASE_URL -e WORKSPACE_HOSPITAL_NAME -e FORWARDED_ALLOW_IPS zeroupfront:release
 docker exec -it zeroupfront python -m app.staff_access add coordinator --name "Case coordinator"
 ```
 
@@ -36,7 +36,7 @@ Digital PDFs can be screened without an API key. On a service authorized to send
 
 ## Optional AI second read
 
-Set `WORKSPACE_ENABLE_AI_REVIEW=1`, `OPENAI_API_KEY` and, if needed, `OPENAI_OCR_MODEL` on the server, and restart. Opening the second-read control requires a further confirmation for the specific revision. It sends the four available document roles and scoped encounter metadata to OpenAI in one request with `store=False`. The supported form families are AIA Thailand IPD, CMS-1450, and FEP overseas medical. The combined limit is 40 physical pages and 24 MiB. The response supplies provisional observations and page links. Staff can compare them against the originals; approval, export and settlement continue to use the existing signed workflow. A changed head revision invalidates an in-flight request. Review the organization's applicable hosted-processing arrangements before enabling the feature on non-synthetic records. [Benchmarks and research](payer-review-design.md)
+Set `WORKSPACE_ENABLE_AI_REVIEW=1`, `OPENAI_API_KEY` and, if needed, `OPENAI_OCR_MODEL` on the server, and restart. Opening the second-read control requires a further confirmation for the specific revision. It sends the available PDFs across up to four document roles and scoped encounter metadata to OpenAI in one request with `store=False`. The supported form families are AIA Thailand IPD, CMS-1450, and FEP overseas medical. The combined limit is 40 physical pages and 24 MiB. The response supplies provisional observations and page links. Staff can compare them against the originals; approval, export and settlement continue to use the existing signed workflow. A changed head revision invalidates an in-flight request. Review the organization's applicable hosted-processing arrangements before enabling the feature on non-synthetic records. [Benchmarks and research](payer-review-design.md)
 
 ## Release boundary
 
