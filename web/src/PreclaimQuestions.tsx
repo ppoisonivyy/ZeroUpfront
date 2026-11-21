@@ -44,8 +44,8 @@ export function PreclaimQuestions({ questions, sources, revision, insurer, busy,
     const source = sources.find(s => s.role === item.source_role);
     return <div className="question-exchange" key={item.sequence}>
       <strong>Insurer question</strong><p>{item.question}</p>
-      {source && <button type="button" className="text-action" onClick={e => inspect({ ...source, page: item.page,
-        quote: source.page === item.page ? source.quote : "" }, e.currentTarget)}>
+      {source && <button type="button" className="text-action" onClick={e => inspect({ role: source.role, label: source.label,
+        url: source.url, page: item.page, quote: "" }, e.currentTarget)}>
         <FileText size={15}/>{source.label} · R{revision} · p. {item.page}
       </button>}
       {item.reply !== null && <><strong>Hospital reply · {handoffTime(item.replied_at)}</strong><p>{item.reply}</p></>}

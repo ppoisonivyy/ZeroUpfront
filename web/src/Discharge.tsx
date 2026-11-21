@@ -446,7 +446,7 @@ function ClaimDetail({
             source={source}
             revision={claim.revision}
             historical={pinned}
-            onReturn={navigation.onReturn}
+            navigation={navigation}
           />
         )}
       </div>

@@ -5,9 +5,11 @@ const PdfPage = lazy(() => import("./PdfPage"));
 
 /** Remember the precise review control and its position while its source is open. */
 export function useSourceNavigation() {
+  const [openSequence, setOpenSequence] = useState(0);
   const [origin, setOrigin] = useState<{ trigger: HTMLElement; top: number } | null>(null);
 
   function open(trigger?: HTMLButtonElement) {
+    setOpenSequence(sequence => sequence + 1);
     const control = trigger || document.activeElement;
     if (control instanceof HTMLElement && control !== document.body) {
       setOrigin({ trigger: control, top: control.getBoundingClientRect().top });
@@ -28,7 +30,7 @@ export function useSourceNavigation() {
     }
     setOrigin(null);
   }
-  return { open, onReturn: origin?.trigger.isConnected ? back : undefined };
+  return { open, openSequence, onReturn: origin?.trigger.isConnected ? back : undefined };
 }
 
 type Props = {
@@ -36,14 +38,14 @@ type Props = {
   revision: number;
   historical: boolean;
   onReady?: () => void;
-  onReturn?: () => void;
+  navigation: ReturnType<typeof useSourceNavigation>;
 };
 
 export function SourceView(props: Props) {
   return <SourcePanel key={props.source.url + "#" + props.source.page} {...props} />;
 }
 
-function SourcePanel({ source, revision, historical, onReady, onReturn }: Props) {
+function SourcePanel({ source, revision, historical, onReady, navigation }: Props) {
   let url = "";
   try {
     url = sameOriginSource(source.url);
@@ -62,7 +64,7 @@ function SourcePanel({ source, revision, historical, onReady, onReturn }: Props)
           Open PDF <ExternalLink size={14} />
         </a>}
       </div>
-      {onReturn && <button type="button" className="text-action source-return" onClick={onReturn}>
+      {navigation.onReturn && <button type="button" className="text-action source-return" onClick={navigation.onReturn}>
         <ArrowLeft size={15} /> Back to review task
       </button>}
       <div className="citation" aria-live="polite">
@@ -77,7 +79,7 @@ function SourcePanel({ source, revision, historical, onReady, onReturn }: Props)
       </div>
       {url ? (
         <Suspense fallback={<p className="loading">Loading viewer…</p>}>
-          <PdfPage url={url} page={page} label={source.label} readable onReady={onReady} onPageChange={setViewedPage}
+          <PdfPage url={url} page={page} label={source.label} readable onReady={onReady} onPageChange={setViewedPage} openSequence={navigation.openSequence}
             quote={source.recordedSummary ? "" : source.quote} method={method} />
         </Suspense>
       ) : <p className="empty-view">The original PDF address is unavailable.</p>}

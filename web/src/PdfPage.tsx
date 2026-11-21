@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import type {
   PDFDocumentLoadingTask,
   PDFDocumentProxy,
@@ -11,6 +11,7 @@ type Props = {
   label: string;
   onText?: (text: string) => void;
   onReady?: () => void;
+  openSequence?: number;
   onPageChange?: (page: number) => void;
   fixedPage?: boolean;
   readable?: boolean;
@@ -43,6 +44,7 @@ function DocumentPage({
   onText,
   onReady,
   onPageChange,
+  openSequence,
   fixedPage = false,
   readable = false,
   quote,
@@ -56,6 +58,12 @@ function DocumentPage({
   const [citation, setCitation] = useState<keyof typeof messages | null>(null);
   const scroll = useRef<HTMLDivElement>(null);
   const [target, setTarget] = useState(String(page));
+  // Reopening the same citation must restore its page without downloading the PDF again.
+  useLayoutEffect(() => {
+    setActive(page);
+    setTarget(String(page));
+    onPageChange?.(page);
+  }, [openSequence, page, onPageChange]);
   const [readText, setReadText] = useState(() => readable && matchMedia("(max-width: 760px)").matches);
   const [extracted, setExtracted] = useState<{ page: number; text: string } | null>(null);
   const [status, setStatus] = useState("Loading original page…");

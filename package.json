@@ -2,7 +2,8 @@
   "name": "zeroupfront-demo-recorder",
   "private": true,
   "scripts": {
-    "demo:record": "playwright test --config demo/playwright.config.ts"
+    "demo:record": "playwright test --config demo/playwright.config.ts",
+    "test:citations": "playwright test --config tests/browser/playwright.config.ts"
   },
   "devDependencies": {
     "@playwright/test": "1.65.1",

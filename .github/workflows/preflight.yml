@@ -82,3 +82,9 @@ jobs:
           mkdir -p web/dist
           docker run --rm --entrypoint tar zeroupfront:release -C web/dist -cf - . | tar -xf - -C web/dist
           uv run --locked python bench/hospital_concurrency.py --cases-per-hospital 2 --concurrent-cases 2
+      - name: Verify submitted question citations in Chromium
+        run: |
+          export PATH="$(pg_config --bindir):$PATH"
+          npm ci
+          npx playwright install --with-deps chromium
+          npm run test:citations

@@ -701,7 +701,7 @@ function CaseWorkspace({
             source={source}
             revision={packet.revision}
             historical={historical}
-            onReturn={navigation.onReturn}
+            navigation={navigation}
           />
         )}
       </div>

@@ -170,7 +170,7 @@ function PacketView({ packet: initial, root, insurer, refresh }: { packet: Packe
           </div>
         </div>
       </section>
-      <SourceView key={packet.status + source.url + ":" + source.page} source={source} revision={packet.revision} historical={historical || insurer} onReturn={navigation.onReturn} onReady={view === "draft" ? formReady : undefined} />
+      <SourceView key={packet.status + source.url + ":" + source.page} source={source} revision={packet.revision} historical={historical || insurer} navigation={navigation} onReady={view === "draft" ? formReady : undefined} />
     </div>
   </>;
 }
