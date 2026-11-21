@@ -2,7 +2,7 @@
 
 For the released hospital service, see the [measured scaling behavior](scaling.md), [security controls](security-and-encryption.md) and [jurisdiction-specific processing decisions](privacy-by-jurisdiction.md).
 
-This 21 November 2026 design describes the proposed pre-arrival workflow and its scale-up targets. The released app serves pre-arrival and discharge cases, accepts multipart PDF uploads, preserves each revision and its original PDFs in PostgreSQL, and supports staff-reviewed export. The sequence below proposes object storage and a separate worker. Isolated benchmarks exercised revision and lease behavior. The current local demo starts on the discharge worklist. [Try the workspace](../README.md#run-the-demo) · [Release and deployment](deployment.md) · [Revision experiments](case-revision-guards.md)
+This 21 November 2026 design describes the proposed pre-arrival workflow and its scale-up targets. The released app serves pre-arrival and discharge cases, accepts multipart PDF uploads, preserves each revision and its original PDFs in PostgreSQL, and supports staff-reviewed export. The sequence below proposes object storage and a separate worker. Isolated benchmarks exercised revision and lease behavior. The hospital’s navigation links discharge claims and pre-arrival cases. A separately authenticated payer reviewer opens the insurer inbox. [Current interface](../README.md#coordinator-workspace) [Try the workspace](../README.md#run-the-demo) · [Release and deployment](deployment.md) · [Revision experiments](case-revision-guards.md)
 
 ## Proposed staged upload and worker sequence
 

@@ -1,4 +1,6 @@
-# Hospital and insurer design review
+# Archived hospital and insurer design study
+
+The running app now has authenticated hospital and insurer workspaces and a revision-bound handoff. For the current UI, follow Amelia’s request from the missing signature to the received packet. [Screenshots and walkthrough](../../README.md#coordinator-workspace)
 
 These two interactive pages show the pre-arrival coverage review and guarantee of payment handoff. The cases are fictional. Decisions in this prototype are saved in the browser.
 

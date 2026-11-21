@@ -32,7 +32,7 @@ uv run --locked python -m app.hospital_demo password canal-bridge --account revi
 | VISIT-CB-002 or VISIT-LS-002 | Review a complete packet directly. Record the external submission and the payer’s response as separate events. |
 | VISIT-CB-003 or VISIT-LS-003 | Compare the final bill with the lower authorization ceiling in the payer letter. The hold calls for evidence or payer follow-up. |
 
-Each hospital also has a pre-arrival case. Canal Bridge has a documented fracture repair. Lakeside has an elective procedure with a possible exclusion. Open **Switch hospital** to sign out of the current workspace and choose another. Separate authenticated tabs can coexist. Coordinators share the hospital case queue. Finance staff can read balances only for assigned discharge cases, with clinical documents and write actions restricted at the API. [Finance account and assignment commands](deployment.md#configure-the-service). Clinical-team assignments, SSO and MFA remain pilot work.
+Both hospitals seed an independent Amelia case. Canal Bridge also has a fracture-repair example and Lakeside has an elective procedure with a possible exclusion. **Switch hospital** signs out and returns to the directory. Coordinators share the hospital case queue. Finance staff can read balances for assigned discharge cases. An insurer reviewer sees only submissions addressed to their payer in that hospital. Clinical-team assignments, SSO and MFA remain pilot work. [Finance account and assignment commands](deployment.md#configure-the-service)
 
 ## Configure a shared release
 

@@ -22,6 +22,8 @@ Bangkok Hospital Phuket describes requesting an adjustment when treatment change
 
 ## The hackathon demonstration
 
-Start with the team's first half. In synthetic Z002, show the missing estimate breakdown, its source clause, the corrected estimate on the same case, staff review, and the insurer-formatted **request** and gap report. Keep **No insurer response on file** visible until a separate document arrives. The admission comparison only makes sense once a specific insurer response is recorded. A future demonstration can use an explicitly simulated letter to show both an unchanged admission and a changed plan that needs an amendment.
+The staffed demonstration follows Amelia Morgan (ZU-0248) from a missing signed report to a reviewed form received by the fictional insurer. It ends while the decision is pending. [See the hospital and insurer screens](../README.md#coordinator-workspace)
+
+For a second example, explore estimate corrections. In synthetic Z002, show the missing estimate breakdown, its source clause, the corrected estimate on the same case, staff review, and the insurer-formatted **request** and gap report. Keep **No insurer response on file** visible until a separate document arrives. The admission comparison only makes sense once a specific insurer response is recorded. A future demonstration can use an explicitly simulated letter to show both an unchanged admission and a changed plan that needs an amendment.
 
 In the alternative pitch diagram, the coordinator compares the admission with the insurer's letter and drafts an amendment when needed. The hospital confirms whether a deposit is waived, reduced or due. A zero-deposit admission is one successful branch. Compare time to a correctly prepared request in the [coordinator pilot](coordinator-pilot.md). Track insurer turnaround and hospital-recorded deposits separately.

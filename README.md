@@ -1,79 +1,63 @@
 # ZeroUpfront
 
-ZeroUpfront helps hospital billing coordinators catch problems in an inpatient insurance claim before they send it to the payer. At discharge, someone has to reconcile what the hospital billed, what the clinical record supports, what the insurer authorized and who should receive payment. A repeated pharmacy charge or a payment assignment naming a different hospital can send staff back through the whole packet.
-
-The workspace puts each discrepancy beside the original PDF page. A coordinator can inspect the evidence, request a correction, review the new revision and export the packet with its original attachments. Staff record external submission, the insurer’s written decision and actual payment separately. The insurer decides what it will pay. [Watch the walkthrough with visible clicks (MP4)](docs/figures/discharge-walkthrough.mp4?raw=1) · [View the animation (GIF)](docs/figures/discharge-walkthrough.gif) · [Follow the case through a simulated payment](docs/demo.md)
-
-[![Play the discharge walkthrough. The coordinator inspects a repeated pharmacy charge on page 2 of the original synthetic bill.](docs/figures/discharge-walkthrough-preview.png)](docs/figures/discharge-walkthrough.gif)
+ZeroUpfront helps hospital staff catch missing evidence before an inpatient insurance request reaches the payer. A coordinator can open the exact policy clause, correct the packet and send the reviewed version to the insurer. At discharge, staff can trace a charge or payment discrepancy back to the original bill, clinical record or guarantee.
 
 <a id="coordinator-workspace"></a>
 
-## Run the demo
+## A case from hospital desk to insurer inbox
 
-For the **password-protected two-hospital demo**, build the client with the first two commands below, then run `uv run --locked python -m app.hospital_demo`. Choose the judge passwords when prompted and open the [hospital directory](http://127.0.0.1:8040/). In Canal Bridge, select **VISIT-CB-001** to inspect and correct a duplicate charge. Lakeside has its own accounts, claim history and original PDFs. [Full demo and hosting guide](docs/hospital-workspaces.md)
+Amelia Morgan is a fictional patient at Canal Bridge Demo Hospital. Her knee arthroscopy estimate is **THB 128,000**, within her fictional Meridian Assist plan’s **THB 150,000** limit. The hospital still needs a signed medical report before it can submit her request.
 
+**1. Find the missing signature.** On case **ZU-0248**, the hospital coordinator opens the cited policy clause. It says the treating physician must sign the report and specify the indication and planned procedure.
 
-The local rehearsal uses fictional patient and billing data and works without an API key. From the repository root, with Python 3.12, uv, Node 24 with npm, and PostgreSQL’s `initdb` and `pg_ctl` on your PATH, run the following as a regular user.
+![Hospital review of Amelia’s request with the original policy clause open](docs/figures/amelia-rule.png)
+
+**2. Review the corrected request.** Attaching the signed report creates revision 2. The coordinator previews the insurer form, checks the supporting PDFs and marks that revision reviewed before submitting it.
+
+![Amelia’s corrected request in the hospital form review](docs/figures/amelia-request.png)
+
+**3. See what reached the insurer.** A separately signed-in Meridian Assist reviewer can open the submitted revision and its attachments. The hospital queue now shows **Waiting for insurer**. The payer makes the coverage and payment decision.
+
+![Meridian Assist’s insurer workspace showing Amelia’s submitted request](docs/figures/amelia-inbox.png)
+
+The 30-second captioned recording follows this case in a disposable hospital workspace and ends with a live test on US and Thai payer forms. [Recording guide](demo/README.md) · [Captions](demo/captions.srt)
+
+<a id="run-the-demo"></a>
+
+## Try the app
+
+With Python 3.12, uv, Node 24 with npm, and PostgreSQL’s `initdb` and `pg_ctl` installed, start the synthetic two-hospital demo. The case above runs without an API key.
 
 ```sh
 npm --prefix web ci
 npm --prefix web run build
-uv run --locked python app/run_workspace.py
+uv run --locked python -m app.hospital_demo
 ```
 
-1. Open the [local discharge worklist](http://127.0.0.1:8038/) and choose **Try duplicate bill example**.
-2. Open the finding. Page 2 shows the same pharmacy item twice. Choose **Try corrected bill**, inspect the replacement, confirm it belongs to the encounter and select **Save corrected packet**.
-3. Choose **Review discharge packet**, review the attachments and select **Mark packet reviewed**. Open **Claim and attachments** to preview the originals or download the reviewed PDF. **Version history** still opens the first bill.
+Open the hospital directory and select **Canal Bridge**. The first interactive launch prompts for separate passwords for `judge` (hospital coordinator) and `reviewer` (insurer) in each hospital. If the host has already set up the demo, use the credentials they provide privately. [Local directory](http://127.0.0.1:8040/) · [Accounts and password reset](docs/hospital-workspaces.md)
 
-For the **Pattaya FX rehearsal**, sign in to Canal Bridge and open **VISIT-CB-FX**. Compare the ECB’s dated USD/THB reference from Frankfurter with the two simulated bank offers. Open the original guarantee or choose **Read fee terms with OpenAI** for page-cited Thai or English evidence. Record the THB 238,700 receipt against the THB 239,000 guarantee and follow the THB 300 balance through settlement. [Pattaya walkthrough](docs/demo.md#pattaya-fx-rehearsal)
-
-The hospital app uses the team’s forest-green workspace design. On desktop the original PDF and review action appear side by side. On a phone, tap a citation to jump to the page. The separate insurer handoff prototype uses fictional records saved in the browser. [Hospital and insurer design guide](docs/workspace-review/README.md)
+| Another case to try | What to look for |
+| --- | --- |
+| **VISIT-CB-001** · Discharge | Find the repeated pharmacy charge on bill page 2, apply the corrected bill and preview the reviewed export with its original attachments. [Earlier discharge walkthrough (MP4)](docs/figures/discharge-walkthrough.mp4?raw=1) |
+| **VISIT-CB-FX** · Settlement | Inspect the guarantee, compare the dated ECB reference from Frankfurter with simulated bank offers, and reconcile a THB 238,700 receipt against a THB 239,000 guarantee. [Pattaya rehearsal](docs/demo.md#pattaya-fx-rehearsal) |
 
 ## Where OpenAI fits
 
-For supported scans, OpenAI transcribes the page so staff can compare the text with the original. An optional multimodal second read inspects Thai and US payer forms and returns observations with page citations. Python checks identifiers and amounts with explicit rules. The FastAPI service stores revisions in PostgreSQL, and the React workspace uses PDF.js to show the original page. Staff sign off on a specific revision. The second read cannot approve a claim or assign a payable amount. [Model evaluation and design](docs/payer-review-design.md)
+OpenAI can transcribe scanned pages, read Thai or English guarantee wording about exchange fees, and give a second reading of supported payer forms with page citations. Staff can inspect the original PDF beside each finding. Python checks identifiers and amounts, and PostgreSQL keeps the reviewed revisions and sources in a separate database for each hospital. [Model evaluation](docs/payer-review-design.md) · [Architecture](docs/architecture.md)
 
-### Who makes each decision?
+## Human review after discharge
 
-| Step | What the app does | Who acts |
-| --- | --- | --- |
-| Prepare the claim | Extracts supported fields, checks totals and flags missing or conflicting evidence. | A hospital coordinator verifies the source pages, corrects the packet and approves a specific revision. |
-| Obtain coverage | Keeps the submitted packet and the written payer response together. | The insurer decides what it covers. A coordinator records the decision and follows up on a query or appeal. |
-| Explain the bill | Calculates the documented amounts and prepares a Thai/English patient statement for review. | A coordinator checks the figures and contact details before marking the statement reviewed. |
-| Fund and reconcile Pattaya | Displays two time-limited simulated bank offers, totals the recorded beneficiary credits and calculates the balance. | A user acting as treasury confirms one booking. Hospital staff record each of the two receipts. The authenticated finance role can inspect its assigned cases. |
+When a payer asks a question or declines a claim, the coordinator can record the follow-up owner, due date and the exact reply sent. A coordinator reviews the Thai/English patient statement before sharing it. New receipts trigger another review. Finance staff can read the balance for an assigned case. [Discharge and settlement guide](docs/demo.md)
 
-The Pattaya exercise starts with a preloaded staff approval and insurer guarantee. The three settlement confirmations can be performed by one demo operator. Real partner-bank execution and staff handling time remain unmeasured. [Discharge and settlement pilot measures](docs/coordinator-pilot.md#discharge-and-settlement)
+## What we measured
 
-## What we verified
+| Test | Result |
+| --- | --- |
+| Synthetic AIA Thailand, US CMS-1450 and BCBS FEP claims on known form layouts | The first blinded run found **10/11** target issues on the correct page and missed a different named payee. After fixes, the same cases scored **11/11**, with **6/6** exact changed-value citations, **0/45** false alerts on aligned fields and **14/14** unverified cases held. A fresh panel passed **8/8** payee and amount checks. [Holdout](docs/payer-holdout.md) · [Fresh panel](docs/payer-confirmation.md) |
+| 10,000 synthetic inpatient encounters | All **760** timed HTTP requests passed. The restore recovered **11,040** revisions and **47,048** original PDF blobs. Median worklist render time was **0.82 seconds** on the test machine. [Database benchmark](docs/discharge-scale-benchmark.md) · [Browser measurements](docs/ux-redesign.md) |
 
-The supported-format rehearsal runs from correction through review, export and simulated settlement. Separately, we filled published AIA Thailand, US CMS-1450 and Blue Cross Blue Shield Federal Employee Program forms with synthetic cases to test where screening should stop. On the **first blinded holdout**, the field readers identified **10 of 11** expected outcomes on the correct page. They missed a different named payee. After fixing that and a cents citation, a **fresh panel passed 8 of 8** payee and amount checks on its first run. All eight unverified claims stayed on hold. Actual payer acceptance and staff time savings remain unmeasured. [Blinded results](docs/payer-holdout.md) · [Fresh confirmation](docs/payer-confirmation.md)
+Actual payer acceptance and hospital staff time savings have yet to be measured. [Scaling benchmarks](docs/scaling.md) · [Deployment](docs/deployment.md) · [Security and encryption](docs/security-and-encryption.md) · [Privacy by jurisdiction](docs/privacy-by-jurisdiction.md)
 
-A database rehearsal created **10,000 distinct synthetic inpatient encounters**, kept 11,040 revisions and restored 47,048 original PDF blobs. All 760 timed HTTP requests passed their checks. The hospital worklist now displays 25 claims at a time and searches the full database. On the same machine, the median time to render the queue fell from **1.72 seconds to 0.82 seconds** across five browser sessions per version. [Database benchmark and restore instructions](docs/discharge-scale-benchmark.md) · [Browser measurements and search tradeoff](docs/ux-redesign.md)
+## Hackathon declaration
 
-## Running across hospitals
-
-Deploy the same release with a separate database and staff accounts per hospital. On the 10,000-claim test set, increasing the API from one to four processes raised reviewed PDF export throughput from **73 to 230 requests/s**. A separate test kept four workers fixed and raised the API CPU quota from one to four, moving throughput from **38 to 147 exports/s**. Worklist and search throughput stayed nearly flat as processes were added. [Scaling results, controls and reproduction](docs/scaling.md)
-
-The HTTPS release test verified the database certificate and negotiated PostgreSQL TLS 1.3. Storage encryption, backup keys, access roles and approved overseas processing depend on the hospital’s deployment and agreements. The security audit and privacy guide distinguish tested controls from the controls a real patient-data pilot still needs. [Security audit and encryption](docs/security-and-encryption.md) · [Thailand, US and EU privacy rules](docs/privacy-by-jurisdiction.md)
-
-## Reproducible Python installation
-
-The Python runtime supports a standard pip installation. From the repository root on Python 3.12, run:
-
-```sh
-python3.12 -m venv .venv
-.venv/bin/python -m pip install --require-hashes -r requirements.txt
-.venv/bin/python -m pip check
-```
-
-The requirements file pins direct and transitive runtime packages with SHA-256 artifact hashes and platform markers. CI regenerates it from `uv.lock` and checks a clean pip installation. The web client uses `npm ci` with its committed lockfile. [Python requirements](requirements.txt) · [Software and licenses](THIRD_PARTY.md)
-
-## Hackathon build declaration
-
-The team planned the insurance workflow before the event. At the 10:00 Bangkok kickoff on 21 November, the public repository contained a README, a demo outline, ignore rules and an empty application directory. Later commits added the coordinator worklist, revision history, field checks that cite original pages, reviewed export, and separate records for payer decisions and payments. [Pre-kickoff snapshot](https://github.com/aowngong/ZeroUpfront/tree/2bdede36e2df9f917025d415e4c8bc5b5e5c452c) · [Organizer agenda and FAQ](https://luma.com/39zve8ph)
-
-The team built on open-source libraries, OpenAI services, public payer forms and a supplied sample corpus. The team added the claim workflow, reconciliation rules and synthetic cases that test them. [Full build declaration and evidence](docs/hackathon-declaration.md) · [Third-party credits](THIRD_PARTY.md)
-
-One Codex-assisted fix began with a missing supporting page. The model correctly read two different member IDs but linked only the claim form. The resulting change also locates the hospital’s ID on the invoice for the same encounter. Replaying six saved responses from three synthetic packets verified both pages for the CMS member and AIA admission comparisons. [See the CMS finding in the app](docs/figures/cms-member-evidence.png) · [Code change](https://github.com/aowngong/ZeroUpfront/commit/b4d21f1334f96a03d87c93addf2d5188b2caca9b) · [Replay the evidence](bench/payer_citation_replay.py)
-
-[Setup and contributor runbook](CONTRIBUTING.md) · [Staff deployment](docs/deployment.md) · [Open-source components, licenses, services and form sources](THIRD_PARTY.md)
+The team planned the workflow before the event. At the Bangkok kickoff on 21 November 2026 the repository held a README, demo outline, ignore rules and an empty app directory. During the hackathon the team built the evidence checks, revision history, hospital and insurer workspaces, reviewed exports, settlement rehearsal and synthetic test cases. The declaration identifies the public payer forms, supplied sample corpus, open-source components and OpenAI services used. [Build declaration and evidence](docs/hackathon-declaration.md) · [Third-party credits](THIRD_PARTY.md) · [Contributor setup](CONTRIBUTING.md)

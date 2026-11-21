@@ -2,7 +2,9 @@
 
 Give the hospital coordinator one place to answer three questions. What holds up this request? Which source proves it? What can I do next? The desktop workflow opens a case from the queue, keeps the original evidence beside the selected finding, and asks for staff approval of a particular revision. The synthetic app implements this flow, including clickable attachment previews and a PDF with the original exhibits embedded. The shared release supports staff sign-in over HTTPS. Staff inspect unfamiliar layouts and send reviewed packets through their hospital’s existing payer channel. [Run the demo](../README.md#coordinator-workspace) · [Application contracts](application-design.md)
 
-## Walk through case Z002
+The staffed release demonstrates a signed-report correction and an authenticated handoff to a payer reviewer. [Follow Amelia through the current interface](../README.md#coordinator-workspace)
+
+## Estimate-correction design for case Z002
 
 | Screen | What the coordinator sees | Primary action |
 | --- | --- | --- |

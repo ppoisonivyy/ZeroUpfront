@@ -1,10 +1,16 @@
-# Walk a discharge claim through ZeroUpfront
+# Walk through ZeroUpfront
+
+## Pre-arrival request
+
+In the two-hospital demo, sign in to Canal Bridge as a hospital coordinator, open **Pre-arrival cases**, and select **Amelia Morgan · ZU-0248**. Choose **View cited clause** to see why Meridian Assist needs a signed report. Attach the signed sample, review form MA-IP-01, mark it reviewed and submit it. In the workspace menu choose **Switch to insurer desk** and sign in as the insurer reviewer. Open the received revision. The hospital can now find the same request under **Waiting for insurer**. The payment decision is pending. [Illustrated handoff](../README.md#coordinator-workspace) · [Run the 30-second recording](../demo/README.md)
+
+## Discharge claim
 
 A hospital coordinator is preparing the final claim for a fictional wrist-fracture admission. The payer letter sets a THB 90,000 ceiling. The hospital's bill states THB 87,500, and one pharmacy charge appears twice. Can you find the original entry, correct the packet, and see exactly what the hospital would send?
 
-Start the local coordinator workspace, then open **Discharge claims**. The digital practice case includes all four source PDFs and runs without an API key. [Setup and local workspace link](../README.md#run-the-demo) · [Watch or pause the walkthrough (MP4)](figures/discharge-walkthrough.mp4?raw=1) · [View the animation (GIF)](figures/discharge-walkthrough.gif)
+Start the local coordinator workspace, then open **Discharge claims**. The digital practice case includes all four source PDFs and runs without an API key. [Setup and local workspace link](../README.md#run-the-demo) · [Earlier discharge walkthrough (MP4)](figures/discharge-walkthrough.mp4?raw=1) · [View the animation (GIF)](figures/discharge-walkthrough.gif)
 
-In the video, pause at **0:13** to read both THB 3,600 pharmacy lines on the original bill. At **0:29**, the corrected revision is ready for staff review. At **0:53**, the exported attachment shows the single remaining charge and the separate credit for returned supplies. [Still view of the coordinator workspace](figures/discharge-review.png)
+In this earlier recording of the discharge interface, pause at **0:13** to read both THB 3,600 pharmacy lines on the original bill. At **0:29**, the corrected revision is ready for staff review. At **0:53**, the exported attachment shows the single remaining charge and the separate credit for returned supplies. [Still view of the coordinator workspace](figures/discharge-review.png)
 
 ## Try it as the hospital coordinator
 
@@ -33,9 +39,7 @@ Bangkok Hospital Pattaya publishes a THB 239,000 multifocal lens replacement pac
 4. Under **Who covers the FX costs?**, open the payer letter, or choose **Read fee terms with OpenAI** to send that original PDF. Each supported answer includes the original-language passage and a button to open its physical page. Exchange differences and bank fees can have different payers. Silence, conflicting terms or an unverifiable citation require staff review. This action is also available for general discharge claims with an attached current confirmed or partial payer decision.
 5. Compare the sending instruction with the receiving bank’s credit advice. Record the simulated **THB 238,700** receipt from the advice. This fictional guarantee explicitly assigns the remaining **THB 300** to the insurer. Confirm the separate top-up when credited. The ledger then shows the hospital paid in full.
 
-![Historical ECB reference and simulated spot and forward offers in the funding step.](figures/pattaya-funding.png)
-
-![The signed guarantee and recorded receipts support the remaining THB 300 balance.](figures/pattaya-settlement-shortfall.jpg)
+The original settlement walkthrough includes two screenshots for comparison. [Earlier funding screen](figures/pattaya-funding.png) · [Earlier shortfall screen](figures/pattaya-settlement-shortfall.jpg)
 
 The market-data lookup is free and requires no key. The optional original-letter read uses the server’s OpenAI project credentials, `WORKSPACE_ENABLE_AI_REVIEW=1` and the configured `OPENAI_MODEL`. For scanned originals, enable `WORKSPACE_ENABLE_OCR=1` for independent page transcription. Staff can inspect the PDF whenever either service is unavailable. The reader is advisory and leaves the ledger untouched. Actual trading and remittance require a contracted provider and confirmation of the beneficiary credit.
 
@@ -47,4 +51,4 @@ The expanded first run held a letter that named the insurer on page 1 and assign
 
 The primary walkthrough uses a supported synthetic layout. The official Thai and US form rehearsals show how the workspace handles unfamiliar layouts, missing evidence and claims that still need manual review. The policy research tools separately exercise Thai and US pre-arrival packets, scans, retrieval, and page citations. [Thai form results](thai-payer-forms.md) · [US form results](us-payer-forms.md) · [Policy and fixture CLI commands](../CONTRIBUTING.md#optional-openai-workflows)
 
-For a separate design walkthrough of pre-arrival coverage and the admission guarantee, try the [hospital and insurer prototype](workspace-review/README.md).
+The team preserved its original browser-only study for readers interested in how the hospital and insurer screens evolved. [Archived design study](workspace-review/README.md)
