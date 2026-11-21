@@ -525,13 +525,14 @@ def discharge_packet_bytes(case: dict, originals: dict[str, bytes]) -> bytes:
         story.append(_paragraph(f"{label} / {result['currency']} {amount//100:,}.{amount%100:02}", body))
     story.extend([_paragraph("Source exhibits", heading), _paragraph("The original four PDFs are embedded in the attachments panel.", body)])
     used = set()
+    verified_sources = {source["role"]: source for source in result["sources"]}
     for role in ROLE_ORDER:
         name = names[role]
         while name.casefold() in used:
             name = role + "-" + name
         used.add(name.casefold())
         names[role] = name
-        source = source_by_role[role]
+        source = verified_sources[role]
         story.append(_paragraph(f"{TITLES[role]} / {name}, p. {source['page']} / {source['quote']}", body))
     story.append(_paragraph("The payer determines the final payable amount after reviewing the submitted claim.", body))
     if attestation:
