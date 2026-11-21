@@ -2,9 +2,9 @@
 
 ZeroUpfront helps hospital billing coordinators catch problems in an inpatient insurance claim before they send it to the payer. At discharge, someone has to reconcile what the hospital billed, what the clinical record supports, what the insurer authorized and who should receive payment. A repeated pharmacy charge or a payment assignment naming a different hospital can send staff back through the whole packet.
 
-The workspace puts each discrepancy beside the original PDF page. A coordinator can inspect the evidence, request a correction, review the new revision and export the packet with its original attachments. Staff record external submission, the insurer’s written decision and actual payment separately. The insurer decides what it will pay. [Watch the 18-second discharge walkthrough](docs/figures/discharge-walkthrough.gif) · [Follow the case through a simulated payment](docs/demo.md)
+The workspace puts each discrepancy beside the original PDF page. A coordinator can inspect the evidence, request a correction, review the new revision and export the packet with its original attachments. Staff record external submission, the insurer’s written decision and actual payment separately. The insurer decides what it will pay. [Watch the walkthrough with visible clicks (MP4)](docs/figures/discharge-walkthrough.mp4?raw=1) · [View the animation (GIF)](docs/figures/discharge-walkthrough.gif) · [Follow the case through a simulated payment](docs/demo.md)
 
-[![ZeroUpfront discharge review with a repeated pharmacy charge beside page 2 of the original synthetic bill](docs/figures/discharge-review.png)](docs/figures/discharge-review.png)
+[![Play the discharge walkthrough. The coordinator inspects a repeated pharmacy charge on page 2 of the original synthetic bill.](docs/figures/discharge-walkthrough-preview.png)](docs/figures/discharge-walkthrough.gif)
 
 <a id="coordinator-workspace"></a>
 
