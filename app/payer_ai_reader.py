@@ -82,7 +82,9 @@ STAFF_RUBRICS["aia"]["consent"] = (
     "Look at the patient consent mark in Part A. Return present for a typed mark, "
     "visual_review for graphical ink needing personal verification, absent for blank, or unknown."
 )
-STAFF_RUBRICS["cms"]["member"] += " Use absent when FL60 itself is blank, even if another page displays an ID."
+STAFF_RUBRICS["cms"]["member"] += (
+    " Use absent when FL60 itself is blank, even if another page displays an ID."
+)
 STAFF_RUBRICS["fep"]["payee"] += (
     " Use other_provider if the named assignment payee differs from the treating facility. "
     "Distinguish the original election from stray or duplicated text outside the payment boxes."
@@ -94,7 +96,7 @@ case evidence conflicts about which document applies, or independent comparison 
 Absence of a separate required document can be reported from its absence in the manifest. A signature
 mark does not establish authenticity, signer authority, or consent. Do not infer a diagnosis or advise
 anyone to pay, approve, reject, or contact a party. Return only the requested administrative fields.
-For a CMS FL60 identity dispute or AIA Part B admission-number dispute, cite the payer form and a separate
+For a CMS FL60 identity comparison or AIA Part B admission-number comparison, cite the payer form and a separate
 physical hospital account or summary page showing the encounter's reference identifier. For an alternate
 assigned provider on FEP, cite the form and an independent page identifying the treating facility.
 If independent corroboration is unavailable, return unknown for that field. Retain other supported fields.
@@ -154,7 +156,8 @@ def request_input(meta, originals, counts, rubric):
         {
             "type": "input_text",
             "text": json.dumps(
-                {"encounter": meta, "physical_pages_by_role": counts, "checks": rubric}, ensure_ascii=False
+                {"encounter": meta, "physical_pages_by_role": counts, "checks": rubric},
+                ensure_ascii=False,
             ),
         }
     ]
@@ -190,20 +193,56 @@ def _counts(case, originals):
                 counts[role] = len(reader.pages)
     except UnsupportedPacket:
         raise
-    except (PdfReadError, IndexError, KeyError, TypeError, ValueError, ArithmeticError, RecursionError) as exc:
+    except (
+        PdfReadError,
+        IndexError,
+        KeyError,
+        TypeError,
+        ValueError,
+        ArithmeticError,
+        RecursionError,
+    ) as exc:
         raise UnsupportedPacket("The physical pages could not be verified.") from exc
     if min(counts.values()) < 1 or sum(counts.values()) > MAX_TOTAL_PAGES:
         raise UnsupportedPacket("A second read requires 1 to 40 physical pages across the whole packet.")
     return counts
 
 
-# A cross-document discrepancy requires a second, distinct physical page containing the
-# independent reference value. A page number passing its bounds check does not establish that.
-DISPUTED = {
-    ("cms", "member", "conflict"): ("bill", "member", "subscriber ID"),
-    ("aia", "admission", "conflict"): ("records", "encounter", "admission number"),
-    ("fep", "payee", "other_provider"): ("records", "facility", "treating facility"),
+# These comparisons have a known form location and an independently checkable hospital value.
+REFERENCE_FIELDS = {
+    ("cms", "member"): (
+        "bill",
+        "member",
+        "subscriber ID",
+        {"match": "cms_insured_id_agrees", "conflict": "cms_member_mismatch"},
+    ),
+    ("aia", "admission"): (
+        "records",
+        "encounter",
+        "admission number",
+        {"match": "aia_admission_matches", "conflict": "aia_admission_mismatch"},
+    ),
+    ("fep", "payee"): (
+        "records",
+        "facility",
+        "treating facility",
+        {"other_provider": "fep_assignment_provider"},
+    ),
 }
+
+
+def _field_evidence(case, originals, family):
+    # Re-read the hash-verified originals for the requested revision. An older stored
+    # finding might predate independent citation capture, even when its PDF contains it.
+    from .discharge_claim import Review as FormReview
+    from .payer_aia import screen_aia
+    from .payer_pages import CaseOriginals
+    from .payer_us import screen_us
+
+    facts = FormReview()
+    screen = screen_aia if family == "aia" else screen_us
+    screen(case, CaseOriginals(originals), facts)
+    return {row["code"]: row for row in [*facts.findings.values(), *facts.checks]}
 
 
 def _reference_on_page(case, originals):
@@ -223,8 +262,19 @@ def _reference_on_page(case, originals):
                 if role not in readers:
                     readers[role] = PdfReader(BytesIO(originals[role]))
                 transcript = readers[role].pages[number - 1].extract_text() or ""
-            except (PdfReadError, IndexError, KeyError, TypeError, ValueError, ArithmeticError, RecursionError):
+            except (
+                PdfReadError,
+                IndexError,
+                KeyError,
+                TypeError,
+                ValueError,
+                ArithmeticError,
+                RecursionError,
+            ):
                 return False
+        encounter_key = "member" if key == "encounter" else "encounter"
+        if case.get(encounter_key) and not contains_identifier(transcript, case[encounter_key]):
+            return False
         if role == form_role:
             # An itemized account can be appended behind a payer form in the same PDF.
             # Another printed form page carrying the identifier is not independent evidence.
@@ -258,10 +308,65 @@ def _reference_on_page(case, originals):
     return matches
 
 
-def validated_checks(review, family, counts, reference_on_page=None):
+def _corroborate(check, family, reference_on_page, field_evidence):
+    if family == "fep" and check.field == "payee" and check.state in {"member", "hospital", "other_provider"}:
+        hold_codes = (
+            "fep_form_version_review",
+            "fep_payee_review",
+            "fep_assignment_provider_review",
+            "fep_assignment_signature",
+        )
+        hold = next((field_evidence[c] for c in hold_codes if c in field_evidence), None)
+        if hold:
+            return check.model_copy(update={"state": "unknown", "observation": hold["message"]})
+    rule = REFERENCE_FIELDS.get((family, check.field))
+    if not rule:
+        return check
+    form_role, key, label, codes = rule
+    if check.state not in codes:
+        return check
+    cited = {(p.role, p.page) for p in check.pages}
+    fact = field_evidence.get(codes[check.state])
+    other_state_found = any(code in field_evidence for state, code in codes.items() if state != check.state)
+    if fact:
+        # Official-form readers verify both field positions and link the second record to
+        # this encounter. Use their wording too, so a model transcription error is not repeated.
+        refs = list(dict.fromkeys((s["role"], s["page"]) for s in fact["sources"] if s.get("quote")))
+        if len(refs) >= 2 and refs[0] in cited:
+            return check.model_copy(
+                update={
+                    "pages": [Citation(role=r, page=n) for r, n in refs],
+                    "observation": fact["message"] + " The form reader verified the linked pages.",
+                }
+            )
+    else:
+        # For a visual read without a typed comparison, retain a supplied pair only when
+        # the independent page contains the actual reference for this encounter.
+        if (
+            not other_state_found
+            and reference_on_page
+            and any(
+                role in {"bill", "records", "summary"}
+                and any(r == form_role and (r, n) != (role, page) for r, n in cited)
+                and reference_on_page(role, page, key, form_role)
+                for role, page in cited
+            )
+        ):
+            return check
+    return check.model_copy(
+        update={
+            "state": "unknown",
+            "observation": f"Verify the {label} against the payer form and a separate hospital page for this encounter.",
+        }
+    )
+
+
+def validated_checks(review, family, counts, reference_on_page=None, field_evidence=None):
     rules = RULES[family]
     if len(review.checks) != len(rules) or {check.field for check in review.checks} != set(rules):
-        raise InvalidReview("The AI response did not supply exactly one observation for every requested field.")
+        raise InvalidReview(
+            "The AI response did not supply exactly one observation for every requested field."
+        )
     checked = {}
     for check in review.checks:
         allowed, needed_roles = rules[check.field]
@@ -297,23 +402,7 @@ def validated_checks(review, family, counts, reference_on_page=None):
             raise InvalidReview(
                 "The CMS total comparison requires separate evidence for the form and the itemized account."
             )
-        dispute = DISPUTED.get((family, check.field, check.state))
-        if dispute:
-            form_role, key, label = dispute
-            supported = reference_on_page and any(
-                role in {"bill", "records", "summary"}
-                and any(form[0] == form_role and form != (role, page) for form in cited)
-                and reference_on_page(role, page, key, form_role)
-                for role, page in cited
-            )
-            if not supported:
-                check = check.model_copy(
-                    update={
-                        "state": "unknown",
-                        "observation": f"The proposed comparison needs a separate cited hospital page showing the {label}. Verify it against the payer form.",
-                    }
-                )
-        checked[check.field] = check
+        checked[check.field] = _corroborate(check, family, reference_on_page, field_evidence or {})
     return [checked[field] for field in rules]
 
 
@@ -342,5 +431,17 @@ def second_read(case, originals, family):
             raise InvalidReview("The AI response did not supply a valid structured second read.") from exc
     if answer.status != "completed" or not isinstance(answer.output_parsed, Review):
         raise InvalidReview("The AI service did not return a complete administrative second read.")
-    checks = validated_checks(answer.output_parsed, family, counts, _reference_on_page(case, originals))
-    return SecondReadResponse(revision=case["revision"], family=family, model=model, checks=checks)
+    checks = validated_checks(
+        answer.output_parsed,
+        family,
+        counts,
+        _reference_on_page(case, originals),
+        _field_evidence(case, originals, family),
+    )
+    reported_model = getattr(answer, "model", None)
+    return SecondReadResponse(
+        revision=case["revision"],
+        family=family,
+        model=reported_model if isinstance(reported_model, str) and reported_model else model,
+        checks=checks,
+    )

@@ -57,7 +57,11 @@ class AIReadValidation(unittest.TestCase):
             [observation("admission", "conflict", cite("records", 3)), *fields[1:]],
             [observation("admission", "match"), *fields[1:]],
             [fields[0], observation("expense", "match", cite("records")), *fields[2:]],
-            [fields[0], observation("expense", "match", cite("records"), cite("records")), *fields[2:]],
+            [
+                fields[0],
+                observation("expense", "match", cite("records"), cite("records")),
+                *fields[2:],
+            ],
         ]
         for rows in invalid:
             with self.subTest(rows=rows), self.assertRaises(reader.InvalidReview):
@@ -81,15 +85,56 @@ class AIReadValidation(unittest.TestCase):
         lookup = reader._reference_on_page(case, originals)
 
         def check():
-            return reader.validated_checks(reader.Review(checks=rows), "cms", {"bill": 2, "summary": 1}, lookup)
+            return reader.validated_checks(
+                reader.Review(checks=rows), "cms", {"bill": 2, "summary": 1}, lookup
+            )
 
         verdict = check()
         self.assertEqual([c.state for c in verdict], ["unknown", "unknown", "original", "unknown"])
-        self.assertIn("separate cited hospital page", verdict[0].observation)
+        self.assertIn("separate hospital page", verdict[0].observation)
         rows[0]["pages"].append(cite("summary"))
         self.assertEqual(check()[0].state, "conflict")
         case["member"] = "MBI-7280"
         self.assertEqual(check()[0].state, "unknown")
+
+    def test_verified_pages_repair_form_only_response_without_repeating_model_values(
+        self,
+    ):
+        rows = [
+            observation("member", "conflict", cite("bill")),
+            observation("disposition", "unknown"),
+            observation("replacement", "original", cite("bill")),
+            observation("expense", "unknown"),
+        ]
+        rows[0]["observation"] = "Wrong digit in AI transcript: MBI-739."
+        sources = [
+            dict(cite("bill"), quote="MBI-738"),
+            dict(cite("bill", 3), quote="Member MBI-728"),
+        ]
+        fact = {
+            "message": "The form shows MBI-738. The invoice shows MBI-728.",
+            "sources": sources,
+        }
+        counts = {"bill": 3}
+
+        def check():
+            return reader.validated_checks(
+                reader.Review(checks=rows),
+                "cms",
+                counts,
+                field_evidence={"cms_member_mismatch": fact},
+            )[0]
+
+        repaired = check()
+        self.assertEqual(repaired.state, "conflict")
+        self.assertEqual([(c.role, c.page) for c in repaired.pages], [("bill", 1), ("bill", 3)])
+        self.assertNotIn("MBI-739", repaired.observation)
+        self.assertIn("MBI-728", repaired.observation)
+        rows[0]["state"] = "match"
+        self.assertEqual(check().state, "unknown")
+        rows[0]["state"] = "conflict"
+        fact["sources"] = sources[:1]
+        self.assertEqual(check().state, "unknown")
 
     def test_corroboration_for_aia_encounter_and_third_party_fep_assignment(self):
         fields = aia()
@@ -98,9 +143,20 @@ class AIReadValidation(unittest.TestCase):
             reader.Review(checks=fields), "aia", {"records": 2, "bill": 1, "letter": 1}
         )
         self.assertEqual((checks[0].state, checks[1].state), ("unknown", "match"))
-        fields = [observation("payee", "other_provider", cite("records")), observation("expense", "unknown")]
+        fields = [
+            observation("payee", "other_provider", cite("records")),
+            observation("expense", "unknown"),
+        ]
         checks = reader.validated_checks(reader.Review(checks=fields), "fep", {"records": 2})
         self.assertEqual(checks[0].state, "unknown")
+
+    def test_independent_document_cannot_establish_a_route_when_elections_conflict(self):
+        fields = [observation("payee", "hospital", cite("records")), observation("expense", "unknown")]
+        review = reader.Review(checks=fields)
+        facts = {"fep_payee_review": {"message": "Confirm the mutually exclusive elections on section 5."}}
+        payee, _ = reader.validated_checks(review, "fep", {"records": 2}, field_evidence=facts)
+        self.assertEqual(payee.state, "unknown")
+        self.assertIn("elections", payee.observation)
 
     def test_cms_total_has_two_independent_source_pages(self):
         fields = [
@@ -138,12 +194,18 @@ class AIReadApi(unittest.TestCase):
         self.path = "/api/discharge/" + self.case["id"]
         self.provider = self.enterContext(patch("app.payer_ai_reader.OpenAI"))
         self.parse = self.provider.return_value.__enter__.return_value.responses.parse
-        self.parse.return_value = SimpleNamespace(status="completed", output_parsed=reader.Review(checks=aia()))
+        self.parse.return_value = SimpleNamespace(
+            status="completed",
+            model="test-model-snapshot",
+            output_parsed=reader.Review(checks=aia()),
+        )
 
     def post(self, *, family="aia", confirmed=True, revision=1):
         headers = {} if revision is None else {"If-Match": f'"{revision}"'}
         return self.client.post(
-            self.path + "/second-read", json={"family": family, "confirmed": confirmed}, headers=headers
+            self.path + "/second-read",
+            json={"family": family, "confirmed": confirmed},
+            headers=headers,
         )
 
     def test_opt_in_and_budgets_precede_every_model_call(self):
@@ -173,7 +235,9 @@ class AIReadApi(unittest.TestCase):
         body = response.json()
         self.assertEqual(set(body), {"revision", "family", "model", "checks"})
         self.assertEqual(body["revision"], 1)
-        self.assertEqual(body["checks"], aia())
+        self.assertEqual(body["checks"][0]["state"], "unknown")
+        self.assertEqual(body["checks"][1:], aia()[1:])
+        self.assertEqual(body["model"], "test-model-snapshot")
         options = self.parse.call_args.kwargs
         self.assertIs(options["store"], False)
         self.assertNotIn("tools", options)
