@@ -16,7 +16,7 @@ COPY fixtures/discharge/ fixtures/discharge/
 COPY fixtures/policies/ fixtures/policies/
 COPY fixtures/cases/ fixtures/cases/
 COPY --from=web /build/dist/ web/dist/
-ENV PATH=/srv/zeroupfront/.venv/bin:$PATH PYTHONDONTWRITEBYTECODE=1
+ENV PATH=/srv/zeroupfront/.venv/bin:$PATH PYTHONDONTWRITEBYTECODE=1 PGSSLMODE=verify-full
 USER 65532:65532
 EXPOSE 8080
 CMD ["uvicorn","app.workspace_server:app","--host","0.0.0.0","--port","8080","--no-access-log"]
