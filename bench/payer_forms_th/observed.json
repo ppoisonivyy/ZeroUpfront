@@ -1,0 +1,760 @@
+{
+  "observed_on": "2026-11-21",
+  "backend_commit": "ad36ccd",
+  "workers": 4,
+  "ocr_model": "gpt-6.2-astra",
+  "source_forms": {
+    "th": {
+      "url": "https://www.aia.co.th/content/dam/th-wise/images/th/help---support/si-141_form_library/%E0%B9%83%E0%B8%9A%E0%B8%99%E0%B8%B3%E0%B8%AA%E0%B9%88%E0%B8%87%E0%B9%80%E0%B8%AD%E0%B8%81%E0%B8%AA%E0%B8%B2%E0%B8%A3%E0%B8%A3%E0%B9%89%E0%B8%AD%E0%B8%87%E0%B9%80%E0%B8%A3%E0%B8%B5%E0%B8%A2%E0%B8%99%E0%B8%AA%E0%B8%B4%E0%B8%99%E0%B9%84%E0%B8%AB%E0%B8%A1%E0%B8%97%E0%B8%B1%E0%B9%88%E0%B8%A7%E0%B9%84%E0%B8%9B.pdf.coredownload.inline.pdf",
+      "sha256": "ed900381d9036a58c30347aa03f5d6914734f3798a114776cb629ffe48a36bc8"
+    },
+    "en": {
+      "url": "https://www.aia.co.th/content/dam/th-wise/images/th/help---support/si-141_form_library/ipd-en.pdf.coredownload.inline.pdf",
+      "sha256": "eb69605050eef54cf6bdee1589fc5b9c982afe51491e241cf1933901f1a6edec"
+    }
+  },
+  "modes": {
+    "digital_only": [
+      {
+        "case": "th-aligned",
+        "gold": "ready_for_review",
+        "target": null,
+        "status": "needs_review",
+        "http": 201,
+        "intake_ms": 1013.1,
+        "target_explained": null,
+        "guards": {
+          "approve": 409,
+          "export": 409,
+          "submission": 409
+        },
+        "ocr_pages": 0,
+        "payable_minor": null,
+        "finding_codes": [
+          "page_order",
+          "unreadable_records"
+        ],
+        "verified_originals": {
+          "bill": 2,
+          "summary": 2,
+          "letter": 2,
+          "records": 5
+        }
+      },
+      {
+        "case": "en-aligned",
+        "gold": "ready_for_review",
+        "target": null,
+        "status": "needs_review",
+        "http": 201,
+        "intake_ms": 1041.0,
+        "target_explained": null,
+        "guards": {
+          "approve": 409,
+          "export": 409,
+          "submission": 409
+        },
+        "ocr_pages": 0,
+        "payable_minor": null,
+        "finding_codes": [
+          "page_order",
+          "unreadable_records"
+        ],
+        "verified_originals": {
+          "bill": 2,
+          "summary": 2,
+          "letter": 2,
+          "records": 4
+        }
+      },
+      {
+        "case": "th-wrong-admission",
+        "gold": "needs_review",
+        "target": "same-encounter",
+        "status": "needs_review",
+        "http": 201,
+        "intake_ms": 1014.5,
+        "target_explained": false,
+        "guards": {
+          "approve": 409,
+          "export": 409,
+          "submission": 409
+        },
+        "ocr_pages": 0,
+        "payable_minor": null,
+        "finding_codes": [
+          "page_order",
+          "unreadable_records"
+        ],
+        "verified_originals": {
+          "bill": 2,
+          "summary": 2,
+          "letter": 2,
+          "records": 5
+        }
+      },
+      {
+        "case": "en-unsigned-patient",
+        "gold": "needs_review",
+        "target": "patient-consent",
+        "status": "needs_review",
+        "http": 201,
+        "intake_ms": 1009.2,
+        "target_explained": false,
+        "guards": {
+          "approve": 409,
+          "export": 409,
+          "submission": 409
+        },
+        "ocr_pages": 0,
+        "payable_minor": null,
+        "finding_codes": [
+          "page_order",
+          "unreadable_records"
+        ],
+        "verified_originals": {
+          "bill": 2,
+          "summary": 2,
+          "letter": 2,
+          "records": 4
+        }
+      },
+      {
+        "case": "th-unsigned-physician",
+        "gold": "needs_review",
+        "target": "physician-certification",
+        "status": "needs_review",
+        "http": 201,
+        "intake_ms": 830.0,
+        "target_explained": false,
+        "guards": {
+          "approve": 409,
+          "export": 409,
+          "submission": 409
+        },
+        "ocr_pages": 0,
+        "payable_minor": null,
+        "finding_codes": [
+          "page_order",
+          "unreadable_records"
+        ],
+        "verified_originals": {
+          "bill": 2,
+          "summary": 2,
+          "letter": 2,
+          "records": 5
+        }
+      },
+      {
+        "case": "th-amount-mismatch",
+        "gold": "needs_review",
+        "target": "submitted-amount",
+        "status": "needs_review",
+        "http": 201,
+        "intake_ms": 829.3,
+        "target_explained": false,
+        "guards": {
+          "approve": 409,
+          "export": 409,
+          "submission": 409
+        },
+        "ocr_pages": 0,
+        "payable_minor": null,
+        "finding_codes": [
+          "page_order",
+          "unreadable_records"
+        ],
+        "verified_originals": {
+          "bill": 2,
+          "summary": 2,
+          "letter": 2,
+          "records": 5
+        }
+      },
+      {
+        "case": "en-missing-letter",
+        "gold": "needs_review",
+        "target": "missing_letter",
+        "status": "needs_review",
+        "http": 201,
+        "intake_ms": 715.6,
+        "target_explained": true,
+        "guards": {
+          "approve": 409,
+          "export": 409,
+          "submission": 409
+        },
+        "ocr_pages": 0,
+        "payable_minor": null,
+        "finding_codes": [
+          "missing_letter",
+          "page_order",
+          "unreadable_records",
+          "missing_or_ambiguous_field"
+        ],
+        "verified_originals": {
+          "bill": 2,
+          "summary": 2,
+          "records": 4
+        }
+      }
+    ],
+    "live_ocr": [
+      {
+        "case": "th-aligned",
+        "gold": "ready_for_review",
+        "target": null,
+        "status": "needs_review",
+        "http": 201,
+        "intake_ms": 61673.2,
+        "target_explained": null,
+        "guards": {
+          "approve": 409,
+          "export": 409,
+          "submission": 409
+        },
+        "ocr_pages": 3,
+        "payable_minor": null,
+        "finding_codes": [
+          "unrecognized_layout",
+          "page_identity",
+          "page_order",
+          "verify_ocr"
+        ],
+        "verified_originals": {
+          "bill": 2,
+          "summary": 2,
+          "letter": 2,
+          "records": 5
+        },
+        "ocr_exact_probes": [
+          {
+            "page": 2,
+            "literal": "T-TEST00001",
+            "expected_present": true,
+            "present": true,
+            "transcript_returned": true
+          },
+          {
+            "page": 2,
+            "literal": "87,500.00",
+            "expected_present": true,
+            "present": true,
+            "transcript_returned": true
+          },
+          {
+            "page": 2,
+            "literal": "TEST PATIENT MARK",
+            "expected_present": true,
+            "present": true,
+            "transcript_returned": true
+          },
+          {
+            "page": 3,
+            "literal": "AN-QA042",
+            "expected_present": true,
+            "present": true,
+            "transcript_returned": true
+          },
+          {
+            "page": 3,
+            "literal": "HN-QA017",
+            "expected_present": true,
+            "present": true,
+            "transcript_returned": true
+          },
+          {
+            "page": 3,
+            "literal": "TEST CLINICIAN MARK",
+            "expected_present": true,
+            "present": true,
+            "transcript_returned": true
+          },
+          {
+            "page": 2,
+            "literal": "มือซ้าย",
+            "expected_present": true,
+            "present": true,
+            "transcript_returned": true
+          }
+        ]
+      },
+      {
+        "case": "en-aligned",
+        "gold": "ready_for_review",
+        "target": null,
+        "status": "needs_review",
+        "http": 201,
+        "intake_ms": 31857.8,
+        "target_explained": null,
+        "guards": {
+          "approve": 409,
+          "export": 409,
+          "submission": 409
+        },
+        "ocr_pages": 2,
+        "payable_minor": null,
+        "finding_codes": [
+          "unrecognized_layout",
+          "page_identity",
+          "page_order",
+          "verify_ocr"
+        ],
+        "verified_originals": {
+          "bill": 2,
+          "summary": 2,
+          "letter": 2,
+          "records": 4
+        },
+        "ocr_exact_probes": [
+          {
+            "page": 1,
+            "literal": "T-TEST00001",
+            "expected_present": true,
+            "present": true,
+            "transcript_returned": true
+          },
+          {
+            "page": 1,
+            "literal": "87,500.00",
+            "expected_present": true,
+            "present": true,
+            "transcript_returned": true
+          },
+          {
+            "page": 1,
+            "literal": "TEST PATIENT MARK",
+            "expected_present": true,
+            "present": true,
+            "transcript_returned": true
+          },
+          {
+            "page": 2,
+            "literal": "AN-QA042",
+            "expected_present": true,
+            "present": true,
+            "transcript_returned": true
+          },
+          {
+            "page": 2,
+            "literal": "HN-QA017",
+            "expected_present": true,
+            "present": true,
+            "transcript_returned": true
+          },
+          {
+            "page": 2,
+            "literal": "TEST CLINICIAN MARK",
+            "expected_present": true,
+            "present": true,
+            "transcript_returned": true
+          }
+        ]
+      },
+      {
+        "case": "th-wrong-admission",
+        "gold": "needs_review",
+        "target": "same-encounter",
+        "status": "needs_review",
+        "http": 201,
+        "intake_ms": 57113.3,
+        "target_explained": false,
+        "guards": {
+          "approve": 409,
+          "export": 409,
+          "submission": 409
+        },
+        "ocr_pages": 3,
+        "payable_minor": null,
+        "finding_codes": [
+          "unrecognized_layout",
+          "page_identity",
+          "page_order",
+          "verify_ocr"
+        ],
+        "verified_originals": {
+          "bill": 2,
+          "summary": 2,
+          "letter": 2,
+          "records": 5
+        },
+        "ocr_exact_probes": [
+          {
+            "page": 2,
+            "literal": "T-TEST00001",
+            "expected_present": true,
+            "present": true,
+            "transcript_returned": true
+          },
+          {
+            "page": 2,
+            "literal": "87,500.00",
+            "expected_present": true,
+            "present": true,
+            "transcript_returned": true
+          },
+          {
+            "page": 2,
+            "literal": "TEST PATIENT MARK",
+            "expected_present": true,
+            "present": true,
+            "transcript_returned": true
+          },
+          {
+            "page": 3,
+            "literal": "AN-QA999",
+            "expected_present": true,
+            "present": true,
+            "transcript_returned": true
+          },
+          {
+            "page": 3,
+            "literal": "HN-QA017",
+            "expected_present": true,
+            "present": true,
+            "transcript_returned": true
+          },
+          {
+            "page": 3,
+            "literal": "TEST CLINICIAN MARK",
+            "expected_present": true,
+            "present": true,
+            "transcript_returned": true
+          },
+          {
+            "page": 2,
+            "literal": "มือซ้าย",
+            "expected_present": true,
+            "present": true,
+            "transcript_returned": true
+          }
+        ]
+      },
+      {
+        "case": "en-unsigned-patient",
+        "gold": "needs_review",
+        "target": "patient-consent",
+        "status": "needs_review",
+        "http": 201,
+        "intake_ms": 35336.3,
+        "target_explained": false,
+        "guards": {
+          "approve": 409,
+          "export": 409,
+          "submission": 409
+        },
+        "ocr_pages": 2,
+        "payable_minor": null,
+        "finding_codes": [
+          "unrecognized_layout",
+          "page_identity",
+          "page_order",
+          "verify_ocr"
+        ],
+        "verified_originals": {
+          "bill": 2,
+          "summary": 2,
+          "letter": 2,
+          "records": 4
+        },
+        "ocr_exact_probes": [
+          {
+            "page": 1,
+            "literal": "T-TEST00001",
+            "expected_present": true,
+            "present": true,
+            "transcript_returned": true
+          },
+          {
+            "page": 1,
+            "literal": "87,500.00",
+            "expected_present": true,
+            "present": true,
+            "transcript_returned": true
+          },
+          {
+            "page": 1,
+            "literal": "TEST PATIENT MARK",
+            "expected_present": false,
+            "present": false,
+            "transcript_returned": true
+          },
+          {
+            "page": 2,
+            "literal": "AN-QA042",
+            "expected_present": true,
+            "present": true,
+            "transcript_returned": true
+          },
+          {
+            "page": 2,
+            "literal": "HN-QA017",
+            "expected_present": true,
+            "present": true,
+            "transcript_returned": true
+          },
+          {
+            "page": 2,
+            "literal": "TEST CLINICIAN MARK",
+            "expected_present": true,
+            "present": true,
+            "transcript_returned": true
+          }
+        ]
+      },
+      {
+        "case": "th-unsigned-physician",
+        "gold": "needs_review",
+        "target": "physician-certification",
+        "status": "needs_review",
+        "http": 201,
+        "intake_ms": 48214.6,
+        "target_explained": false,
+        "guards": {
+          "approve": 409,
+          "export": 409,
+          "submission": 409
+        },
+        "ocr_pages": 3,
+        "payable_minor": null,
+        "finding_codes": [
+          "unrecognized_layout",
+          "page_identity",
+          "page_order",
+          "verify_ocr"
+        ],
+        "verified_originals": {
+          "bill": 2,
+          "summary": 2,
+          "letter": 2,
+          "records": 5
+        },
+        "ocr_exact_probes": [
+          {
+            "page": 2,
+            "literal": "T-TEST00001",
+            "expected_present": true,
+            "present": false,
+            "transcript_returned": true
+          },
+          {
+            "page": 2,
+            "literal": "87,500.00",
+            "expected_present": true,
+            "present": false,
+            "transcript_returned": true
+          },
+          {
+            "page": 2,
+            "literal": "TEST PATIENT MARK",
+            "expected_present": true,
+            "present": false,
+            "transcript_returned": true
+          },
+          {
+            "page": 3,
+            "literal": "AN-QA042",
+            "expected_present": true,
+            "present": true,
+            "transcript_returned": true
+          },
+          {
+            "page": 3,
+            "literal": "HN-QA017",
+            "expected_present": true,
+            "present": true,
+            "transcript_returned": true
+          },
+          {
+            "page": 3,
+            "literal": "TEST CLINICIAN MARK",
+            "expected_present": false,
+            "present": false,
+            "transcript_returned": true
+          },
+          {
+            "page": 2,
+            "literal": "มือซ้าย",
+            "expected_present": true,
+            "present": false,
+            "transcript_returned": true
+          }
+        ]
+      },
+      {
+        "case": "th-amount-mismatch",
+        "gold": "needs_review",
+        "target": "submitted-amount",
+        "status": "needs_review",
+        "http": 201,
+        "intake_ms": 58340.8,
+        "target_explained": false,
+        "guards": {
+          "approve": 409,
+          "export": 409,
+          "submission": 409
+        },
+        "ocr_pages": 3,
+        "payable_minor": null,
+        "finding_codes": [
+          "unrecognized_layout",
+          "page_identity",
+          "page_order",
+          "verify_ocr"
+        ],
+        "verified_originals": {
+          "bill": 2,
+          "summary": 2,
+          "letter": 2,
+          "records": 5
+        },
+        "ocr_exact_probes": [
+          {
+            "page": 2,
+            "literal": "T-TEST00001",
+            "expected_present": true,
+            "present": true,
+            "transcript_returned": true
+          },
+          {
+            "page": 2,
+            "literal": "92,750.00",
+            "expected_present": true,
+            "present": true,
+            "transcript_returned": true
+          },
+          {
+            "page": 2,
+            "literal": "TEST PATIENT MARK",
+            "expected_present": true,
+            "present": true,
+            "transcript_returned": true
+          },
+          {
+            "page": 3,
+            "literal": "AN-QA042",
+            "expected_present": true,
+            "present": true,
+            "transcript_returned": true
+          },
+          {
+            "page": 3,
+            "literal": "HN-QA017",
+            "expected_present": true,
+            "present": true,
+            "transcript_returned": true
+          },
+          {
+            "page": 3,
+            "literal": "TEST CLINICIAN MARK",
+            "expected_present": true,
+            "present": true,
+            "transcript_returned": true
+          },
+          {
+            "page": 2,
+            "literal": "มือซ้าย",
+            "expected_present": true,
+            "present": true,
+            "transcript_returned": true
+          }
+        ]
+      },
+      {
+        "case": "en-missing-letter",
+        "gold": "needs_review",
+        "target": "missing_letter",
+        "status": "needs_review",
+        "http": 201,
+        "intake_ms": 34400.7,
+        "target_explained": true,
+        "guards": {
+          "approve": 409,
+          "export": 409,
+          "submission": 409
+        },
+        "ocr_pages": 2,
+        "payable_minor": null,
+        "finding_codes": [
+          "missing_letter",
+          "unrecognized_layout",
+          "page_identity",
+          "page_order",
+          "verify_ocr",
+          "missing_or_ambiguous_field"
+        ],
+        "verified_originals": {
+          "bill": 2,
+          "summary": 2,
+          "records": 4
+        },
+        "ocr_exact_probes": [
+          {
+            "page": 1,
+            "literal": "T-TEST00001",
+            "expected_present": true,
+            "present": true,
+            "transcript_returned": true
+          },
+          {
+            "page": 1,
+            "literal": "87,500.00",
+            "expected_present": true,
+            "present": true,
+            "transcript_returned": true
+          },
+          {
+            "page": 1,
+            "literal": "TEST PATIENT MARK",
+            "expected_present": true,
+            "present": true,
+            "transcript_returned": true
+          },
+          {
+            "page": 2,
+            "literal": "AN-QA042",
+            "expected_present": true,
+            "present": true,
+            "transcript_returned": true
+          },
+          {
+            "page": 2,
+            "literal": "HN-QA017",
+            "expected_present": true,
+            "present": true,
+            "transcript_returned": true
+          },
+          {
+            "page": 2,
+            "literal": "TEST CLINICIAN MARK",
+            "expected_present": true,
+            "present": true,
+            "transcript_returned": true
+          }
+        ]
+      }
+    ]
+  },
+  "revision": {
+    "prior_source_sha256": "d72a0c95ff7944628c1cf8021658ecc86a692fd6c4d670aafb8726e4c123b11f",
+    "corrected_source_sha256": "6280e6dcc3a23412ec5b93792a53067a8c0e423ce2b8339173697fcff5778ab0",
+    "prior_status": "needs_review",
+    "corrected_status": "needs_review",
+    "prior_revision_retrieved": 1,
+    "stale_approval_http": 412
+  },
+  "supported_control": {
+    "intake": "ready_for_review",
+    "approval": "staff_reviewed",
+    "export_verified_originals": 4,
+    "submission": "submitted",
+    "query": "query",
+    "partial": "partial",
+    "remittance_1": "partially_paid",
+    "remittance_2": "paid"
+  },
+  "extra_form": {
+    "http": 422,
+    "detail": "Unsupported attachment field 'payer_form'. Accepted file fields: bill, summary, letter, records."
+  }
+}
