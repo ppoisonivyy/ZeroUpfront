@@ -104,6 +104,12 @@ def unfamiliar_case(scenario, blanks=None):
         (33, 666, "Laboratory: 140.54"),
         (33, 640, "Invoice total: " + invoice_amount),
     ]
+    if scenario == "cms_no_named_member":
+        invoice_rows[2] = (
+            33,
+            706,
+            f"Person {meta['member']}. Visit {meta['encounter']}.",
+        )
     if scenario == "fep_ambiguous_totals":
         invoice_rows.append((33, 610, "Grand total: EUR 7,115.55"))
     if scenario == "fep_only_estimate":
@@ -392,6 +398,86 @@ class USPayerFields(TestCase):
                         [s["page"] for s in finding["sources"]],
                         [2, 2, 3] if name.startswith("cms") else [2, 1],
                     )
+
+    def test_member_mismatch_requires_an_independently_linked_page(self):
+        meta = META | {"insurer": "Medicare Part A"}
+        wrong = "R37910183"
+        front = form("cms", [(46, 291, "Medicare Part A"), (233, 247, wrong)])
+        reverse = sheet([(35, 720, "Conditions on reverse")])
+        header = f"Member {meta['member']}  |  Visit {meta['encounter']}"
+        invoice = sheet([(34, 730, "Itemized hospital account"), (34, 710, header)])
+        neighbor = sheet(
+            [
+                (34, 730, "Itemized hospital account"),
+                (34, 710, "Member R37910182 | Visit IP-070902X"),
+            ]
+        )
+        mixed = sheet(
+            [
+                (34, 730, "Itemized hospital account"),
+                (34, 710, header),
+                (34, 690, "Visit IP-070903  Member R37910183"),
+            ]
+        )
+        cover = sheet([(34, 730, "Cover note only"), (34, 710, header)])
+
+        def assess(documents):
+            review = Review()
+            screen_us(meta, CaseOriginals(documents), review)
+            self.assertFalse(review.checks)
+            return review.findings["cms_member_mismatch"]
+
+        for other in (None, neighbor, mixed, cover):
+            with self.subTest(other_present=other is not None):
+                f = assess(
+                    {"bill": joined(front, reverse, *([other] if other else []))}
+                )
+                self.assertEqual(
+                    [(r["page"], r["quote"]) for r in f["sources"]], [(1, wrong)]
+                )
+                self.assertIn("Intake lists", f["message"])
+        actual = assess({"bill": joined(front, reverse, invoice)})
+        self.assertEqual(
+            [(r["page"], r["quote"]) for r in actual["sources"]],
+            [(1, wrong), (3, "Member R37910182")],
+        )
+        summary = assess(
+            {
+                "bill": joined(front, reverse, neighbor),
+                "summary": sheet(
+                    [(34, 730, "Medical discharge summary"), (34, 710, header)]
+                ),
+            }
+        )
+        self.assertEqual(
+            [(r["role"], r["page"]) for r in summary["sources"]],
+            [("bill", 1), ("summary", 1)],
+        )
+
+    def test_held_out_cms_identifier_cites_form_and_appended_invoice(self):
+        import json
+
+        self.register.stop()
+        path = (
+            Path(__file__).resolve().parents[1]
+            / ".local/payer-challenge/fixtures/cms-member"
+        )
+        if not (path / "metadata.json").is_file():
+            self.skipTest(
+                "Generate the pinned publisher holdout with bench/payer_challenge.py to exercise its physical pages."
+            )
+        review = Review()
+        screen_us(
+            json.loads((path / "metadata.json").read_text()),
+            CaseOriginals({p.stem: p.read_bytes() for p in path.glob("*.pdf")}),
+            review,
+        )
+        finding = review.findings["cms_member_mismatch"]
+        self.assertEqual(
+            [(c["role"], c["page"], c["quote"]) for c in finding["sources"]],
+            [("bill", 1, "HM0130891"), ("bill", 3, "Member HM0130871")],
+        )
+        self.assertIn("linked hospital record", finding["message"])
 
     def test_independent_cases_on_ci_canvases(self):
         self.check_variants()

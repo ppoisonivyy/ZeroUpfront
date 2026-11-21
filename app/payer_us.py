@@ -201,13 +201,22 @@ def _compare_total(family, meta, originals, page, role, actual, quotes, review):
         )
 
 
-def _member_source(meta, originals, form_role, form_number):
+def _member_source(meta, originals, form_role, form_number, *, prefer_invoice=False):
     labeled = re.compile(
         r"\bmember(?:\s+(?:id|number|identifier))?\s*[:#]?\s+([A-Z0-9][A-Z0-9-]{2,47})\b",
         re.IGNORECASE,
     )
+    encounter_label = re.compile(
+        r"\b(?:encounter|admission|visit)(?:\s+(?:id|number|identifier))?\s*[:#]?\s+([A-Z0-9][A-Z0-9-]{2,47})\b",
+        re.IGNORECASE,
+    )
     found = []
-    for role in ("summary", "records"):
+    roles = (
+        ("bill", "summary", "records")
+        if prefer_invoice
+        else ("summary", "records", "bill")
+    )
+    for role in roles:
         for source in form_pages(originals, role):
             if role == form_role and source.number == form_number:
                 continue
@@ -216,6 +225,20 @@ def _member_source(meta, originals, form_role, form_number):
                 or source.page.images.keys()
                 or not contains_identifier(normalized(source.text), meta["encounter"])
             ):
+                continue
+            if role == "bill" and not re.search(
+                r"\b(?:itemi[sz]ed|invoice|hospital account)\b",
+                source.text,
+                re.IGNORECASE,
+            ):
+                continue
+            named_encounters = {
+                m[1].casefold()
+                for m in encounter_label.finditer(source.text)
+                if any(ch.isdigit() for ch in m[1])
+                or m[1].casefold() == meta["encounter"].casefold()
+            }
+            if named_encounters != {meta["encounter"].casefold()}:
                 continue
             for line in source.text.splitlines():
                 for match in labeled.finditer(line):
@@ -292,18 +315,6 @@ def _cms(meta, originals, page, role, review):
         )
         return
     member = _single(page, (230, 242, 355, 254))
-    if (
-        member
-        and re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9-]{2,47}", member)
-        and member.casefold() != meta["member"].casefold()
-    ):
-        review.flag(
-            "cms_member_mismatch",
-            "Hospital registration",
-            f"CMS-1450 FL 60A shows {member}. The encounter lists {meta['member']}. Verify the insured identifier for the primary payer.",
-            page.ref(role, member),
-        )
-        return
     if not member or not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9-]{2,47}", member):
         review.flag(
             "cms_member_review",
@@ -313,7 +324,23 @@ def _cms(meta, originals, page, role, review):
             severity="review",
         )
         return
-    corroboration = _member_source(meta, originals, role, page.number)
+    mismatch = member.casefold() != meta["member"].casefold()
+    corroboration = _member_source(
+        meta, originals, role, page.number, prefer_invoice=mismatch
+    )
+    if mismatch:
+        if corroboration:
+            message = f"CMS-1450 FL 60A shows {member}. The linked hospital record identifies member {meta['member']} for this encounter. Verify the primary insured identifier."
+        else:
+            message = f"CMS-1450 FL 60A shows {member}. Intake lists {meta['member']}. Confirm the identifier against an independent hospital record for this encounter."
+        review.flag(
+            "cms_member_mismatch",
+            "Hospital registration",
+            message,
+            page.ref(role, member),
+            corroboration,
+        )
+        return
     if corroboration:
         review.checked(
             "cms_insured_id_agrees",
@@ -337,7 +364,9 @@ def _cms(meta, originals, page, role, review):
                         summary.ref("summary", match[0]),
                     )
                 )
-            elif re.match(r"^(?:discharge\s+)?disposition\s*[:=]", line.strip(), re.IGNORECASE):
+            elif re.match(
+                r"^(?:discharge\s+)?disposition\s*[:=]", line.strip(), re.IGNORECASE
+            ):
                 uncertain_disposition = True
     if (
         status in {"01", "02"}
