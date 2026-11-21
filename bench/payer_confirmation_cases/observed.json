@@ -1,0 +1,905 @@
+{
+  "manifest_sha256": "e3beb6c0ad0a47832d82f0d876ea29756ef7d0fc390011a9c803e01509989360",
+  "rows": [
+    {
+      "id": "fep-near-facilities",
+      "kind": "other-provider",
+      "pass": true,
+      "expected_code": "fep_assignment_provider",
+      "observed_codes": [
+        "fep_stated_total_agrees",
+        "fep_assignment_provider"
+      ],
+      "actual": {
+        "code": "fep_assignment_provider",
+        "owner": "Payer liaison",
+        "message": "Section 5D names Cedar Spire Outpatient Centre as the payment recipient. The treating facility on this encounter is Cedar Spire Inpatient Hospital. Verify the intended payee and any documented alternative payment arrangement.",
+        "sources": [
+          {
+            "page": 1,
+            "role": "records",
+            "quote": "Cedar Spire Outpatient Centre",
+            "method": "digital"
+          },
+          {
+            "page": 1,
+            "role": "summary",
+            "quote": "Cedar Spire Inpatient Hospital",
+            "method": "digital"
+          }
+        ],
+        "severity": "review"
+      },
+      "safe": true,
+      "originals_intact": true
+    },
+    {
+      "id": "fep-matching-payee",
+      "kind": "hospital",
+      "pass": true,
+      "expected_code": "fep_provider_assignment",
+      "observed_codes": [
+        "fep_stated_total_agrees",
+        "fep_provider_assignment"
+      ],
+      "actual": {
+        "code": "fep_provider_assignment",
+        "message": "FEP section 5D names the hospital and contains text in its signature and date boxes. Staff must verify the assignment and signer before routing.",
+        "sources": [
+          {
+            "page": 1,
+            "role": "records",
+            "quote": "5D. AUTHORIZATION FOR ASSIGNMENT OF BENEFITS",
+            "method": "digital"
+          },
+          {
+            "page": 1,
+            "role": "records",
+            "quote": "Ocean Fern Surgical Hospital",
+            "method": "digital"
+          }
+        ]
+      },
+      "safe": true,
+      "originals_intact": true
+    },
+    {
+      "id": "fep-member-election",
+      "kind": "member",
+      "pass": true,
+      "expected_code": "fep_member_reimbursement",
+      "observed_codes": [
+        "fep_stated_total_agrees",
+        "fep_member_reimbursement"
+      ],
+      "actual": {
+        "code": "fep_member_reimbursement",
+        "message": "FEP sections 5A and 5B select member reimbursement by check. Route the packet for member reimbursement and confirm the payment details.",
+        "sources": [
+          {
+            "page": 1,
+            "role": "records",
+            "quote": "5A. CONTRACT HOLDER REIMBURSEMENT INFORMATION",
+            "method": "digital"
+          },
+          {
+            "page": 1,
+            "role": "records",
+            "quote": "5B. SELECT TYPE OF REIMBURSEMENT",
+            "method": "digital"
+          }
+        ]
+      },
+      "safe": true,
+      "originals_intact": true
+    },
+    {
+      "id": "fep-affiliation-unknown",
+      "kind": "unlinked-provider",
+      "pass": true,
+      "expected_code": "fep_assignment_provider_review",
+      "observed_codes": [
+        "fep_amount_review",
+        "fep_assignment_provider_review"
+      ],
+      "actual": {
+        "code": "fep_assignment_provider_review",
+        "owner": "Payer liaison",
+        "message": "Section 5D names Banyan Reach Specialist Centre. The intake lists Banyan Reach General Hospital. Corroborate the treating facility from the original encounter documents and confirm the intended payee.",
+        "sources": [
+          {
+            "page": 1,
+            "role": "records",
+            "quote": "Banyan Reach Specialist Centre",
+            "method": "digital"
+          }
+        ],
+        "severity": "review"
+      },
+      "safe": true,
+      "originals_intact": true
+    },
+    {
+      "id": "fep-simultaneous-election",
+      "kind": "contradictory",
+      "pass": true,
+      "expected_code": "fep_payee_review",
+      "observed_codes": [
+        "fep_stated_total_agrees",
+        "fep_payee_review"
+      ],
+      "actual": {
+        "code": "fep_payee_review",
+        "owner": "Payer liaison",
+        "message": "Confirm the FEP member identifier and a single payment route. Compare the member elections with the assignment to provider in section 5D.",
+        "sources": [
+          {
+            "page": 1,
+            "role": "records",
+            "quote": "5D. AUTHORIZATION FOR ASSIGNMENT OF BENEFITS",
+            "method": "digital"
+          },
+          {
+            "page": 1,
+            "role": "records",
+            "quote": "5B. SELECT TYPE OF REIMBURSEMENT",
+            "method": "digital"
+          }
+        ],
+        "severity": "review"
+      },
+      "safe": true,
+      "originals_intact": true
+    },
+    {
+      "id": "cms-leading-cent-zero",
+      "kind": "total-conflict",
+      "pass": true,
+      "expected_code": "cms_total_mismatch",
+      "observed_codes": [
+        "cms_insured_id_agrees",
+        "cms_initial_claim_type",
+        "cms_disposition_agrees",
+        "cms_total_mismatch"
+      ],
+      "actual": {
+        "code": "cms_total_mismatch",
+        "owner": "Hospital billing",
+        "message": "CMS-1450 FL 47 shows USD 14,207.03. The linked itemized invoice shows USD 14,207.30. Reconcile the difference.",
+        "sources": [
+          {
+            "page": 1,
+            "role": "bill",
+            "quote": "14207",
+            "method": "digital"
+          },
+          {
+            "page": 1,
+            "role": "bill",
+            "quote": "03",
+            "method": "digital"
+          },
+          {
+            "page": 3,
+            "role": "bill",
+            "quote": "Grand total USD 14,207.30",
+            "method": "digital"
+          }
+        ],
+        "severity": "blocker"
+      },
+      "safe": true,
+      "originals_intact": true
+    },
+    {
+      "id": "cms-adjacent-cents",
+      "kind": "total-agrees",
+      "pass": true,
+      "expected_code": "cms_stated_total_agrees",
+      "observed_codes": [
+        "cms_insured_id_agrees",
+        "cms_initial_claim_type",
+        "cms_disposition_agrees",
+        "cms_stated_total_agrees"
+      ],
+      "actual": {
+        "code": "cms_stated_total_agrees",
+        "message": "CMS-1450 FL 47 and the linked itemized invoice both state USD 18,219.00. Staff still need to review individual charges and credits.",
+        "sources": [
+          {
+            "page": 1,
+            "role": "bill",
+            "quote": "18219",
+            "method": "digital"
+          },
+          {
+            "page": 1,
+            "role": "bill",
+            "quote": "00",
+            "method": "digital"
+          },
+          {
+            "page": 3,
+            "role": "bill",
+            "quote": "Grand total USD 18,219.00",
+            "method": "digital"
+          }
+        ]
+      },
+      "safe": true,
+      "originals_intact": true
+    },
+    {
+      "id": "fep-transposed-cent",
+      "kind": "total-conflict",
+      "pass": true,
+      "expected_code": "fep_total_mismatch",
+      "observed_codes": [
+        "fep_provider_assignment",
+        "fep_total_mismatch"
+      ],
+      "actual": {
+        "code": "fep_total_mismatch",
+        "owner": "Hospital billing",
+        "message": "FEP section 4 shows THB 142,710.05. The linked itemized invoice shows THB 142,710.50. Reconcile the difference.",
+        "sources": [
+          {
+            "page": 1,
+            "role": "records",
+            "quote": "THB 142,710.05",
+            "method": "digital"
+          },
+          {
+            "page": 1,
+            "role": "bill",
+            "quote": "Grand total THB 142,710.50",
+            "method": "digital"
+          }
+        ],
+        "severity": "blocker"
+      },
+      "safe": true,
+      "originals_intact": true
+    }
+  ],
+  "observed": [
+    {
+      "id": "fep-near-facilities",
+      "intake_ms": 765.6,
+      "safe": true,
+      "safety": {
+        "status": "needs_review",
+        "payable_minor": null,
+        "approve_http": 409,
+        "export_http": 409,
+        "allowed_actions": []
+      },
+      "pages": {
+        "bill": 1,
+        "summary": 2,
+        "records": 3,
+        "letter": 1
+      },
+      "originals_intact": true,
+      "findings": [
+        {
+          "code": "fep_assignment_provider",
+          "owner": "Payer liaison",
+          "message": "Section 5D names Cedar Spire Outpatient Centre as the payment recipient. The treating facility on this encounter is Cedar Spire Inpatient Hospital. Verify the intended payee and any documented alternative payment arrangement.",
+          "sources": [
+            {
+              "page": 1,
+              "role": "records",
+              "quote": "Cedar Spire Outpatient Centre",
+              "method": "digital"
+            },
+            {
+              "page": 1,
+              "role": "summary",
+              "quote": "Cedar Spire Inpatient Hospital",
+              "method": "digital"
+            }
+          ],
+          "severity": "review"
+        }
+      ],
+      "checks": [
+        {
+          "code": "fep_stated_total_agrees",
+          "message": "FEP section 4 and the linked itemized invoice both state THB 158,050.00. Staff still need to review individual charges and credits.",
+          "sources": [
+            {
+              "page": 1,
+              "role": "records",
+              "quote": "THB 158,050.00",
+              "method": "digital"
+            },
+            {
+              "page": 1,
+              "role": "bill",
+              "quote": "Grand total THB 158,050.00",
+              "method": "digital"
+            }
+          ]
+        }
+      ],
+      "all_finding_codes": [
+        "unrecognized_layout",
+        "page_identity",
+        "unreadable_records",
+        "unexamined_content",
+        "missing_or_ambiguous_field",
+        "clinical_review",
+        "missing_itemization",
+        "fep_assignment_provider"
+      ]
+    },
+    {
+      "id": "fep-matching-payee",
+      "intake_ms": 766.1,
+      "safe": true,
+      "safety": {
+        "status": "needs_review",
+        "payable_minor": null,
+        "approve_http": 409,
+        "export_http": 409,
+        "allowed_actions": []
+      },
+      "pages": {
+        "bill": 1,
+        "summary": 2,
+        "records": 3,
+        "letter": 1
+      },
+      "originals_intact": true,
+      "findings": [],
+      "checks": [
+        {
+          "code": "fep_stated_total_agrees",
+          "message": "FEP section 4 and the linked itemized invoice both state THB 158,050.00. Staff still need to review individual charges and credits.",
+          "sources": [
+            {
+              "page": 1,
+              "role": "records",
+              "quote": "THB 158,050.00",
+              "method": "digital"
+            },
+            {
+              "page": 1,
+              "role": "bill",
+              "quote": "Grand total THB 158,050.00",
+              "method": "digital"
+            }
+          ]
+        },
+        {
+          "code": "fep_provider_assignment",
+          "message": "FEP section 5D names the hospital and contains text in its signature and date boxes. Staff must verify the assignment and signer before routing.",
+          "sources": [
+            {
+              "page": 1,
+              "role": "records",
+              "quote": "5D. AUTHORIZATION FOR ASSIGNMENT OF BENEFITS",
+              "method": "digital"
+            },
+            {
+              "page": 1,
+              "role": "records",
+              "quote": "Ocean Fern Surgical Hospital",
+              "method": "digital"
+            }
+          ]
+        }
+      ],
+      "all_finding_codes": [
+        "unrecognized_layout",
+        "page_identity",
+        "unreadable_records",
+        "unexamined_content",
+        "missing_or_ambiguous_field",
+        "clinical_review",
+        "missing_itemization"
+      ]
+    },
+    {
+      "id": "fep-member-election",
+      "intake_ms": 763.8,
+      "safe": true,
+      "safety": {
+        "status": "needs_review",
+        "payable_minor": null,
+        "approve_http": 409,
+        "export_http": 409,
+        "allowed_actions": []
+      },
+      "pages": {
+        "bill": 1,
+        "summary": 2,
+        "records": 3,
+        "letter": 1
+      },
+      "originals_intact": true,
+      "findings": [],
+      "checks": [
+        {
+          "code": "fep_stated_total_agrees",
+          "message": "FEP section 4 and the linked itemized invoice both state THB 158,050.00. Staff still need to review individual charges and credits.",
+          "sources": [
+            {
+              "page": 1,
+              "role": "records",
+              "quote": "THB 158,050.00",
+              "method": "digital"
+            },
+            {
+              "page": 1,
+              "role": "bill",
+              "quote": "Grand total THB 158,050.00",
+              "method": "digital"
+            }
+          ]
+        },
+        {
+          "code": "fep_member_reimbursement",
+          "message": "FEP sections 5A and 5B select member reimbursement by check. Route the packet for member reimbursement and confirm the payment details.",
+          "sources": [
+            {
+              "page": 1,
+              "role": "records",
+              "quote": "5A. CONTRACT HOLDER REIMBURSEMENT INFORMATION",
+              "method": "digital"
+            },
+            {
+              "page": 1,
+              "role": "records",
+              "quote": "5B. SELECT TYPE OF REIMBURSEMENT",
+              "method": "digital"
+            }
+          ]
+        }
+      ],
+      "all_finding_codes": [
+        "unrecognized_layout",
+        "page_identity",
+        "unreadable_records",
+        "unexamined_content",
+        "missing_or_ambiguous_field",
+        "clinical_review",
+        "missing_itemization"
+      ]
+    },
+    {
+      "id": "fep-affiliation-unknown",
+      "intake_ms": 764.3,
+      "safe": true,
+      "safety": {
+        "status": "needs_review",
+        "payable_minor": null,
+        "approve_http": 409,
+        "export_http": 409,
+        "allowed_actions": []
+      },
+      "pages": {
+        "bill": 1,
+        "summary": 2,
+        "records": 3,
+        "letter": 1
+      },
+      "originals_intact": true,
+      "findings": [
+        {
+          "code": "fep_amount_review",
+          "owner": "Hospital billing",
+          "message": "Compare the currency and total on the form with a single identifiable itemized invoice.",
+          "sources": [
+            {
+              "page": 1,
+              "role": "records",
+              "quote": "THB 158,050.00",
+              "method": "digital"
+            }
+          ],
+          "severity": "review"
+        },
+        {
+          "code": "fep_assignment_provider_review",
+          "owner": "Payer liaison",
+          "message": "Section 5D names Banyan Reach Specialist Centre. The intake lists Banyan Reach General Hospital. Corroborate the treating facility from the original encounter documents and confirm the intended payee.",
+          "sources": [
+            {
+              "page": 1,
+              "role": "records",
+              "quote": "Banyan Reach Specialist Centre",
+              "method": "digital"
+            }
+          ],
+          "severity": "review"
+        }
+      ],
+      "checks": [],
+      "all_finding_codes": [
+        "unrecognized_layout",
+        "page_identity",
+        "unreadable_records",
+        "unexamined_content",
+        "missing_or_ambiguous_field",
+        "clinical_review",
+        "missing_itemization",
+        "fep_amount_review",
+        "fep_assignment_provider_review"
+      ]
+    },
+    {
+      "id": "fep-simultaneous-election",
+      "intake_ms": 584.2,
+      "safe": true,
+      "safety": {
+        "status": "needs_review",
+        "payable_minor": null,
+        "approve_http": 409,
+        "export_http": 409,
+        "allowed_actions": []
+      },
+      "pages": {
+        "bill": 1,
+        "summary": 2,
+        "records": 3,
+        "letter": 1
+      },
+      "originals_intact": true,
+      "findings": [
+        {
+          "code": "fep_payee_review",
+          "owner": "Payer liaison",
+          "message": "Confirm the FEP member identifier and a single payment route. Compare the member elections with the assignment to provider in section 5D.",
+          "sources": [
+            {
+              "page": 1,
+              "role": "records",
+              "quote": "5D. AUTHORIZATION FOR ASSIGNMENT OF BENEFITS",
+              "method": "digital"
+            },
+            {
+              "page": 1,
+              "role": "records",
+              "quote": "5B. SELECT TYPE OF REIMBURSEMENT",
+              "method": "digital"
+            }
+          ],
+          "severity": "review"
+        }
+      ],
+      "checks": [
+        {
+          "code": "fep_stated_total_agrees",
+          "message": "FEP section 4 and the linked itemized invoice both state THB 158,050.00. Staff still need to review individual charges and credits.",
+          "sources": [
+            {
+              "page": 1,
+              "role": "records",
+              "quote": "THB 158,050.00",
+              "method": "digital"
+            },
+            {
+              "page": 1,
+              "role": "bill",
+              "quote": "Grand total THB 158,050.00",
+              "method": "digital"
+            }
+          ]
+        }
+      ],
+      "all_finding_codes": [
+        "unrecognized_layout",
+        "page_identity",
+        "unreadable_records",
+        "unexamined_content",
+        "missing_or_ambiguous_field",
+        "clinical_review",
+        "missing_itemization",
+        "fep_payee_review"
+      ]
+    },
+    {
+      "id": "cms-leading-cent-zero",
+      "intake_ms": 581.4,
+      "safe": true,
+      "safety": {
+        "status": "needs_review",
+        "payable_minor": null,
+        "approve_http": 409,
+        "export_http": 409,
+        "allowed_actions": []
+      },
+      "pages": {
+        "bill": 3,
+        "summary": 2,
+        "records": 1
+      },
+      "originals_intact": true,
+      "findings": [
+        {
+          "code": "cms_total_mismatch",
+          "owner": "Hospital billing",
+          "message": "CMS-1450 FL 47 shows USD 14,207.03. The linked itemized invoice shows USD 14,207.30. Reconcile the difference.",
+          "sources": [
+            {
+              "page": 1,
+              "role": "bill",
+              "quote": "14207",
+              "method": "digital"
+            },
+            {
+              "page": 1,
+              "role": "bill",
+              "quote": "03",
+              "method": "digital"
+            },
+            {
+              "page": 3,
+              "role": "bill",
+              "quote": "Grand total USD 14,207.30",
+              "method": "digital"
+            }
+          ],
+          "severity": "blocker"
+        }
+      ],
+      "checks": [
+        {
+          "code": "cms_insured_id_agrees",
+          "message": "FL 60A and the linked encounter record both identify insured member QH2619084.",
+          "sources": [
+            {
+              "page": 1,
+              "role": "bill",
+              "quote": "QH2619084",
+              "method": "digital"
+            },
+            {
+              "page": 1,
+              "role": "summary",
+              "quote": "Member QH2619084",
+              "method": "digital"
+            }
+          ]
+        },
+        {
+          "code": "cms_initial_claim_type",
+          "message": "FL 4 shows 0111, an admit-through-discharge claim. The prior-reference requirement for adjustments does not apply to this frequency.",
+          "sources": [
+            {
+              "page": 1,
+              "role": "bill",
+              "quote": "0111",
+              "method": "digital"
+            },
+            {
+              "page": 1,
+              "role": "bill",
+              "quote": "64 DOCUMENT CONTROL NUMBER",
+              "method": "digital"
+            }
+          ]
+        },
+        {
+          "code": "cms_disposition_agrees",
+          "message": "FL 17 shows 01 (home or self-care). The linked discharge summary records the same disposition.",
+          "sources": [
+            {
+              "page": 1,
+              "role": "bill",
+              "quote": "17 STAT",
+              "method": "digital"
+            },
+            {
+              "page": 1,
+              "role": "bill",
+              "quote": "01",
+              "method": "digital"
+            },
+            {
+              "page": 2,
+              "role": "summary",
+              "quote": "Disposition: home",
+              "method": "digital"
+            }
+          ]
+        }
+      ],
+      "all_finding_codes": [
+        "unrecognized_layout",
+        "page_identity",
+        "missing_letter",
+        "missing_or_ambiguous_field",
+        "clinical_review",
+        "missing_itemization",
+        "cms_total_mismatch"
+      ]
+    },
+    {
+      "id": "cms-adjacent-cents",
+      "intake_ms": 579.4,
+      "safe": true,
+      "safety": {
+        "status": "needs_review",
+        "payable_minor": null,
+        "approve_http": 409,
+        "export_http": 409,
+        "allowed_actions": []
+      },
+      "pages": {
+        "bill": 3,
+        "summary": 2,
+        "records": 1
+      },
+      "originals_intact": true,
+      "findings": [],
+      "checks": [
+        {
+          "code": "cms_insured_id_agrees",
+          "message": "FL 60A and the linked encounter record both identify insured member QH3871056.",
+          "sources": [
+            {
+              "page": 1,
+              "role": "bill",
+              "quote": "QH3871056",
+              "method": "digital"
+            },
+            {
+              "page": 1,
+              "role": "summary",
+              "quote": "Member QH3871056",
+              "method": "digital"
+            }
+          ]
+        },
+        {
+          "code": "cms_initial_claim_type",
+          "message": "FL 4 shows 0111, an admit-through-discharge claim. The prior-reference requirement for adjustments does not apply to this frequency.",
+          "sources": [
+            {
+              "page": 1,
+              "role": "bill",
+              "quote": "0111",
+              "method": "digital"
+            },
+            {
+              "page": 1,
+              "role": "bill",
+              "quote": "64 DOCUMENT CONTROL NUMBER",
+              "method": "digital"
+            }
+          ]
+        },
+        {
+          "code": "cms_disposition_agrees",
+          "message": "FL 17 shows 01 (home or self-care). The linked discharge summary records the same disposition.",
+          "sources": [
+            {
+              "page": 1,
+              "role": "bill",
+              "quote": "17 STAT",
+              "method": "digital"
+            },
+            {
+              "page": 1,
+              "role": "bill",
+              "quote": "01",
+              "method": "digital"
+            },
+            {
+              "page": 2,
+              "role": "summary",
+              "quote": "Disposition: home",
+              "method": "digital"
+            }
+          ]
+        },
+        {
+          "code": "cms_stated_total_agrees",
+          "message": "CMS-1450 FL 47 and the linked itemized invoice both state USD 18,219.00. Staff still need to review individual charges and credits.",
+          "sources": [
+            {
+              "page": 1,
+              "role": "bill",
+              "quote": "18219",
+              "method": "digital"
+            },
+            {
+              "page": 1,
+              "role": "bill",
+              "quote": "00",
+              "method": "digital"
+            },
+            {
+              "page": 3,
+              "role": "bill",
+              "quote": "Grand total USD 18,219.00",
+              "method": "digital"
+            }
+          ]
+        }
+      ],
+      "all_finding_codes": [
+        "unrecognized_layout",
+        "page_identity",
+        "missing_letter",
+        "missing_or_ambiguous_field",
+        "clinical_review",
+        "missing_itemization"
+      ]
+    },
+    {
+      "id": "fep-transposed-cent",
+      "intake_ms": 584.0,
+      "safe": true,
+      "safety": {
+        "status": "needs_review",
+        "payable_minor": null,
+        "approve_http": 409,
+        "export_http": 409,
+        "allowed_actions": []
+      },
+      "pages": {
+        "bill": 1,
+        "summary": 2,
+        "records": 3,
+        "letter": 1
+      },
+      "originals_intact": true,
+      "findings": [
+        {
+          "code": "fep_total_mismatch",
+          "owner": "Hospital billing",
+          "message": "FEP section 4 shows THB 142,710.05. The linked itemized invoice shows THB 142,710.50. Reconcile the difference.",
+          "sources": [
+            {
+              "page": 1,
+              "role": "records",
+              "quote": "THB 142,710.05",
+              "method": "digital"
+            },
+            {
+              "page": 1,
+              "role": "bill",
+              "quote": "Grand total THB 142,710.50",
+              "method": "digital"
+            }
+          ],
+          "severity": "blocker"
+        }
+      ],
+      "checks": [
+        {
+          "code": "fep_provider_assignment",
+          "message": "FEP section 5D names the hospital and contains text in its signature and date boxes. Staff must verify the assignment and signer before routing.",
+          "sources": [
+            {
+              "page": 1,
+              "role": "records",
+              "quote": "5D. AUTHORIZATION FOR ASSIGNMENT OF BENEFITS",
+              "method": "digital"
+            },
+            {
+              "page": 1,
+              "role": "records",
+              "quote": "Cypress Jetty District Hospital",
+              "method": "digital"
+            }
+          ]
+        }
+      ],
+      "all_finding_codes": [
+        "unrecognized_layout",
+        "page_identity",
+        "unreadable_records",
+        "unexamined_content",
+        "missing_or_ambiguous_field",
+        "clinical_review",
+        "missing_itemization",
+        "fep_total_mismatch"
+      ]
+    }
+  ]
+}
