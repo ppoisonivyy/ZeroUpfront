@@ -1,32 +1,40 @@
 1
-00:00:03,000 --> 00:00:05,000
+00:00:03,000 --> 00:00:04,000
 The hospital desk's queue. Synthetic patients only.
 
 2
-00:00:05,000 --> 00:00:07,000
+00:00:04,000 --> 00:00:05,000
 Amelia’s knee surgery needs insurer preauthorization.
 
 3
-00:00:07,000 --> 00:00:11,000
+00:00:05,000 --> 00:00:09,000
 Missing signature. Code verifies this rule on page 12.
 
 4
-00:00:11,000 --> 00:00:14,000
+00:00:09,000 --> 00:00:12,000
 The desk attaches the signed report. The gap clears.
 
 5
-00:00:14,000 --> 00:00:17,000
-Staff review and send the request. The insurer decides.
+00:00:12,000 --> 00:00:14,000
+Staff open the insurer’s request form.
 
 6
-00:00:17,000 --> 00:00:20,000
-Meridian Assist receives Amelia’s reviewed request.
+00:00:14,000 --> 00:00:16,000
+Staff mark this revision reviewed.
 
 7
-00:00:20,000 --> 00:00:22,000
-Hospital queue: waiting for the insurer’s decision.
+00:00:16,000 --> 00:00:18,000
+Staff submit the reviewed form to the insurer.
 
 8
+00:00:18,000 --> 00:00:21,000
+Meridian Assist receives Amelia’s reviewed request.
+
+9
+00:00:21,000 --> 00:00:22,000
+Hospital queue: waiting for the insurer’s decision.
+
+10
 00:00:22,000 --> 00:00:27,000
 Tested on held-out cases from known payer forms.
 
