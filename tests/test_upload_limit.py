@@ -25,7 +25,7 @@ class UploadLimitTests(unittest.IsolatedAsyncioTestCase):
         app = FastAPI()
         self.body = packet()
 
-        @app.post("/api/test")
+        @app.post("/api/cases")
         async def inspect(files: list[UploadFile] = File(), note: str = Form()):
             contents = [(file.filename, (await file.read()).decode()) for file in files]
             return {"contents": contents, "note": note}
@@ -59,7 +59,7 @@ class UploadLimitTests(unittest.IsolatedAsyncioTestCase):
 
     async def test_exact_limit_chunked_preserves_four_files_and_closes_every_spool(self):
         opened = self.track_files()
-        response = await self.client.post("/api/test", headers=self.headers, content=self.chunks(self.body))
+        response = await self.client.post("/api/cases", headers=self.headers, content=self.chunks(self.body))
         self.assertNotIn("content-length", response.request.headers)
         self.assertEqual(response.status_code, 200, response.text)
         self.assertEqual(response.json(), {"note": "Example case", "contents": [
@@ -71,7 +71,7 @@ class UploadLimitTests(unittest.IsolatedAsyncioTestCase):
         bill = b"Practice bill line\n" * 8000
         body = self.body.replace(b"Example bill", bill)
         async with self.limited_client(len(body)) as client:
-            response = await client.post("/api/test", headers=self.headers, content=body)
+            response = await client.post("/api/cases", headers=self.headers, content=body)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json()["contents"][0], ["bill.pdf", bill.decode()])
 
@@ -85,13 +85,13 @@ class UploadLimitTests(unittest.IsolatedAsyncioTestCase):
                 yielded.append(len(part))
                 yield part
 
-        declared = await self.client.post("/api/test", headers=self.headers | {"Content-Length": str(len(content))},
+        declared = await self.client.post("/api/cases", headers=self.headers | {"Content-Length": str(len(content))},
                                           content=counted())
         self.assertEqual(declared.status_code, 413)
         self.assertEqual(yielded, [])
         self.assertEqual(opened, {"body": [], "parts": []})
         with patch("starlette.requests.MultiPartParser", side_effect=AssertionError("Parsed oversized upload")):
-            chunked = await self.client.post("/api/test", headers=self.headers, content=counted())
+            chunked = await self.client.post("/api/cases", headers=self.headers, content=counted())
         self.assertEqual(chunked.status_code, 413)
         self.assertGreater(len(yielded), 1)
         self.assertEqual(len(opened["body"]), 1)
@@ -99,7 +99,7 @@ class UploadLimitTests(unittest.IsolatedAsyncioTestCase):
 
     async def test_fastapi_validation_keeps_its_normal_cleanup(self):
         opened = self.track_files()
-        response = await self.client.post("/api/test", headers=self.headers, content=packet(note=False))
+        response = await self.client.post("/api/cases", headers=self.headers, content=packet(note=False))
         self.assertEqual(response.status_code, 422)
         self.assertEqual(len(opened["parts"]), 4)
         self.assertTrue(all(file.closed for files in opened.values() for file in files))
@@ -115,10 +115,18 @@ class UploadLimitTests(unittest.IsolatedAsyncioTestCase):
         async def send(message):
             pass
 
-        scope = {"type": "http", "headers": [(b"content-type", b"multipart/form-data; boundary=demo")]}
+        scope = {"type": "http", "method": "POST", "path": "/api/cases", "headers": [(b"content-type", b"multipart/form-data; boundary=demo")]}
         await MultipartBodyLimit(self.app, maximum=len(self.body))(scope, receive, send)
         self.assertEqual(len(opened["parts"]), 0)
         self.assertTrue(opened["body"][0].closed)
+
+    async def test_public_routes_do_not_spool_uploads(self):
+        files = self.track_files()
+        for path in ("/healthz", "/api/access/login"):
+            with self.subTest(path=path):
+                result = await self.client.post(path, headers=self.headers, content=packet())
+                self.assertEqual(result.status_code, 415)
+        self.assertEqual(files, {"body": [], "parts": []})
 
     def test_production_allowance_covers_four_maximum_pdfs(self):
         self.assertEqual(MAX_MULTIPART_BYTES, 4 * INTAKE_BYTES + 1024 * 1024)

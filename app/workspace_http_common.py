@@ -29,6 +29,12 @@ class MultipartBodyLimit:
         if media_type != "multipart/form-data":
             return await self.app(scope, receive, send)
 
+        # Only the hospital's protected case workflows accept uploaded files.
+        workflow = scope["path"].split("/")[:3]
+        if scope["method"] != "POST" or workflow not in (["", "api", "cases"], ["", "api", "discharge"]):
+            return await JSONResponse({"detail": "This route does not accept multipart uploads."},
+                                      status_code=415)(scope, receive, send)
+
         too_large = JSONResponse(
             {"detail": f"All files and form data together must fit within {self.maximum / (1024 * 1024):g} MiB."},
             status_code=413,
