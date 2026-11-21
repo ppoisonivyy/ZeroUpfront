@@ -5,6 +5,7 @@ import shutil
 import unittest
 from unittest.mock import patch
 
+from argon2 import extract_parameters, Type
 import psycopg
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
@@ -28,6 +29,30 @@ class StaffAccessTest(unittest.TestCase):
 
     def setUp(self):
         self.browser.cookies.clear()
+
+    def test_identical_passwords_have_independent_argon2id_salts_and_verifiers(self):
+        password = secrets.token_urlsafe(32)
+        names = ["salt-staff-a", "salt-staff-b"]
+        for username in names:
+            provision(self.dsn, username, "Demo staff", password)
+        with psycopg.connect(self.dsn) as db:
+            hashes = [row[0] for row in db.execute(
+                "SELECT password_hash FROM zeroupfront_demo.staff_accounts WHERE username = ANY(%s) ORDER BY username",
+                (names,))]
+        self.assertEqual(len(hashes), 2)
+        for encoded in hashes:
+            params = extract_parameters(encoded)
+            self.assertEqual((params.type, params.salt_len, params.hash_len), (Type.ID, 16, 32))
+            self.assertEqual((params.memory_cost, params.time_cost, params.parallelism), (65536, 3, 4))
+            self.assertNotIn(password, encoded)
+        self.assertNotEqual(hashes[0].split("$")[4], hashes[1].split("$")[4])
+        self.assertNotEqual(hashes[0].split("$")[5], hashes[1].split("$")[5])
+        login = self.browser.post("/api/access/login", json={"username": names[0], "password": password})
+        self.assertEqual(login.status_code, 200)
+        for term in ["O'Neil", "%", "_"]:
+            result = self.browser.post("/api/discharge/worklist/search", json={"search": term})
+            self.assertEqual(result.status_code, 200, result.text)
+            self.assertEqual(result.json()["total"], 0)
 
     def test_source_privacy_identity_and_session_lifecycle(self):
         url = "/api/cases/Z001/revisions/1/sources/policy"

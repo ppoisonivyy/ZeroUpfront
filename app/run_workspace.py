@@ -24,7 +24,7 @@ def _terminate(_signum, _frame):
 
 @contextmanager
 def workspace_database(data_dir):
-    if os.environ.get("DATABASE_URL"):
+    if os.environ.get("DATABASE_URL") or "WORKSPACE_HOSPITALS" in os.environ:
         yield
         return
 
@@ -56,7 +56,7 @@ def main():
     if not (ROOT / "web" / "dist" / "index.html").is_file():
         parser.exit(1, "Build the client first with npm --prefix web ci and npm --prefix web run build.\n")
     sys.path.insert(0, str(ROOT))
-    os.environ.setdefault("WORKSPACE_AUTH_MODE", "local" if not os.getenv("DATABASE_URL") else "staff")
+    os.environ.setdefault("WORKSPACE_AUTH_MODE", "staff" if os.getenv("DATABASE_URL") or "WORKSPACE_HOSPITALS" in os.environ else "local")
     previous = signal.signal(signal.SIGTERM, _terminate)
     try:
         with workspace_database(args.data_dir.resolve()):

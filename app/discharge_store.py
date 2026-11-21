@@ -5,6 +5,7 @@ from decimal import Decimal, InvalidOperation
 
 import psycopg
 from psycopg.types.json import Jsonb
+from app.hospital_platform import hospital_path
 
 from app.workspace_store import WorkspaceError, _save_document, _writing, document_digest, lock_intake
 
@@ -131,7 +132,7 @@ def _detail(db, ident, rev=None):
         )
     ]
     sources = [
-        dict(s, url=f"/api/discharge/{ident}/revisions/{rev}/sources/{s['role']}") for s in evidence["sources"]
+        dict(s, url=hospital_path(f"/api/discharge/{ident}/revisions/{rev}/sources/{s['role']}")) for s in evidence["sources"]
     ]
     events = [
         dict(
@@ -142,7 +143,7 @@ def _detail(db, ident, rev=None):
             created_at=stamp.isoformat(),
             data=d,
             filename=f,
-            source_url=f"/api/discharge/{ident}/revisions/{rev}/events/{i}/source" if f else None,
+            source_url=hospital_path(f"/api/discharge/{ident}/revisions/{rev}/events/{i}/source") if f else None,
         )
         for i, k, a, u, stamp, d, f in db.execute(
             """
@@ -489,3 +490,11 @@ def source(dsn, ident, revision, *, role=None, event_id=None):
     if not row:
         raise WorkspaceError(404, "Discharge source not found.")
     return row[0]
+
+
+def corrected_example_bill(dsn, digest):
+    with psycopg.connect(dsn) as db:
+        row = db.execute("SELECT pdf FROM zeroupfront_demo.documents WHERE digest=%s", (digest,)).fetchone()
+        if row is None:
+            raise WorkspaceError(404, "The corrected example bill is unavailable.")
+        return bytes(row[0])
