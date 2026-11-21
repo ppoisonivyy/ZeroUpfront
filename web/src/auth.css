@@ -1,11 +1,28 @@
-.staff-entry { min-height: 100vh; display: grid; place-items: center; background: var(--subtle); padding: 24px; }
-.staff-form { box-sizing: border-box; width: min(100%, 390px); display: grid; gap: 22px; padding: 34px; background: #fff; color: var(--ink); border: 1px solid var(--line); border-radius: 12px; }
-.staff-form strong { color: var(--action); font-size: 15px; }
-.staff-form h1 { font-size: 28px; margin: 0; }
-.staff-form label { display: grid; gap: 7px; font-weight: 600; }
-.staff-form input { box-sizing: border-box; width: 100%; padding: 11px; color: var(--ink); border: 1px solid var(--control); border-radius: 5px; font: inherit; }
-.staff-form button { padding: 12px; border: 0; background: var(--action); color: white; border-radius: 5px; font: inherit; cursor: pointer; }
+.staff-entry { max-width: none; margin: 0; padding: 0; min-height: 100dvh; background: #f5f6f0; color: var(--ink); }
+.entry-header { min-height: 68px; display: flex; align-items: center; padding: 12px clamp(18px, 5vw, 86px); border-bottom: 1px solid var(--line); background: white; }
+.entry-content { padding: clamp(36px, 10vh, 100px) 16px; }
+.staff-form { width: min(100%, 440px); margin: 0 auto; display: grid; gap: 20px; border: 1px solid #d6ddd3; background: white; border-radius: 14px; padding: clamp(22px, 4vw, 38px); box-shadow: 0 6px 24px #193e2b09; }
+.staff-form.directory { width: min(100%, 520px); gap: 25px; }
+.entry-heading { display: grid; gap: 9px; justify-items: start; }
+.staff-form h1 { color: #183e32; font-size: clamp(1.65rem, 4vw, 2rem); line-height: 1.18; letter-spacing: -.045em; margin: 0; }
 .staff-form p { margin: 0; }
-.staff-form-heading p { margin-top: 5px; color: var(--muted); overflow-wrap: anywhere; }
-.staff-account { display: flex; gap: 16px; justify-content: flex-end; align-items: center; padding: 6px 24px; font-size: 13px; background: var(--selected); color: var(--ink); }
-.staff-account button { font: inherit; background: transparent; color: var(--action); border: 0; text-decoration: underline; cursor: pointer; }
+.entry-heading > p { color: var(--muted); line-height: 1.5; font-size: .92rem; }
+.entry-emblem { width: 48px; height: 48px; display: grid; place-items: center; color: #275940; background: #e6edde; border-radius: 13px; margin-bottom: 6px; }
+.hospital-choices { display: grid; gap: 8px; }
+.hospital-choices a { min-height: 60px; padding: 12px 16px; display: grid; align-items: center; grid-template-columns: auto 1fr auto; gap: 12px; border: 1px solid var(--line); border-radius: 8px; color: #214b3d; font-weight: 650; overflow-wrap: anywhere; }
+.hospital-choices a:hover { border-color: #90ab94; background: #f4f7ef; text-decoration: none; }
+.hospital-choices a > svg:last-child { color: #557462; }
+.entry-back { display: inline-flex; align-items: center; gap: 6px; padding-block: 5px; margin: -5px 0 9px; font-size: .84rem; font-weight: 600; }
+.entry-heading .entry-hospital { display: flex; align-items: center; gap: 7px; color: var(--action); font-size: .86rem; font-weight: 650; overflow-wrap: anywhere; }
+.entry-hospital svg { flex: none; }
+.entry-field { display: grid; gap: 6px; color: var(--ink); font-weight: 630; font-size: .87rem; }
+.entry-field input { width: 100%; min-width: 0; height: 45px; padding: 9px 12px; color: var(--ink); border: 1px solid var(--control); border-radius: 6px; font: inherit; font-size: 1rem; font-weight: 450; background: white; }
+.password-field { display: block; position: relative; }
+.password-field input { padding-right: 47px; }
+.password-field button { position: absolute; right: 1px; top: 1px; width: 43px; height: 43px; display: grid; place-items: center; color: var(--action); border: 0; border-radius: 5px; background: transparent; }
+.entry-submit { justify-content: space-between; min-height: 45px; }
+.entry-status { align-items: start; }
+@media (max-width: 650px) {
+  .entry-header { min-height: 58px; }
+  .entry-content { padding-top: 32px; }
+}

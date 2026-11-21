@@ -1,4 +1,5 @@
 import type { Source, WorkflowEvent } from "./api";
+import { hospitalPrefix } from "./api";
 
 export const dischargeRoles = {
   bill: "Final itemized bill",
@@ -69,7 +70,7 @@ export type DischargeWorklist = {
   page_size: number;
 };
 export const claimPath = (id: string) =>
-  "/api/discharge/" + encodeURIComponent(id);
+  hospitalPrefix + "/api/discharge/" + encodeURIComponent(id);
 export const claimHref = (id: string, revision?: number) =>
   "#/discharge/" +
   encodeURIComponent(id) +

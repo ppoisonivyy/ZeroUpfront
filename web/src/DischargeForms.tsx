@@ -133,7 +133,7 @@ export function ClaimUpload({
                 checked={useSample}
                 onChange={(e) => setUseSample(e.target.checked)}
               />
-              Use the corrected bill from this local example.
+              Use the corrected bill from this practice case.
             </label>
           )}
           {useSample && claim ? (

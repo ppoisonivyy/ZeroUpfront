@@ -5,6 +5,8 @@ import {
   BookOpen,
   ChevronDown,
   Hospital,
+  LogOut,
+  ArrowLeftRight,
   Building2,
   Check,
   ChevronRight,
@@ -23,7 +25,7 @@ import {
   Upload,
 } from "lucide-react";
 import type { CaseDetail, CaseSummary, PacketStatus } from "./api";
-import { api, blocked, casePath, displayDate, money, statuses } from "./api";
+import { api, blocked, casePath, displayDate, hospitalPrefix, money, statuses } from "./api";
 import { ApproveDraft, ReplaceEstimate } from "./ReviewForms";
 import { SourceView } from "./SourceView";
 import { AttachmentList } from "./Attachments";
@@ -50,7 +52,7 @@ const caseHref = (id: string, rev?: number) =>
   "#/cases/" + encodeURIComponent(id) + (rev ? "?revision=" + rev : "");
 function readRoute(): Route {
   const pathAndSearch =
-    location.hash.slice(1) || location.pathname + location.search;
+    location.hash.slice(1) || (location.pathname.slice(hospitalPrefix.length) || "/") + location.search;
   const [path, search] = pathAndSearch.split("?");
   if (path === "/") return { id: "", discharge: true };
   const params = new URLSearchParams(search);
@@ -933,16 +935,25 @@ function App() {
               <a aria-current={route.discharge ? "page" : undefined} href="#/discharge">Discharge claims</a>
               <a aria-current={!route.discharge ? "page" : undefined} href="#/cases">Pre-arrival cases</a>
             </nav>
-            <button className="mast-context" popoverTarget="workspace-context">
-              <Hospital size={15} /> Hospital <ChevronDown size={13} />
+            <button className="mast-context" popoverTarget="workspace-context" title={session.hospital_name || "Hospital workspace"}>
+              <Hospital size={15} /><span>{session.hospital_name || "Hospital"}</span><ChevronDown size={13} />
             </button>
             <div id="workspace-context" className="workspace-context" popover="auto">
               <strong>{session.hospital_name || "Hospital workspace"}</strong>
-              <span>{session.mode === "local" ? "Local rehearsal" : "Signed-in staff"}</span>
+              <span>{session.mode === "local" ? "Local rehearsal" : session.actor}</span>
               <nav aria-label="Workspace shortcuts" onClick={() => document.getElementById("workspace-context")?.hidePopover()}>
                 <a href="#/discharge">Discharge worklist <ChevronRight size={15} /></a>
                 <a href="#/cases">Pre-arrival worklist <ChevronRight size={15} /></a>
               </nav>
+              {session.mode === "staff" && <div className="account-actions">
+                {hospitalPrefix && <button disabled={session.busy} onClick={() => void session.signOut(true)}>
+                  <ArrowLeftRight size={15} />Switch hospital
+                </button>}
+                <button disabled={session.busy} onClick={() => void session.signOut()}>
+                  <LogOut size={15} />Sign out
+                </button>
+                {session.problem && <p className="error-message" role="alert">{session.problem}</p>}
+              </div>}
             </div>
           </div>
         </header>
