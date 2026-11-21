@@ -143,22 +143,34 @@ class PreclaimHandoffTests(unittest.TestCase):
             self.assertEqual(payer.post(resource, json=dict(question, page=999), headers=match).status_code, 422)
             self.assertEqual(payer.post(resource, json=dict(question, question="  "), headers=match).status_code, 422)
             self.assertEqual(payer.post(resource, json=question, headers={"If-Match": '"1"'}).status_code, 404)
-            asked = payer.post(resource, json=question, headers=match)
-            self.assertEqual(asked.status_code, 200, asked.text)
+            # Independent HTTP requests compete for the same correspondence sequence.
+            def competing_posts(client, url, payloads):
+                with ThreadPoolExecutor(max_workers=2) as pool:
+                    responses = list(pool.map(lambda data: client.post(url, json=data, headers=match), payloads))
+                self.assertEqual(sorted(response.status_code for response in responses), [200, 409])
+                return next(response for response in responses if response.status_code == 200)
+
+            asked = competing_posts(payer, resource, [
+                question, dict(question, question="Which charges cover the surgeon?"),
+            ])
             self.assertEqual(asked.json()["status"], "hospital_reply_needed")
-            self.assertEqual(staff.get(case).json()["questions"][0]["question"], question["question"])
+            saved_questions = staff.get(case).json()["questions"]
+            self.assertEqual(len(saved_questions), 1)
+            self.assertEqual(saved_questions, asked.json()["questions"])
             self.assertEqual(payer.post(resource, json=question, headers=match).status_code, 409)
             item = next(x for x in staff.get(north + "/cases").json() if x["id"] == fixture.CASE)
             self.assertEqual(item["workflow_stage"], "hospital_reply_needed")
             reply = {"reply": "The submitted estimate lists the facility and professional charges."}
             reply_url = case + "/clarifications/1/reply"
             self.assertEqual(payer.post(reply_url, json=reply, headers=match).status_code, 403)
-            updated = staff.post(reply_url, json=reply, headers=match)
-            self.assertEqual(updated.status_code, 200, updated.text)
+            updated = competing_posts(staff, reply_url, [
+                reply, {"reply": "Facility and surgeon charges appear separately on the estimate."},
+            ])
             self.assertEqual(staff.post(reply_url, json=reply, headers=match).status_code, 409)
             self.assertEqual(payer.post(resource, json=question, headers=match).status_code, 409)
             received = payer.get(inbox).json()[0]
-            self.assertEqual(received["questions"][0]["reply"], reply["reply"])
+            self.assertEqual(len(received["questions"]), 1)
+            self.assertEqual(received["questions"], updated.json()["questions"])
             self.assertEqual(received["status"], "hospital_replied")
             self.assertEqual(received["revision"], 2)
             self.assertEqual(payer.get(received["draft_url"]).content, saved_form)
