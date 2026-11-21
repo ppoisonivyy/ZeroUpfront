@@ -21,6 +21,8 @@ For supported administrative checks, pin the original PDF and maintain a reviewe
 
 The [benchmark comparison](benchmark-comparison.md) supports full-edition reading for bounded open questions, plus verified, mandatory clause links for supported checks. [Context budgets](context-budget.md) should be applied to the full request including case evidence.
 
+The [coordinator application design](application-design.md) specifies upload finalization, revision-safe checks, reviewer actions, export and insurer responses.
+
 ## Proposed application design
 
 ```mermaid
