@@ -7,9 +7,17 @@ const roles: Record<string, string> = {
   policy: "Policy schedule",
   plan: "Treatment plan",
   estimate: "Hospital estimate",
+  bill: "Final itemized bill",
+  summary: "Discharge summary",
+  letter: "Payer letter",
+  records: "Supporting records",
 };
 
-export function AttachmentList({ packet }: { packet: CaseDetail }) {
+export function AttachmentList({
+  packet,
+}: {
+  packet: Pick<CaseDetail, "revision" | "sources">;
+}) {
   const [selected, setSelected] = useState<string | null>(null);
   const id = useId();
   return (

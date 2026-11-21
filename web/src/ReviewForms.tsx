@@ -8,6 +8,7 @@ import {
 import type { CaseDetail, Charge } from "./api";
 import { api, casePath, displayDate, money } from "./api";
 import { AttachmentList } from "./Attachments";
+import { useStaffSession } from "./Auth";
 
 const PdfPage = lazy(() => import("./PdfPage"));
 type FormProps = {
@@ -78,7 +79,7 @@ type Preview = { lines: Charge[]; total: number };
 function readSample(text: string): Preview | null {
   const amountAfter = (label: string) => {
     const match = text.match(
-      new RegExp(label + "\\s+THB\\s+([0-9,]+(?:\\.[0-9]+)?)", "i"),
+      new RegExp(label + "\\s*:?\\s+THB\\s+([0-9,]+(?:\\.[0-9]+)?)", "i"),
     );
     return match ? Number(match[1].replaceAll(",", "")) : null;
   };
@@ -156,12 +157,14 @@ function Compare({
 }
 export function ReplaceEstimate(props: FormProps) {
   const { packet, onCancel, onStale } = props;
-  const sampleAvailable = packet.id === "Z002";
+  const sampleAvailable =
+    packet.sample_estimate_available ?? packet.id === "Z002";
   const [mode, setMode] = useState<"sample" | "upload">(
     sampleAvailable ? "sample" : "upload",
   );
   const [file, setFile] = useState<File | null>(null);
   const [confirmed, setConfirmed] = useState(false);
+  const [ocr, setOcr] = useState(false);
   const [sample, setSample] = useState<Preview | null>(null);
   const sampleText = useCallback(
     (text: string) => setSample(readSample(text)),
@@ -200,7 +203,10 @@ export function ReplaceEstimate(props: FormProps) {
             const data = new FormData();
             data.set("confirmed", "true");
             if (mode === "sample") data.set("sample", "true");
-            else if (file) data.set("file", file);
+            else if (file) {
+              data.set("file", file);
+              data.set("ocr", String(ocr));
+            }
             void save("/estimate", data);
           }}
         >
@@ -231,12 +237,12 @@ export function ReplaceEstimate(props: FormProps) {
                   setConfirmed(false);
                 }}
               />
-              Upload demo PDF
+              Upload PDF
             </label>
           </fieldset>
           {mode === "upload" && (
             <div className="field">
-              <label htmlFor="file">Upload demo estimate PDF</label>
+              <label htmlFor="file">Upload estimate PDF</label>
               <input
                 id="file"
                 type="file"
@@ -248,9 +254,19 @@ export function ReplaceEstimate(props: FormProps) {
                 }}
               />
               <p className="hint">
-                Choose a supported synthetic estimate for this case. Personal
-                patient files do not belong in this demo.
+                Use the estimate issued for the same admission. The current
+                revision is preserved in case history.
               </p>
+              <label className="check-field">
+                <input
+                  type="checkbox"
+                  checked={ocr}
+                  disabled={busy}
+                  onChange={(e) => setOcr(e.target.checked)}
+                />
+                Allow OpenAI to process scanned pages of this estimate if OCR is
+                needed.
+              </label>
             </div>
           )}
           {mode === "sample" && sample ? (
@@ -329,7 +345,7 @@ export function ReplaceEstimate(props: FormProps) {
             </>
           ) : (
             <p className="empty-view">
-              Choose a demo PDF to inspect its original page.
+              Choose a PDF to inspect its original page.
             </p>
           )}
         </section>
@@ -339,7 +355,8 @@ export function ReplaceEstimate(props: FormProps) {
 }
 export function ApproveDraft(props: FormProps) {
   const { packet, onCancel, onStale } = props;
-  const [name, setName] = useState("");
+  const session = useStaffSession();
+  const [name, setName] = useState(session.actor || "");
   const [checked, setChecked] = useState(false);
   const { save, busy, error } = useSave(props);
   return (
@@ -392,6 +409,7 @@ export function ApproveDraft(props: FormProps) {
             value={name}
             maxLength={100}
             required
+            readOnly={!!session.actor}
             disabled={busy}
             onChange={(e) => setName(e.target.value)}
           />

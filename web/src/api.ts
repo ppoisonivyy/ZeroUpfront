@@ -13,6 +13,10 @@ export type CaseSummary = {
   total: number | null;
   status: PacketStatus;
   revision: number;
+  insurer_status?: string;
+  workflow_stage?: string;
+  latest_event_kind?: string;
+  open_hold_count?: number;
 };
 export type Source = {
   role: string;
@@ -20,6 +24,29 @@ export type Source = {
   url: string;
   page: number;
   quote: string;
+  anchors?: { page: number; quote: string; clause?: string; method?: string }[];
+};
+export type WorkflowAction =
+  "submission" | "reply" | "supplement" | "admission" | "deposit";
+export type WorkflowEvent = {
+  id: number | string;
+  kind: WorkflowAction;
+  actor: string;
+  created_at: string;
+  data: Record<string, unknown>;
+  source_url?: string | null;
+  filename?: string | null;
+};
+export type Citation = { role: string; page: number; quote: string };
+export type EvidenceCheck = {
+  requirement: string;
+  result: string;
+  policy: Citation;
+  support: Citation;
+};
+export type ManualEvidence = {
+  fields: Record<string, Citation>;
+  checks: EvidenceCheck[];
 };
 export type Charge = { label: string; amount: number };
 export type CaseDetail = CaseSummary & {
@@ -31,6 +58,32 @@ export type CaseDetail = CaseSummary & {
   history: { revision: number; status: PacketStatus; total: number | null }[];
   reviewer: string | null;
   insurer_status: string;
+  workflow_version?: number;
+  events?: WorkflowEvent[];
+  allowed_actions?: (WorkflowAction | "hold" | "resolve_hold")[];
+  intake?: boolean;
+  input_kind?: string;
+  issues?: string[];
+  manual_review?: ManualEvidence | null;
+  clarification_available?: boolean;
+  sample_estimate_available?: boolean;
+  open_holds?: {
+    id: number;
+    revision: number;
+    category: string;
+    note: string;
+    actor: string;
+  }[];
+  admission_check?: {
+    outcome: string;
+    differences?: string[];
+    uncertainties?: string[];
+  } | null;
+  deposit_decision?: {
+    outcome: string;
+    amount?: string;
+    currency?: string;
+  } | null;
 };
 
 export const statuses: Record<PacketStatus, string> = {
@@ -82,11 +135,19 @@ export async function api(path: string, options?: RequestInit) {
     );
   }
   if (!response.ok) {
+    if (response.status === 401)
+      window.dispatchEvent(new Event("staff-session-expired"));
     const payload = await response.json().catch(() => null);
     const detail =
       typeof payload?.detail === "string"
         ? payload.detail
-        : "The case service could not complete this request.";
+        : Array.isArray(payload?.detail)
+          ? payload.detail
+              .map((issue: { loc?: string[]; msg?: string }) =>
+                [issue.loc?.at(-1), issue.msg].filter(Boolean).join(" · "),
+              )
+              .join(". ")
+          : "The case service could not complete this request.";
     const stale = response.status === 412;
     throw new RequestError(
       response.status,
