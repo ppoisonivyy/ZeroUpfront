@@ -19,6 +19,7 @@ export function AttachmentList({
   packet: Pick<CaseDetail, "revision" | "sources">;
 }) {
   const [selected, setSelected] = useState<string | null>(null);
+  const [previewPage, setPreviewPage] = useState(1);
   const id = useId();
   return (
     <section className="attachments" aria-label="Request attachments">
@@ -41,7 +42,10 @@ export function AttachmentList({
               className="attachment-toggle"
               aria-controls={previewId}
               aria-expanded={open}
-              onClick={() => setSelected(open ? null : source.url)}
+              onClick={() => {
+                setPreviewPage(source.page || 1);
+                setSelected(open ? null : source.url);
+              }}
             >
               <span className="file-icon">
                 <FileText size={17} />
@@ -64,11 +68,11 @@ export function AttachmentList({
               {open && (
                 <div className="attachment-preview">
                   <div className="attachment-tools">
-                    <span>Original · page {source.page}</span>
+                    <span>Cited excerpt · page {source.page || 1}</span>
                     {href && (
                       <a
                         className="text-action"
-                        href={href + "#page=" + source.page}
+                        href={href + "#page=" + previewPage}
                         target="_blank"
                         rel="noreferrer"
                       >
@@ -85,6 +89,7 @@ export function AttachmentList({
                         url={href}
                         page={source.page}
                         label={source.label}
+                        onPageChange={setPreviewPage}
                       />
                     </Suspense>
                   )}

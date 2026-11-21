@@ -11,6 +11,7 @@ type Props = {
   label: string;
   onText?: (text: string) => void;
   onReady?: () => void;
+  onPageChange?: (page: number) => void;
   fixedPage?: boolean;
 };
 export default function PdfPage(props: Props) {
@@ -22,6 +23,7 @@ function DocumentPage({
   label,
   onText,
   onReady,
+  onPageChange,
   fixedPage = false,
 }: Props) {
   const frame = useRef<HTMLDivElement>(null);
@@ -106,6 +108,7 @@ function DocumentPage({
   function selectPage(value: number) {
     if (doc && Number.isInteger(value) && value >= 1 && value <= doc.numPages) {
       setActive(value);
+      onPageChange?.(value);
       setTarget(String(value));
     }
   }

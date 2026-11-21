@@ -187,7 +187,7 @@ function Worklist({ epoch, retry }: { epoch: number; retry: () => void }) {
   });
   return (
     <>
-      <div className="page-title">
+      <div className="page-title desk-heading">
         <div>
           <p className="section-label">Pre-arrival coordination</p>
           <h1>Case worklist</h1>
