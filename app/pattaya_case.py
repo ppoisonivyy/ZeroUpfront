@@ -1,8 +1,14 @@
 """Fictional discharge exhibits based on Bangkok Hospital Pattaya's published lens package."""
 
+from dataclasses import dataclass
+from decimal import Decimal
+
 from app.journey_examples import pdf
 
 
+FACILITY = "Pattaya Practice Hospital"
+ENCOUNTER = "DEMO-LENS-239"
+CREDIT_DOCUMENTS = {"record_short_credit": "initial_credit", "record_topup": "topup_credit"}
 PROCEDURE = "Bilateral multifocal lens replacement"
 SCENARIO = "pattaya_fx"
 TERMS = ("The insurer guarantees net THB 239,000 to the hospital. The hospital payment is due 30 November 2026. The patient share is THB 0. "
@@ -10,10 +16,10 @@ TERMS = ("The insurer guarantees net THB 239,000 to the hospital. The hospital p
 
 
 def exhibits():
-    facility = "Pattaya Practice Hospital"
+    facility = FACILITY
     insurer = "Meridian Travel Cover (fictional)"
     member = "DEMO-PATTAYA-239"
-    encounter = "DEMO-LENS-239"
+    encounter = ENCOUNTER
     admission, discharge = "2026-11-18", "2026-11-19"
     dates = [f"Admission date: {admission}", f"Discharge date: {discharge}"]
     case = dict(member=member, encounter=encounter, facility=facility, insurer=insurer, procedure=PROCEDURE,
@@ -52,3 +58,50 @@ def final_decision():
                 "The insurer funds exchange-rate changes and bank fees.",
                 "If the hospital receives less, the insurer pays the outstanding THB balance.",
                 "Additional services need separate approval.", "Issued by the fictional insurer claims desk.", "Synthetic rehearsal. No real guarantee is issued."])
+
+
+@dataclass(frozen=True)
+class BankMessage:
+    kind: str
+    case_id: str
+    encounter: str
+    beneficiary: str
+    bank_reference: str
+    value_date: str
+    currency: str
+    gross_minor: int
+    fee_minor: int | None
+    net_minor: int | None
+
+    def document(self):
+        def money(minor):
+            return f"{self.currency} {Decimal(minor) / 100:,.2f}"
+
+        is_instruction = self.kind == "instruction"
+        heading = "SENDER TRANSFER INSTRUCTION" if is_instruction else "BENEFICIARY CREDIT ADVICE"
+        lines = [f"SIMULATED {heading}", "Pattaya practice case / fictional bank document",
+                 "Issued by: " + ("Practice Sending Bank" if is_instruction else "Practice Receiving Bank"),
+                 f"Bank reference: {self.bank_reference}", f"Claim reference: {self.case_id}",
+                 f"Encounter: {self.encounter}", f"Beneficiary: {self.beneficiary}",
+                 f"{'Requested' if is_instruction else 'Credit'} value date: {self.value_date}",
+                 f"Instructed amount: {money(self.gross_minor)}"]
+        if is_instruction:
+            lines.append("Status: Transfer requested. Beneficiary credit unconfirmed.")
+        else:
+            lines.append("Status: Posted to beneficiary account")
+            lines.append("Receiving-bank deduction: " + (money(self.fee_minor) if self.fee_minor is not None else "Unspecified"))
+            lines.append(f"Net credited to hospital: {money(self.net_minor)}")
+        return pdf(lines)
+
+
+def bank_message(ident, kind):
+    # The sample receiving bank issues these facts independently of the hospital ledger.
+    if kind == "instruction":
+        leg, value_date, gross, fee, net = "SEND-01", "2026-11-30", 23_900_000, None, None
+    elif kind == "initial_credit":
+        leg, value_date, gross, fee, net = "CREDIT-01", "2026-11-30", 23_900_000, 30_000, 23_870_000
+    elif kind == "topup_credit":
+        leg, value_date, gross, fee, net = "CREDIT-02", "2026-12-01", 30_000, 0, 30_000
+    else:
+        raise ValueError("Unknown practice bank document.")
+    return BankMessage(kind, ident, ENCOUNTER, FACILITY, f"SIM-{leg}-{ident}", value_date, "THB", gross, fee, net)

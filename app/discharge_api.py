@@ -62,8 +62,17 @@ class WorklistCounts(BaseModel):
     payer: int
 
 
+class PattayaSettlementBalance(BaseModel):
+    status: Literal["unpaid", "partially_paid", "paid", "reconciliation_required"]
+    outstanding_minor: int | None
+
+
+class WorklistItem(Summary):
+    pattaya_settlement: PattayaSettlementBalance | None = None
+
+
 class WorklistPage(BaseModel):
-    items: list[Summary]
+    items: list[WorklistItem]
     counts: WorklistCounts
     total: int
     page: int
@@ -131,7 +140,7 @@ def _files(uploads):
     return {role: _read_upload(f) for role, f in chosen.items()}, {role: f.filename for role, f in chosen.items()}
 
 
-@router.get("", response_model=list[Summary])
+@router.get("", response_model=list[WorklistItem], response_model_exclude_unset=True)
 def queue(request: Request):
     return store.summaries(request.app.state.dsn)
 
@@ -146,14 +155,14 @@ class WorklistSearch(WorklistFilters):
     search: str = Field(max_length=250)
 
 
-@router.get("/worklist", response_model=WorklistPage)
+@router.get("/worklist", response_model=WorklistPage, response_model_exclude_unset=True)
 def worklist(request: Request, filters: Annotated[WorklistFilters, Query()]):
     if request.query_params.get("search"):
         raise HTTPException(422, "Send claim search text in the body of POST /api/discharge/worklist/search.")
     return store.worklist(request.app.state.dsn, filters.queue, "", filters.page, filters.page_size)
 
 
-@router.post("/worklist/search", response_model=WorklistPage)
+@router.post("/worklist/search", response_model=WorklistPage, response_model_exclude_unset=True)
 def search_worklist(request: Request, filters: WorklistSearch):
     return store.worklist(request.app.state.dsn, filters.queue, filters.search.strip(), filters.page, filters.page_size)
 
@@ -254,6 +263,8 @@ class PracticeConfirmation(BaseModel):
 class PracticeAction(PracticeConfirmation):
     action: Literal["book_spot", "book_forward", "record_short_credit", "record_topup"]
     workflow_version: int = Field(strict=True, ge=0)
+    quote_id: str | None = Field(default=None, max_length=80)
+    bank_document: Literal["instruction", "initial_credit", "topup_credit"] | None = None
 
 
 def _pattaya_case(dsn, ident, revision):
@@ -276,6 +287,15 @@ def pattaya_review(request: Request, response: Response, ident: str, revision: A
     return pattaya_agents.review(case)
 
 
+@router.get("/{ident}/pattaya/bank-documents/{kind}", response_class=Response, responses=PDF)
+def pattaya_bank_document(request: Request, ident: str, kind: Literal["instruction", "initial_credit", "topup_credit"],
+                          revision: Annotated[int, Query(ge=1)]):
+    from app import pattaya_workflow
+
+    case = _pattaya_case(request.app.state.dsn, ident, revision)
+    return _pdf(pattaya_workflow.preview_bank_document(case, kind), f"pattaya-{kind}.pdf")
+
+
 @router.post("/{ident}/pattaya/agent-review")
 def pattaya_model_review(request: Request, response: Response, ident: str, options: PracticeConfirmation, if_match: Match = None):
     from app import pattaya_agents
@@ -295,7 +315,8 @@ def pattaya_action(request: Request, ident: str, command: PracticeAction, if_mat
     from app import pattaya_workflow
 
     _require_practice_mode()
-    return pattaya_workflow.apply(request.app.state.dsn, ident, _revision(if_match), command.action, command.workflow_version)
+    return pattaya_workflow.apply(request.app.state.dsn, ident, _revision(if_match), command.action,
+                                 command.workflow_version, quote_id=command.quote_id, bank_document=command.bank_document)
 
 
 def _sample_bill(dsn, case):

@@ -187,14 +187,14 @@ def detail(dsn, ident, rev=None):
 
 _SUMMARIES = """
     SELECT c.id, c.head AS revision, fields.member, fields.procedure, fields.insurer, fields.encounter,
-           fields.admission_date, fields.discharge_date, fields.currency, fields.bill_total_minor,
+           fields.admission_date, fields.discharge_date, fields.currency, fields.bill_total_minor, fields.example_scenario,
            CASE WHEN a.actor IS NULL THEN fields.status ELSE 'staff_reviewed' END AS status,
            coalesce(stage.status, 'not_sent') AS insurer_status
     FROM zeroupfront_demo.discharge_cases c
     JOIN zeroupfront_demo.discharge_revisions r ON r.case_id=c.id AND r.revision=c.head
     CROSS JOIN LATERAL jsonb_to_record(r.evidence) AS fields(
         member text, procedure text, insurer text, encounter text, admission_date text,
-        discharge_date text, currency text, bill_total_minor numeric, status text)
+        discharge_date text, currency text, bill_total_minor numeric, status text, example_scenario text)
     LEFT JOIN zeroupfront_demo.discharge_approvals a ON a.case_id=c.id AND a.revision=c.head
     LEFT JOIN LATERAL (
         SELECT CASE WHEN e.kind='submission' THEN 'submitted' ELSE e.data->>'outcome' END AS status
@@ -207,11 +207,39 @@ _SUMMARIES = """
 
 def summaries(dsn):
     with psycopg.connect(dsn, row_factory=psycopg.rows.dict_row) as db:
-        return db.execute(_SUMMARIES + " ORDER BY c.id").fetchall()
+        db.execute("SET TRANSACTION ISOLATION LEVEL REPEATABLE READ, READ ONLY")
+        items = db.execute(_SUMMARIES + " ORDER BY c.id").fetchall()
+        _pattaya_worklist_balances(db, items)
+        return items
+
+
+def _pattaya_worklist_balances(db, items):
+    # Fetch ledger events only for practice cases already selected for display.
+    cases = {item["id"]: item for item in items if item.pop("example_scenario", None) == "pattaya_fx"}
+    if not cases:
+        return
+    events = {ident: [] for ident in cases}
+    for row in db.execute("""
+        SELECT e.case_id, e.kind, e.data
+        FROM zeroupfront_demo.discharge_events e
+        JOIN zeroupfront_demo.discharge_cases c ON c.id=e.case_id AND c.head=e.revision
+        WHERE e.case_id=ANY(%s) AND e.kind IN ('reply', 'payment')
+        ORDER BY e.case_id, e.version
+    """, (list(cases),)):
+        events[row["case_id"]].append(row)
+    for ident, item in cases.items():
+        ledger = _projection(events[ident], approved=True)
+        decision = ledger["payer_decision"] or {}
+        status = ledger["settlement_status"]
+        outstanding = None
+        if decision.get("outcome") == "confirmed" and decision.get("currency") == "THB" and status != "reconciliation_required":
+            outstanding = decision["amount_minor"] - ledger["paid_by_currency"].get("THB", 0)
+        else:
+            status = "reconciliation_required"
+        item["pattaya_settlement"] = dict(status=status, outstanding_minor=outstanding)
 
 
 def worklist(dsn, queue, search, page, page_size):
-    # One statement keeps the selection, totals and returned page on a single database snapshot.
     query = f"""
         WITH claims AS ({_SUMMARIES}),
         queues AS MATERIALIZED (
@@ -241,8 +269,10 @@ def worklist(dsn, queue, search, page, page_size):
     """
     pattern = "%" + search.replace("\\", "\\\\").replace("%", r"\%").replace("_", r"\_") + "%"
     with psycopg.connect(dsn, row_factory=psycopg.rows.dict_row) as db:
+        db.execute("SET TRANSACTION ISOLATION LEVEL REPEATABLE READ, READ ONLY")
         row = db.execute(query, dict(queue=queue, search=search, pattern=pattern, size=page_size,
                                      offset=(page - 1) * page_size)).fetchone()
+        _pattaya_worklist_balances(db, row["items"])
     return dict(items=row.pop("items"), total=row.pop("total"), counts=row, page=page, page_size=page_size)
 
 
@@ -466,6 +496,9 @@ def record(dsn, ident, base, fields, actor, username, raw, name, submitted_packe
                 data.update(_amount(fields))
         elif action == "payment":
             data.update(_amount(fields), notes=_required(fields, "notes"))
+            if pattaya_rehearsal and case.get("example_scenario") == "pattaya_fx":
+                for key in ("bank_reference", "value_date", "beneficiary", "gross_minor", "fee_minor"):
+                    data[key] = fields["bank_advice"][key]
             if data["currency"] != case["payer_decision"]["currency"]:
                 raise WorkspaceError(
                     422, "The recorded payment currency differs from the payer decision. Reconcile it first."

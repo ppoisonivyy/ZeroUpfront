@@ -27,10 +27,10 @@ Use the same practice claim. Save the one-page fictional reply to your computer 
 
 Bangkok Hospital Pattaya publishes a THB 239,000 multifocal lens replacement package covering both eyes and one inpatient night. The hospital describes checking the insurer’s guarantee and requesting an extension when costs or treatment change. The price and hospital workflow are public. The demo insurer, patient, approval, quotes and bank receipts are fictional. The scenario assumes the insurer has agreed to cover the whole package in THB, including any FX-related shortfall. [Published hospital package](https://www.bangkokhospital.com/en/pattaya/package/lens-replacement-surgery-package-bph) · [Hospital direct-billing process](https://www.bangkokhospital.com/en/pattaya/visit/insurance-bph)
 
-1. Open the Pattaya example from the local discharge worklist. Inspect the written THB 239,000 guarantee, the approved patient share of zero and the evidence used by the settlement agents.
-2. Compare the simulated spot and forward, then confirm one bank booking. The insurer buys baht with USD. From the simulated 19 November trade date, spot costs USD 7,029.41 for delivery on 23 November. The forward costs USD 6,867.82 for delivery on the 30 November hospital due date. Both prices are illustrative. The hospital still has a THB 239,000 receivable. Open a second example to try the other instrument.
-3. Record the simulated **THB 238,700** bank credit. The reconciliation agent assigns **THB 300** to the insurer and keeps the patient’s FX charge at zero. Refresh the case to see the outstanding balance.
-4. Confirm the simulated **THB 300** top-up. The two bank credits now match the guarantee. The claim can show paid.
+1. Choose **Open Pattaya case** from the local discharge worklist. Open the final guarantee and compare its recorded summary with the original insurer PDF. It guarantees THB 239,000 net with zero patient share.
+2. Compare the dated bank quotes. On 19 November the simulated spot costs USD 7,029.41 for 23 November delivery. The forward costs USD 6,867.82 for the 30 November hospital due date. Confirm one quote. A changed quote requires fresh confirmation. Once booked, the original ticket retains its rate, USD cost and value date.
+3. Inspect the transfer instruction and the receiving bank’s credit advice. The first advice documents THB 239,000 instructed, a THB 300 deduction, and **THB 238,700 credited**. Record the beneficiary credit. Return to the worklist to find the case with **THB 300** awaiting an insurer top-up.
+4. Open the top-up advice and record its net **THB 300** credit. The worklist now shows the hospital paid in full. Finance can reopen each original from the recorded receipts. Older receipts retain their recorded amounts and show when a bank document is unavailable.
 
 ![The reconciliation agent assigns the THB 300 shortfall to the insurer and shows zero patient FX charge.](figures/pattaya-settlement-shortfall.jpg)
 

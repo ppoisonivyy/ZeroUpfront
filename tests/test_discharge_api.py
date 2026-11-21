@@ -107,6 +107,29 @@ class DischargeApiTests(unittest.TestCase):
         self.assertEqual(corrected["counts"]["needs"], counts["needs"] - 1)
         self.assertEqual(corrected["counts"]["ready"], counts["ready"] + 1)
 
+    def test_worklist_distinguishes_matching_pattaya_cases_with_existing_receipts(self):
+        import psycopg
+        from app import discharge_store as store
+
+        cases = [self.new("pattaya_fx")[1] for _ in range(3)]
+        # Recreate receipts saved by the original rehearsal, before advice files existed.
+        with psycopg.connect(os.environ["DATABASE_URL"]) as db:
+            for case, receipts in zip(cases, [[], [23_870_000], [23_870_000, 30_000]]):
+                for version, amount in enumerate(receipts, start=case["workflow_version"]):
+                    event = {"reference": f"old-{version}", "amount_minor": amount, "currency": "THB"}
+                    store.append_event(db, dict(case, workflow_version=version), "payment", event, "Fixture finance")
+        result = self.client.post(ROOT + "/worklist/search", json={"search": cases[0]["encounter"], "page_size": 100})
+        self.assertEqual(result.status_code, 200, result.text)
+        rows = {item["id"]: item for item in result.json()["items"]}
+        self.assertEqual([rows[case["id"]]["pattaya_settlement"] for case in cases], [
+            {"status": "unpaid", "outstanding_minor": 23_900_000},
+            {"status": "partially_paid", "outstanding_minor": 30_000},
+            {"status": "paid", "outstanding_minor": 0},
+        ])
+        _, ordinary = self.new("aligned")
+        item = self.client.post(ROOT + "/worklist/search", json={"search": ordinary["id"]}).json()["items"][0]
+        self.assertNotIn("pattaya_settlement", item)
+
     def test_worklist_literal_substrings_thai_search_and_limits(self):
         meta, raw, names = load_discharge_fixture("aligned")
         fields = dict(meta, confirmed="true", member="สมาชิก_Q77", encounter="บิล%77",
