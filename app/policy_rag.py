@@ -202,7 +202,9 @@ def main():
     parser=argparse.ArgumentParser(description=__doc__)
     parser.add_argument("pack", choices=PACKS)
     parser.add_argument("question")
-    parser.add_argument("--live", action="store_true", help="Use policy embeddings and generate a cited draft")
+    parser.add_argument("--live", action="store_true", help="Generate and verify a cited draft with OpenAI")
+    parser.add_argument("--policy-context", choices=("full", "search"),
+                        help="Use the full selected edition or search for passages. Live defaults to full on the two demo editions; offline defaults to lexical search.")
     parser.add_argument("--scanned-case", action="store_true", help="Use the Thai packet with a scanned statement sheet")
     args=parser.parse_args()
     if args.live and not os.getenv("OPENAI_API_KEY"):
@@ -216,7 +218,9 @@ def main():
     if not contains_identifier(policy.pages[0].text, edition):
         raise ValueError("Policy edition mismatch")
     chunks = passages(policy, "P")
-    if client:
+    if args.policy_context == "full" or (client and args.policy_context is None):
+        selected = chunks
+    elif client:
         from cloud_policy import cloud_retrieve
         selected = cloud_retrieve(client, args.question, edition, chunks)
     else:

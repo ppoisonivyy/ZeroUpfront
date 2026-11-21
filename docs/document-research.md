@@ -2,9 +2,11 @@
 
 Reviewed 21 November 2026. The design decision is to use Astra for transcription when the text layer is untrustworthy, retrieve the applicable policy evidence, and show both the source page and the case evidence to staff. The three operations have different failure modes and need separate measurements.
 
+The later [paired benchmark](benchmark-comparison.md) compared this retrieval route with full-edition reading on synthetic policies and an actual 42-page Thai policy. Full-edition context is now the default on the two short demo editions.
+
 ## Preparation decision
 
-Use the tested OpenAI-hosted policy store, explicit text-embedding-3-large reranking and page-level Astra fallback for the synthetic demonstration. The original live fixture suite passed 6/6. The live complex Thai CLI produced a verified THB 141,800 staff draft in 20.180 seconds with one scanned statement page. The operating question for a pilot is whether the system helps staff catch a material missing or incorrect item **before** they send a request. Track deposit collection and insurer turnaround separately because both depend on decisions outside this system. A reviewer should be able to reconstruct each proposed amount from the selected edition, original case revision, dated limits, currency and independently checked line calculations. [Bumrungrad finance guidance](https://www.bumrungrad.com/th/medical-travel/patient-finance-insurance-information) · [Bangkok Hospital Pattaya insurance guidance](https://www.bangkokhospital.com/en/visit/insurance-bph)
+Use the tested OpenAI-hosted store and explicit text-embedding-3-large reranking when exploring the search route. Use page-level Astra fallback for damaged or scanned content. The original live fixture suite passed 6/6. The live complex Thai CLI produced a verified THB 141,800 staff draft in 20.180 seconds with one scanned statement page. The operating question for a pilot is whether the system helps staff catch a material missing or incorrect item **before** they send a request. Track deposit collection and insurer turnaround separately because both depend on decisions outside this system. A reviewer should be able to reconstruct each proposed amount from the selected edition, original case revision, dated limits, currency and independently checked line calculations. [Bumrungrad finance guidance](https://www.bumrungrad.com/th/medical-travel/patient-finance-insurance-information) · [Bangkok Hospital Pattaya insurance guidance](https://www.bangkokhospital.com/en/visit/insurance-bph)
 
 ## Source register
 

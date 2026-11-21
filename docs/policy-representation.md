@@ -1,6 +1,6 @@
 # How ZeroUpfront should represent a policy
 
-**Keep the original documents. Publish a small, reviewed JSON rulebook for each supported edition.** Use the rulebook to fetch mandatory clauses and run repeatable checks. Use search for questions or wording the rulebook does not yet cover. A JSON object containing every page as a string still has the original retrieval problem. A generated summary can make an omitted endorsement harder to notice.
+**Keep the original documents. Publish a small, reviewed JSON rulebook for each supported edition.** Use the rulebook to fetch mandatory clauses and run repeatable checks. For an open question about a single edition within the request budget, give Astra the complete page-numbered text. Use search to discover policies and additional wording across a larger library. [Full context and passage retrieval comparison](benchmark-comparison.md) A JSON object containing every page as a string still has the original retrieval problem. A generated summary can make an omitted endorsement harder to notice.
 
 This distinction matters on the actual source material. On the 42-page Allianz Thai contract, a Thai question about a motorcycle accident needed both the base exclusion and the endorsement. The large embedding model surfaced the endorsement and missed the base exclusion. On the synthetic US certificate, the question about an insurer acknowledgment also needed the payment evidence clause on a different page. An answer can quote a retrieved page perfectly and still miss the clause that controls the result. [Allianz native-text benchmark and page labels](thai-public-eval.md) · [Bilingual search results](embedding-eval.md)
 
@@ -49,3 +49,9 @@ On four deliberately mapped tasks, lookup returned all **7/7 required pages** an
 uv run --locked python bench/rulebook_lookup.py
 uv run --locked python bench/rulebook_lookup.py --edition NQ-26B --task reconcile_guarantee_and_payment
 ```
+
+## Preserve the layout during preprocessing
+
+For benefit schedules, retain the plan tier, service, currency, limit, whether the unit is per night or per admission, column header, footnote and source page together. Preserve the original language and the distinction between printed and physical page numbers. Reconstruct tables that span pages with their repeated headings. Flag uncertain cells and discarded qualifications for visual review. For prose, split on a numbered clause or structural heading; carry its parent heading and follow explicit links to endorsements. The evaluated 900-character overlapping windows are a measured baseline for search. They still missed the base motorcycle exclusion in Thai.
+
+These design choices are supported by document-layout systems that preserve heading ancestry, table header cells, merged cells and footnotes. ZeroUpfront can express the same fields in its own representation while using OpenAI for difficult pages. Persist per-page OCR and independent review status; a model accepting a transcription does not validate the value of a benefit limit. [Google Document AI layout and chunking](https://docs.cloud.google.com/document-ai/docs/layout-parse-chunk) · [Microsoft document layout](https://learn.microsoft.com/azure/ai-services/document-intelligence/prebuilt/layout) · [Thai passage benchmark](thai-passage-eval.md)

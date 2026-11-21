@@ -4,6 +4,8 @@ ZeroUpfront helps a hospital's international patient department prepare a clause
 
 ## Start here
 
+- [Benchmark comparison and preprocessing recommendation](docs/benchmark-comparison.md)
+- [Context sizing and token counts](docs/context-budget.md)
 - [Stack, architecture and product research](docs/architecture.md)
 - [Original PDFs, reviewed JSON rules and source citations](docs/policy-representation.md)
 - [OpenAI hosting, retrieval and credit scope](docs/cloud-rag.md)
@@ -15,9 +17,11 @@ ZeroUpfront helps a hospital's international patient department prepare a clause
 
 ## Run the demo
 
-Use Python 3.12 and [uv](https://docs.astral.sh/uv/getting-started/installation/). On a fresh clone, create the local key file, then fill in the organization project key. The private file is Git-ignored.
+For this preparation snapshot, clone the research branch. Use Python 3.12 and [uv](https://docs.astral.sh/uv/getting-started/installation/). Create the local key file and enter your project key. The private file is Git-ignored.
 
 ```sh
+git clone --branch prep/research-reliability https://github.com/aowngong/ZeroUpfront.git
+cd ZeroUpfront
 uv sync --locked --python 3.12
 test -e .env || (umask 077 && cp .env.example .env)
 ```
@@ -29,15 +33,21 @@ uv run --locked python app/check_fixtures.py
 uv run --locked --env-file .env python app/check_fixtures.py --live
 ```
 
-**Long-document RAG.** Run the first command once per checkout to create or reuse the synthetic policy index in your OpenAI project. Repeat setup if the store expires after seven days of inactivity. The Thai example combines a five-page case packet with an eight-page policy and an active rider. The US packet exercises overseas notification and a missing supplier schedule.
+**Policy and case review.** The live CLI reads the complete selected edition for the two eight-page demo policies. These editions fit comfortably in the model request, and complete context performed better on the evidence benchmark. The Thai example combines a five-page case packet with an eight-page policy and an active rider. The US packet exercises overseas notification and a missing supplier schedule.
 
 ```sh
-uv run --locked --env-file .env python app/cloud_policy.py
 uv run --locked --env-file .env python app/policy_rag.py th "How do the Gold room limit, active rider and companion bed affect the draft amount?" --scanned-case --live
 uv run --locked --env-file .env python app/policy_rag.py us "Was the overseas accident notice on time under the active rider?" --live
 ```
 
-A live run searches the selected policy edition in OpenAI's vector store, applies a second ranking pass using OpenAI embeddings, and submits the cited passages and current synthetic case to Astra. The program checks quoted text, physical pages and the proposed amount before displaying a draft. Only synthetic policy passages enter the shared index. The source PDFs and the private key file stay in the checkout. Without `--live`, the policy CLI previews lexical search locally. [Model settings](.env.example) · [Hosting and credit scope](docs/cloud-rag.md)
+For the hosted search comparison, set up the expiring policy index and select the search mode. Setup creates or reuses an index in the same OpenAI project. Repeat it after seven days of inactivity if the store expires.
+
+```sh
+uv run --locked --env-file .env python app/cloud_policy.py
+uv run --locked --env-file .env python app/policy_rag.py us "How does the overseas notification rider apply?" --policy-context search --live
+```
+
+Both modes submit the selected evidence and current synthetic case to Astra. The program checks quoted text, physical pages and the proposed amount before displaying a draft. Only synthetic policy passages enter the shared index. The source PDFs and the private key file stay in the checkout. Without `--live`, the policy CLI previews lexical search locally. [Model settings](.env.example) · [Hosting and credit scope](docs/cloud-rag.md)
 
 **Evaluation.** Page relevance judgments and financial answers for the complex cases live outside the model input. The supplied JSONL corpus remains a separate text-extraction evaluation.
 

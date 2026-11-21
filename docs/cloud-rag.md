@@ -2,6 +2,8 @@
 
 Research and live CLI runs checked 21 November 2026. The tested path uses OpenAI-managed policy retrieval, an explicit embedding reranker, Astra page transcription and Astra drafting. The web application remains event build work. [Document benchmarks](document-research.md) · [Bilingual retrieval comparison](embedding-eval.md)
 
+The live demo now defaults to full-edition evidence for its two short policies. The managed pipeline below remains available with `--policy-context search`. [Direct comparison](benchmark-comparison.md)
+
 ## What to host
 
 The preparation CLI indexed the two eight-page fictional policy editions in one expiring OpenAI vector store. It attached 16 text files, one per passage in these fixtures, with edition, digest, passage reference and physical page. Each direct search filters on edition and digest and checks its hits against the local source manifest. It then reranks with an explicit Embeddings API call and sends up to four policy passages plus the bounded case exhibits to Astra. The store holds policy material. Original PDFs stay in the checkout. The current case is supplied to inference during the live run. Responses File Search is another possible integration, with search invoked from the model call. [Retrieval guide](https://developers.openai.com/api/docs/guides/retrieval) · [File Search](https://developers.openai.com/api/docs/guides/tools-file-search)
