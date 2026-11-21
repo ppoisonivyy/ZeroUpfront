@@ -9,7 +9,10 @@ from typing import Literal
 
 from openai import APIError, OpenAI
 from pydantic import BaseModel
-from document_text import contains_identifier, contains_quote, read_document
+if __package__:
+    from .document_text import contains_identifier, contains_quote, read_document
+else:
+    from document_text import contains_identifier, contains_quote, read_document
 
 ROOT = Path(__file__).resolve().parents[1] / "fixtures"
 
