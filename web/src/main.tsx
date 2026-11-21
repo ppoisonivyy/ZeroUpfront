@@ -9,45 +9,62 @@ import {
   CircleAlert,
   ClipboardList,
   Download,
-  ExternalLink,
   FileText,
   FolderOpen,
   History,
   Layers,
   LayoutList,
   ListChecks,
-  MessageSquare,
+  Plus,
   RefreshCw,
-  ScanLine,
   ShieldCheck,
   Upload,
 } from "lucide-react";
-import type { CaseDetail, CaseSummary, PacketStatus, Source } from "./api";
-import {
-  api,
-  blocked,
-  casePath,
-  displayDate,
-  money,
-  sameOriginSource,
-  statuses,
-} from "./api";
+import type { CaseDetail, CaseSummary, PacketStatus } from "./api";
+import { api, blocked, casePath, displayDate, money, statuses } from "./api";
 import { ApproveDraft, ReplaceEstimate } from "./ReviewForms";
+import { SourceView } from "./SourceView";
 import { AttachmentList } from "./Attachments";
+import { NewCase } from "./CaseIntake";
+import { CaseWorkflow, payerStatus } from "./CaseWorkflow";
+import { EvidenceReview } from "./EvidenceReview";
+import { AuthGate, useStaffSession } from "./Auth";
+import { OperationalHolds } from "./OperationalHolds";
 import "./style.css";
+import "./caseflow.css";
 
-const PdfPage = lazy(() => import("./PdfPage"));
-type Route = { id: string; rev?: number };
+const Discharge = lazy(() =>
+  import("./Discharge").then((m) => ({ default: m.Discharge })),
+);
+type Route = {
+  id: string;
+  rev?: number;
+  create?: boolean;
+  discharge?: boolean;
+  prior?: string;
+};
 const caseHref = (id: string, rev?: number) =>
   "#/cases/" + encodeURIComponent(id) + (rev ? "?revision=" + rev : "");
 function readRoute(): Route {
   const pathAndSearch =
     location.hash.slice(1) || location.pathname + location.search;
-  if (pathAndSearch === "/") return { id: "Z002" };
   const [path, search] = pathAndSearch.split("?");
+  if (path === "/") return { id: "", discharge: true };
+  const params = new URLSearchParams(search);
+  const revision = Number(params.get("revision"));
+  const rev =
+    Number.isSafeInteger(revision) && revision > 0 ? revision : undefined;
+  const discharge = path.match(/^\/discharge(?:\/([a-zA-Z0-9_-]+))?$/);
+  if (discharge)
+    return {
+      discharge: true,
+      id: discharge[1] || "",
+      prior: params.get("case") || undefined,
+      rev,
+    };
+  if (path === "/new") return { id: "", create: true };
   const id = path.match(/^\/cases\/([a-zA-Z0-9_-]+)$/)?.[1] || "";
-  const rev = Number(new URLSearchParams(search).get("revision"));
-  return { id, rev: Number.isSafeInteger(rev) && rev > 0 ? rev : undefined };
+  return { id, rev };
 }
 function useResource<T>(url: string, epoch: number) {
   const [result, set] = useState<{ key: string; data?: T; error?: string }>({
@@ -107,6 +124,64 @@ function LoadState({ error, retry }: { error?: string; retry: () => void }) {
 }
 function Worklist({ epoch, retry }: { epoch: number; retry: () => void }) {
   const { data, error } = useResource<CaseSummary[]>("/api/cases", epoch);
+  const session = useStaffSession();
+  const [example, setExample] = useState("");
+  const [exampleError, setExampleError] = useState("");
+  const examples = [
+    [
+      "missing-estimate",
+      "Missing itemization",
+      "Find the missing service prices and correct the estimate.",
+    ],
+    [
+      "possible-exclusion",
+      "Possible exclusion",
+      "Compare the stated treatment purpose with an exclusion.",
+    ],
+    [
+      "partial-guarantee",
+      "Partial guarantee",
+      "Read the insurer letter and compare its limited amount.",
+    ],
+    [
+      "admission-mismatch",
+      "Admission mismatch",
+      "Inspect the discrepancy between the planned and admitted encounters.",
+    ],
+  ];
+  async function startExample(key: string) {
+    if (example) return;
+    setExample(key);
+    setExampleError("");
+    try {
+      const packet: CaseDetail = await (
+        await api("/api/examples/" + key, { method: "POST" })
+      ).json();
+      location.hash = "/cases/" + encodeURIComponent(packet.id);
+    } catch (e) {
+      setExampleError(
+        e instanceof Error ? e.message : "This example could not be created.",
+      );
+    } finally {
+      setExample("");
+    }
+  }
+  const [term, setTerm] = useState("");
+  const [filter, setFilter] = useState("all");
+  const rows = (data || []).filter((c) => {
+    const found = [c.id, c.member, c.procedure, c.insurer].some((x) =>
+      x.toLocaleLowerCase().includes(term.trim().toLocaleLowerCase()),
+    );
+    if (!found) return false;
+    if (filter === "attention") return blocked(c.status) || !!c.open_hold_count;
+    if (filter === "review")
+      return c.status === "ready_for_review" && !c.open_hold_count;
+    if (filter === "insurer")
+      return ["submitted", "query", "supplement_sent"].includes(
+        c.insurer_status || "",
+      );
+    return true;
+  });
   return (
     <>
       <div className="page-title">
@@ -115,7 +190,40 @@ function Worklist({ epoch, retry }: { epoch: number; retry: () => void }) {
           <h1>Case worklist</h1>
           <p>Inpatient requests for a guarantee of payment.</p>
         </div>
+        <a href="#/new" className="primary">
+          <Plus size={17} />
+          Create a case
+        </a>
       </div>
+      {session.mode === "local" && (
+        <details className="examples">
+          <summary>Try a case</summary>
+          <p>Open a fresh synthetic example in this local workspace.</p>
+          <div className="example-grid">
+            {examples.map(([id, title, desc]) => (
+              <button
+                type="button"
+                key={id}
+                disabled={!!example}
+                onClick={() => void startExample(id)}
+              >
+                <span className="row-detail">
+                  <strong>
+                    {example === id ? "Creating example…" : title}
+                  </strong>
+                  <small>{desc}</small>
+                </span>
+                <ChevronRight size={16} />
+              </button>
+            ))}
+          </div>
+          {exampleError && (
+            <p className="error-message" role="alert">
+              {exampleError}
+            </p>
+          )}
+        </details>
+      )}
       {!data ? (
         <LoadState error={error} retry={retry} />
       ) : (
@@ -125,20 +233,70 @@ function Worklist({ epoch, retry }: { epoch: number; retry: () => void }) {
               <LayoutList size={18} />
               Inpatient cases
             </h2>
-            <span className="small">{data.length} cases</span>
+            <span className="small">
+              {rows.length} of {data.length} cases
+            </span>
           </div>
-          {data.length === 0 ? (
-            <p className="empty-view">No cases in the worklist.</p>
+          <div className="worklist-filters">
+            <label className="stack-field">
+              <span>Find a case</span>
+              <input
+                type="search"
+                placeholder="Case, member, procedure or insurer"
+                value={term}
+                onChange={(e) => setTerm(e.target.value)}
+              />
+            </label>
+            <label className="stack-field">
+              <span>Work queue</span>
+              <select
+                value={filter}
+                onChange={(e) => setFilter(e.target.value)}
+              >
+                <option value="all">All cases</option>
+                <option value="attention">Needs evidence</option>
+                <option value="review">Ready for review</option>
+                <option value="insurer">With insurer</option>
+              </select>
+            </label>
+          </div>
+          {rows.length === 0 ? (
+            <p className="empty-view">
+              {data.length
+                ? "No cases match these filters."
+                : "No cases in the worklist."}
+            </p>
           ) : (
             <div className="worklist">
-              {data.map((c) => (
+              {rows.map((c) => (
                 <a key={c.id} className="case-row" href={caseHref(c.id)}>
-                  <span className="case-code">{c.id}</span>
+                  <span className="case-code" title={c.id}>
+                    {c.id.length > 14
+                      ? c.id.slice(0, 7) + "…" + c.id.slice(-4)
+                      : c.id}
+                  </span>
                   <span className="row-detail">
                     <strong>{c.procedure}</strong>
                     <small>
-                      {c.insurer} · {money(c.total)}
+                      {c.insurer} · {money(c.total)} ·{" "}
+                      {displayDate(c.admission_date)}
                     </small>
+                    {!!c.open_hold_count && (
+                      <small className="queue-hold">
+                        {c.open_hold_count} open{" "}
+                        {c.open_hold_count === 1 ? "hold" : "holds"}
+                      </small>
+                    )}
+                    {c.insurer_status && c.insurer_status !== "not_sent" && (
+                      <small>
+                        {payerStatus(c.insurer_status)}
+                        {c.latest_event_kind === "deposit"
+                          ? " · Deposit recorded"
+                          : c.latest_event_kind === "admission"
+                            ? " · Admission checked"
+                            : ""}
+                      </small>
+                    )}
                   </span>
                   <Pill status={c.status} />
                   <ChevronRight size={17} />
@@ -149,71 +307,6 @@ function Worklist({ epoch, retry }: { epoch: number; retry: () => void }) {
         </section>
       )}
     </>
-  );
-}
-function SourceView({
-  source,
-  revision,
-  historical,
-}: {
-  source: Source;
-  revision: number;
-  historical: boolean;
-}) {
-  let url = "";
-  try {
-    url = sameOriginSource(source.url);
-  } catch {
-    /* Keep the cited quote visible if the URL is invalid. */
-  }
-  const page = source.page || 1;
-  return (
-    <section
-      className="panel viewer"
-      id="source-view"
-      aria-labelledby="source-title"
-    >
-      <div className="panel-heading">
-        <h2 id="source-title">
-          <ScanLine size={18} />
-          Source viewer
-        </h2>
-        {url && (
-          <a
-            className="text-action"
-            href={url + "#page=" + page}
-            target="_blank"
-            rel="noreferrer"
-          >
-            Open PDF <ExternalLink size={14} />
-          </a>
-        )}
-      </div>
-      <div className="citation" aria-live="polite">
-        <div className="cite-label">
-          {source.label} <span>· Page {page}</span>
-        </div>
-        <blockquote>
-          {source.quote || "No verified excerpt is available for this source."}
-        </blockquote>
-      </div>
-      <div className="viewer-meta">
-        <span>
-          <FileText size={14} />
-          Original document
-        </span>
-        <span>
-          {historical ? "Pinned" : "Case"} R{revision} · p. {page}
-        </span>
-      </div>
-      {url ? (
-        <Suspense fallback={<p className="loading">Loading viewer…</p>}>
-          <PdfPage url={url} page={page} label={source.label} />
-        </Suspense>
-      ) : (
-        <p className="empty-view">The original PDF address is unavailable.</p>
-      )}
-    </section>
   );
 }
 const headings: Record<PacketStatus, string> = {
@@ -303,8 +396,7 @@ function ExportReview({
         </dl>
         <AttachmentList packet={packet} />
         <p className="body-copy">
-          The coordinator prepares this request for the insurer. No insurer
-          response has been recorded.
+          Payer tracking · {payerStatus(packet.insurer_status)}.
         </p>
         {pinned && (
           <p className="footnote">
@@ -325,16 +417,18 @@ function ExportReview({
           </p>
         )}
         <div className="actions">
-          {!pinned && packet.status === "staff_reviewed" && (
-            <button
-              className="primary"
-              disabled={exportBusy}
-              onClick={() => void exportRequest()}
-            >
-              <Download size={16} />
-              {exportBusy ? "Preparing PDF…" : "Download reviewed request"}
-            </button>
-          )}
+          {!pinned &&
+            !packet.open_holds?.length &&
+            packet.status === "staff_reviewed" && (
+              <button
+                className="primary"
+                disabled={exportBusy}
+                onClick={() => void exportRequest()}
+              >
+                <Download size={16} />
+                {exportBusy ? "Preparing PDF…" : "Download reviewed request"}
+              </button>
+            )}
           <button className="secondary" onClick={onBack}>
             <ArrowLeft size={16} />
             Back to packet
@@ -351,6 +445,9 @@ function CaseWorkspace({
   onReplace,
   onReview,
   onExport,
+  onEvidence,
+  onWorkflowSaved,
+  onReload,
   notice,
 }: {
   packet: CaseDetail;
@@ -359,6 +456,9 @@ function CaseWorkspace({
   onReplace: () => void;
   onReview: () => void;
   onExport: () => void;
+  onEvidence: () => void;
+  onWorkflowSaved: () => void;
+  onReload: () => void;
   notice: string;
 }) {
   const { sources, status } = packet;
@@ -366,6 +466,45 @@ function CaseWorkspace({
     sources.findIndex((s) => s.role === "policy"),
   );
   const source = sources[selected] || sources[0];
+  const intake = packet.intake || packet.input_kind === "intake";
+  const [clarificationError, setClarificationError] = useState("");
+  const [preparing, setPreparing] = useState(false);
+  const linkRef = useRef("");
+  useEffect(
+    () => () => {
+      if (linkRef.current) URL.revokeObjectURL(linkRef.current);
+    },
+    [],
+  );
+  async function downloadClarification() {
+    setPreparing(true);
+    setClarificationError("");
+    try {
+      const res = await api(
+        casePath(packet.id) + "/clarification?revision=" + packet.revision,
+      );
+      if (!res.headers.get("Content-Type")?.includes("application/pdf"))
+        throw new Error(
+          "The information request is unavailable. Reload the case and try again.",
+        );
+      if (linkRef.current) URL.revokeObjectURL(linkRef.current);
+      linkRef.current = URL.createObjectURL(await res.blob());
+      const link = document.createElement("a");
+      link.href = linkRef.current;
+      link.download = packet.id + "-R" + packet.revision + "-clarification.pdf";
+      document.body.append(link);
+      link.click();
+      link.remove();
+    } catch (e) {
+      setClarificationError(
+        e instanceof Error
+          ? e.message
+          : "Unable to download the information request.",
+      );
+    } finally {
+      setPreparing(false);
+    }
+  }
   return (
     <>
       <div className="page-title">
@@ -410,10 +549,31 @@ function CaseWorkspace({
           {notice}
         </p>
       )}
+      {!!packet.open_holds?.length && (
+        <div className="hold-banner" role="status">
+          <CircleAlert size={16} />
+          <span>
+            {packet.open_holds.length} open{" "}
+            {packet.open_holds.length === 1 ? "hold" : "holds"} · Review and
+            export are paused.
+          </span>
+          <a
+            href="#operational-holds"
+            onClick={(e) => {
+              e.preventDefault();
+              document
+                .getElementById("operational-holds")
+                ?.scrollIntoView({ block: "start" });
+            }}
+          >
+            View holds
+          </a>
+        </div>
+      )}
       {historical && (
         <div className="history-warning">
           <History size={17} />
-          Viewing a read-only snapshot of revision R{packet.revision}.{" "}
+          Viewing packet revision R{packet.revision}.{" "}
           <a href={caseHref(packet.id)}>Open current case</a>
         </div>
       )}
@@ -441,6 +601,13 @@ function CaseWorkspace({
               </div>
               <h3>{headings[status] || "Packet status"}</h3>
               <p>{packet.reason}</p>
+              {!!packet.issues?.length && (
+                <ul className="case-issues">
+                  {packet.issues.map((issue, i) => (
+                    <li key={i}>{issue}</li>
+                  ))}
+                </ul>
+              )}
               {packet.reviewer && <p>Reviewed by {packet.reviewer}.</p>}
             </div>
             <div className="subhead">
@@ -463,12 +630,10 @@ function CaseWorkspace({
                     onClick={() => {
                       setSelected(i);
                       if (window.matchMedia("(max-width: 760px)").matches)
-                        document
-                          .getElementById("source-view")
-                          ?.scrollIntoView({
-                            block: "start",
-                            behavior: "instant",
-                          });
+                        document.getElementById("source-view")?.scrollIntoView({
+                          block: "start",
+                          behavior: "instant",
+                        });
                     }}
                   >
                     <span className="file-icon">
@@ -489,19 +654,44 @@ function CaseWorkspace({
               })}
             </div>
             <div className="actions">
-              {!historical && status === "ready_for_review" && (
-                <button className="primary" onClick={onReview}>
-                  <ShieldCheck size={16} />
-                  Review request draft
+              {intake && !historical && status !== "staff_reviewed" && (
+                <button
+                  className={
+                    status === "needs_review" ? "primary" : "secondary"
+                  }
+                  onClick={onEvidence}
+                >
+                  <BookOpen size={16} />
+                  Review policy evidence
                 </button>
               )}
+              {intake && !historical && packet.clarification_available && (
+                <button
+                  className="secondary"
+                  disabled={preparing}
+                  onClick={() => void downloadClarification()}
+                >
+                  <Download size={16} />
+                  {preparing
+                    ? "Preparing PDF…"
+                    : "Download clarification request"}
+                </button>
+              )}
+              {!historical &&
+                !packet.open_holds?.length &&
+                status === "ready_for_review" && (
+                  <button className="primary" onClick={onReview}>
+                    <ShieldCheck size={16} />
+                    Review request draft
+                  </button>
+                )}
               {(historical || status === "staff_reviewed") && (
                 <button
                   className={historical ? "secondary" : "primary"}
                   onClick={onExport}
                 >
                   <FileText size={16} />
-                  {historical
+                  {historical || !!packet.open_holds?.length
                     ? "Preview attachments"
                     : "Review export and attachments"}
                 </button>
@@ -518,6 +708,11 @@ function CaseWorkspace({
                 </button>
               )}
             </div>
+            {clarificationError && (
+              <p className="error-message" role="alert">
+                {clarificationError}
+              </p>
+            )}
           </div>
         </section>
         {source && (
@@ -528,19 +723,27 @@ function CaseWorkspace({
           />
         )}
       </div>
-      <aside className="insurer-response">
-        <div className="response-icon">
-          <MessageSquare size={19} />
+      <div id="operational-holds">
+        <OperationalHolds
+          packet={packet}
+          pinned={historical}
+          onSaved={onWorkflowSaved}
+          onReload={onReload}
+        />
+      </div>
+      <CaseWorkflow
+        packet={packet}
+        pinned={historical}
+        onSaved={onWorkflowSaved}
+        onReload={onReload}
+      />
+      {!historical && (
+        <div className="prior-link">
+          <a href={"#/discharge/new?case=" + encodeURIComponent(packet.id)}>
+            Open a linked discharge claim
+          </a>
         </div>
-        <div>
-          <h2>Insurer response</h2>
-          <p>
-            {packet.insurer_status === "not_sent"
-              ? "Request has not been sent. No guarantee of payment on file."
-              : packet.insurer_status.replaceAll("_", " ")}
-          </p>
-        </div>
-      </aside>
+      )}
     </>
   );
 }
@@ -558,7 +761,7 @@ function CaseView({
     epoch,
   );
   const [view, setView] = useState<
-    "review" | "replace" | "draft" | "history" | "export"
+    "review" | "replace" | "draft" | "history" | "export" | "evidence"
   >("review");
   const [notice, setNotice] = useState("");
   const historical = !!route.rev;
@@ -586,9 +789,29 @@ function CaseView({
     },
     onStale: current,
   };
+  if (view === "evidence" && !historical)
+    return (
+      <EvidenceReview
+        packet={data}
+        onBack={() => setView("review")}
+        onSaved={() => {
+          setNotice(
+            "Evidence review saved. The current packet reflects the verified findings.",
+          );
+          setView("review");
+          retry();
+        }}
+        onReload={current}
+      />
+    );
   if (view === "replace" && !historical)
     return <ReplaceEstimate {...formProps} />;
-  if (view === "draft" && !historical && data.status === "ready_for_review")
+  if (
+    view === "draft" &&
+    !historical &&
+    !data.open_holds?.length &&
+    data.status === "ready_for_review"
+  )
     return <ApproveDraft {...formProps} />;
   if (view === "export")
     return (
@@ -653,10 +876,17 @@ function CaseView({
       onReplace={() => setView("replace")}
       onReview={() => setView("draft")}
       onExport={() => setView("export")}
+      onEvidence={() => setView("evidence")}
+      onWorkflowSaved={() => {
+        setNotice("Case timeline updated.");
+        retry();
+      }}
+      onReload={current}
     />
   );
 }
 function App() {
+  const session = useStaffSession();
   const [route, setRoute] = useState<Route>(readRoute);
   const [epoch, setEpoch] = useState(0);
   const retry = () => setEpoch((n) => n + 1);
@@ -669,10 +899,14 @@ function App() {
     return () => window.removeEventListener("hashchange", change);
   }, []);
   useEffect(() => {
-    document.title = route.id
-      ? "Case " + route.id + " · ZeroUpfront"
-      : "Case worklist · ZeroUpfront";
-  }, [route.id]);
+    document.title = route.discharge
+      ? "Discharge claims · ZeroUpfront"
+      : route.id
+        ? "Case " + route.id + " · ZeroUpfront"
+        : route.create
+          ? "Create a case · ZeroUpfront"
+          : "Case worklist · ZeroUpfront";
+  }, [route.id, route.create, route.discharge]);
   return (
     <>
       <a
@@ -687,7 +921,7 @@ function App() {
       </a>
       <header className="app-header">
         <div className="header-inner">
-          <a href="#/cases" className="brand">
+          <a href="#/discharge" className="brand">
             <span className="logomark" aria-hidden="true">
               Z
             </span>
@@ -697,27 +931,60 @@ function App() {
           <span className="header-label">Coordinator workspace</span>
           <span className="demo-label">
             <i />
-            Synthetic demo
+            {session.mode === "local" ? "Local workspace" : "Staff workspace"}
           </span>
         </div>
       </header>
       <main id="main-content" tabIndex={-1}>
-        <nav className="breadcrumbs" aria-label="Breadcrumb">
-          <a href="#/cases">
-            <FolderOpen size={15} />
-            Case worklist
+        <nav className="workspace-nav" aria-label="Hospital workflows">
+          <a
+            aria-current={route.discharge ? "page" : undefined}
+            href="#/discharge"
+          >
+            Discharge claims
           </a>
-          {route.id && (
-            <>
-              <ChevronRight size={14} />
-              <span aria-current="page">
-                {route.id}
-                {route.rev ? " · R" + route.rev : ""}
-              </span>
-            </>
-          )}
+          <a
+            aria-current={!route.discharge ? "page" : undefined}
+            href="#/cases"
+          >
+            Pre-arrival cases
+          </a>
         </nav>
-        {route.id ? (
+        {(route.id || route.create) && (
+          <nav className="breadcrumbs" aria-label="Breadcrumb">
+            <a href={route.discharge ? "#/discharge" : "#/cases"}>
+              <FolderOpen size={15} />
+              {route.discharge ? "Discharge worklist" : "Case worklist"}
+            </a>
+            {(route.id || route.create) && (
+              <>
+                <ChevronRight size={14} />
+                <span aria-current="page">
+                  {route.create
+                    ? "Create a case"
+                    : route.discharge && route.id === "new"
+                      ? "Open a claim"
+                      : route.id}
+                  {route.rev ? " · R" + route.rev : ""}
+                </span>
+              </>
+            )}
+          </nav>
+        )}
+        {route.discharge ? (
+          <Suspense
+            fallback={<p className="loading">Opening discharge workspace…</p>}
+          >
+            <Discharge
+              key={route.id + ":" + String(route.rev)}
+              id={route.id || undefined}
+              prior={route.prior}
+              revision={route.rev}
+            />
+          </Suspense>
+        ) : route.create ? (
+          <NewCase />
+        ) : route.id ? (
           <CaseView
             key={route.id + "-" + (route.rev ?? "current")}
             route={route}
@@ -731,4 +998,8 @@ function App() {
     </>
   );
 }
-createRoot(document.getElementById("root")!).render(<App />);
+createRoot(document.getElementById("root")!).render(
+  <AuthGate>
+    <App />
+  </AuthGate>,
+);

@@ -84,6 +84,10 @@ class Transcript(BaseModel):
     text: str
 
 
+class IncompleteTranscription(ValueError):
+    """A provider response did not supply verified, complete wording for this physical page."""
+
+
 def ocr_page(source, number, client):
     if client is None:
         raise ValueError(f"Page {number} needs Astra OCR. Run with --live and configure OPENAI_API_KEY.")
@@ -104,7 +108,7 @@ def ocr_page(source, number, client):
                 "detail": "high", "file_data": "data:application/pdf;base64," + payload}]}])
     parsed = result.output_parsed
     if result.status != "completed" or parsed is None or parsed.legibility != "complete" or not parsed.text.strip():
-        raise ValueError(f"Staff review required: incomplete Astra transcription on page {number}.")
+        raise IncompleteTranscription(f"Staff review required: incomplete Astra transcription on page {number}.")
     return parsed.text
 
 

@@ -1,0 +1,70 @@
+import { lazy, Suspense } from "react";
+import { ExternalLink, FileText, ScanLine } from "lucide-react";
+import { sameOriginSource, type Source } from "./api";
+const PdfPage = lazy(() => import("./PdfPage"));
+
+export function SourceView({
+  source,
+  revision,
+  historical,
+}: {
+  source: Source;
+  revision: number;
+  historical: boolean;
+}) {
+  let url = "";
+  try {
+    url = sameOriginSource(source.url);
+  } catch {
+    /* Keep the cited quote visible if the URL is invalid. */
+  }
+  const page = source.page || 1;
+  return (
+    <section
+      className="panel viewer"
+      id="source-view"
+      aria-labelledby="source-title"
+    >
+      <div className="panel-heading">
+        <h2 id="source-title">
+          <ScanLine size={18} />
+          Source viewer
+        </h2>
+        {url && (
+          <a
+            className="text-action"
+            href={url + "#page=" + page}
+            target="_blank"
+            rel="noreferrer"
+          >
+            Open PDF <ExternalLink size={14} />
+          </a>
+        )}
+      </div>
+      <div className="citation" aria-live="polite">
+        <div className="cite-label">
+          {source.label} <span>· Page {page}</span>
+        </div>
+        <blockquote>
+          {source.quote || "No verified excerpt is available for this source."}
+        </blockquote>
+      </div>
+      <div className="viewer-meta">
+        <span>
+          <FileText size={14} />
+          Original document
+        </span>
+        <span>
+          {historical ? "Pinned" : "Case"} R{revision} · p. {page}
+        </span>
+      </div>
+      {url ? (
+        <Suspense fallback={<p className="loading">Loading viewer…</p>}>
+          <PdfPage url={url} page={page} label={source.label} />
+        </Suspense>
+      ) : (
+        <p className="empty-view">The original PDF address is unavailable.</p>
+      )}
+    </section>
+  );
+}

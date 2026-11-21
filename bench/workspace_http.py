@@ -31,7 +31,7 @@ def server(dsn, enable_ocr):
         port = bound.getsockname()[1]
         args = [sys.executable, "-m", "uvicorn", "app.workspace_api:app", "--fd", str(bound.fileno()),
                 "--log-level", "error", "--no-access-log"]
-        env = dict(os.environ, DATABASE_URL=dsn, WORKSPACE_ENABLE_OCR="1" if enable_ocr else "0")
+        env = dict(os.environ, DATABASE_URL=dsn, WORKSPACE_AUTH_MODE="local", WORKSPACE_ENABLE_OCR="1" if enable_ocr else "0")
         with subprocess.Popen(args, cwd=ROOT, env=env, pass_fds=(bound.fileno(),)) as process:
             try:
                 with httpx.Client(base_url=f"http://127.0.0.1:{port}", timeout=210, trust_env=False) as client:

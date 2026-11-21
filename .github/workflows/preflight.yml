@@ -45,7 +45,25 @@ jobs:
 
       - name: Smoke test the coordinator API over loopback HTTP
         run: uv run --locked python bench/workspace_http.py --repetitions 2
+      - name: Rehearse adverse admissions through the HTTP API
+        run: uv run --locked python bench/claim_journey.py
+      - name: Rehearse corrected discharge packets and remittances through the HTTP API
+        run: uv run --locked python bench/discharge_journey.py
       - name: Exercise same-case replacement and late worker completion
         run: uv run --locked --with 'psycopg[binary]==3.3.2' python bench/case_revision.py --repetitions 3
       - name: Check encounter, lease and export guards
         run: uv run --locked --with 'psycopg[binary]==3.3.2' python bench/case_revision_guards.py --repetitions 3
+
+  staff-release:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@1db35dd8eee11c5894872e0b383ae6c406cf738d # v10.4.0
+        with:
+          version: "0.12.7"
+      - run: uv sync --locked --python 3.12
+      - run: docker build -t zeroupfront:release .
+      - run: uv run --locked python bench/container_release.py

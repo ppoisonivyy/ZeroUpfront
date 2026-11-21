@@ -56,6 +56,7 @@ def main():
     if not (ROOT / "web" / "dist" / "index.html").is_file():
         parser.exit(1, "Build the client first with npm --prefix web ci and npm --prefix web run build.\n")
     sys.path.insert(0, str(ROOT))
+    os.environ.setdefault("WORKSPACE_AUTH_MODE", "local" if not os.getenv("DATABASE_URL") else "staff")
     previous = signal.signal(signal.SIGTERM, _terminate)
     try:
         with workspace_database(args.data_dir.resolve()):

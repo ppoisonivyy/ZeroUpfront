@@ -12,14 +12,21 @@
     BlinkMacSystemFont,
     "Segoe UI",
     sans-serif;
-  color: #183441;
-  background: #f1f5f6;
+  color: var(--ink);
+  background: #f3f6f9;
   font-synthesis: none;
   --ink: #173445;
   --muted: #506874;
   --line: #d3dfe3;
+  --action: #185a89;
+  --action-hover: #10456b;
+  --selected: #e7f1fa;
+  --control: #788a97;
+  --focus: #145c93;
+  --problem: #8b3829;
+  --problem-bg: #fff0eb;
   --teal: #006c62;
-  --navy: #113443;
+  --navy: #17374f;
   --paper: #fff;
   --subtle: #f3f7f8;
   --mint: #e7f4ef;
@@ -35,7 +42,7 @@ body {
   line-height: 1.55;
 }
 a {
-  color: var(--teal);
+  color: var(--action);
   text-decoration: none;
 }
 button,
@@ -56,9 +63,13 @@ button:disabled {
 a:focus-visible,
 button:focus-visible,
 input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+summary:focus-visible,
 [tabindex]:focus-visible {
-  outline: 3px solid #207acc;
+  outline: 3px solid var(--focus);
   outline-offset: 3px;
+  box-shadow: 0 0 0 3px white;
 }
 button {
   color: inherit;
@@ -107,7 +118,7 @@ strong,
   top: -8rem;
   left: 1rem;
   background: #fff;
-  color: var(--teal);
+  color: var(--action);
   padding: 12px;
   z-index: 9;
 }
@@ -117,7 +128,7 @@ strong,
 .app-header {
   background: var(--navy);
   color: white;
-  border-bottom: 3px solid #296459;
+  border-bottom: 3px solid #396686;
 }
 .header-inner {
   max-width: 1360px;
@@ -144,8 +155,8 @@ strong,
 .logomark {
   width: 32px;
   height: 32px;
-  border: 1px solid #7fb8a9;
-  color: #b6eed9;
+  border: 1px solid #85b4d4;
+  color: #d1eaff;
   display: grid;
   place-items: center;
   border-radius: 8px;
@@ -153,7 +164,7 @@ strong,
     700 23px/1 Georgia,
     serif;
   letter-spacing: -1px;
-  background: #254b53;
+  background: #284e69;
 }
 .header-divider {
   height: 21px;
@@ -175,7 +186,7 @@ strong,
 .pill i {
   height: 7px;
   width: 7px;
-  background: #8bdfc1;
+  background: #a7cfea;
   border-radius: 50%;
   flex-shrink: 0;
 }
@@ -271,8 +282,8 @@ main:focus:not(:focus-visible) {
   color: #88490c;
 }
 .pill.good {
-  background: #def2e9;
-  color: #125e4b;
+  background: var(--selected);
+  color: var(--action);
 }
 .facts {
   display: grid;
@@ -335,7 +346,7 @@ main:focus:not(:focus-visible) {
   border: 0;
   padding: 4px 0;
   font-size: 0.82rem;
-  color: var(--teal);
+  color: var(--action);
   font-weight: 600;
 }
 .text-action:hover,
@@ -353,7 +364,7 @@ main:focus:not(:focus-visible) {
   padding: 14px 16px 15px;
 }
 .finding.pass {
-  border-color: var(--teal);
+  border-color: var(--action);
   background: var(--mint);
 }
 .finding-kicker {
@@ -411,11 +422,11 @@ main:focus:not(:focus-visible) {
 }
 .source-row:hover,
 .case-row:hover {
-  background: #f3f8f7;
+  background: var(--subtle);
   text-decoration: none;
 }
 .source-row.chosen {
-  color: var(--teal);
+  color: var(--action);
 }
 .source-row > svg,
 .case-row > svg {
@@ -434,9 +445,9 @@ main:focus:not(:focus-visible) {
   color: #5b7380;
 }
 .chosen .file-icon {
-  color: var(--teal);
-  background: var(--mint);
-  border-color: #b8d9ce;
+  color: var(--action);
+  background: var(--selected);
+  border-color: #a8c6dc;
 }
 .row-detail {
   min-width: 0;
@@ -470,17 +481,17 @@ main:focus:not(:focus-visible) {
   font-size: 0.88rem;
 }
 .primary {
-  background: var(--teal);
+  background: var(--action);
   color: #fff;
-  border: 1px solid var(--teal);
+  border: 1px solid var(--action);
 }
 .primary:hover:enabled {
-  background: #00534c;
+  background: var(--action-hover);
 }
 .secondary {
   background: white;
   color: var(--ink);
-  border: 1px solid #bfd0d5;
+  border: 1px solid var(--control);
 }
 .secondary:hover:enabled {
   background: var(--subtle);
@@ -499,7 +510,7 @@ main:focus:not(:focus-visible) {
 .cite-label {
   font-size: 0.8rem;
   font-weight: 650;
-  color: var(--teal);
+  color: var(--action);
 }
 .cite-label span {
   color: var(--muted);
@@ -630,7 +641,7 @@ main:focus:not(:focus-visible) {
   width: 24px;
   height: 24px;
   border: 2px solid #c7ded8;
-  border-top-color: var(--teal);
+  border-top-color: var(--action);
   border-radius: 50%;
   animation: spin 1s linear infinite;
 }
@@ -668,7 +679,7 @@ main:focus:not(:focus-visible) {
 .field input:not([type]) {
   display: block;
   width: 100%;
-  border: 1px solid #aebfc5;
+  border: 1px solid var(--control);
   border-radius: 6px;
   padding: 9px 10px;
   color: var(--ink);
@@ -704,7 +715,7 @@ main:focus:not(:focus-visible) {
 }
 .option-set input,
 .check-field input {
-  accent-color: var(--teal);
+  accent-color: var(--action);
 }
 .compact-detail {
   border-block: 1px solid var(--line);
@@ -724,7 +735,7 @@ main:focus:not(:focus-visible) {
 }
 .comparison-top {
   gap: 7px;
-  color: var(--teal);
+  color: var(--action);
 }
 .comparison table {
   border-collapse: collapse;
@@ -755,7 +766,7 @@ main:focus:not(:focus-visible) {
   font-weight: 680 !important;
 }
 .comparison-note {
-  color: var(--teal);
+  color: var(--action);
   font-size: 0.83rem;
   margin-top: 5px;
 }
@@ -779,8 +790,8 @@ main:focus:not(:focus-visible) {
 }
 .error-message {
   padding: 9px 12px;
-  color: #873b27;
-  background: #fff0eb;
+  color: var(--problem);
+  background: var(--problem-bg);
   border-radius: 5px;
   margin-top: 12px;
   font-size: 0.88rem;
@@ -929,18 +940,18 @@ main:focus:not(:focus-visible) {
   border: 0;
   background: white;
   text-align: left;
-  color: var(--teal);
+  color: var(--action);
 }
 .attachment-toggle:hover,
 .attachment-toggle[aria-expanded="true"] {
-  background: #f1f8f5;
+  background: var(--selected);
 }
 .attachment-toggle[aria-expanded="true"] > svg {
   transform: rotate(180deg);
 }
 .attachment-preview {
   padding: 9px 12px 8px;
-  background: #eef4f3;
+  background: var(--subtle);
   border-radius: 6px;
   margin: 0 0 8px;
 }
