@@ -22,6 +22,16 @@
 
 ## Interpreting cost and speed
 
+### Discharge and settlement
+
+Extend the matched-case exercise with a revised guarantee, a queried extra night, a partial decision and a short beneficiary credit. Give the manual and assisted arms the same underlying evidence. Have a hospital coordinator, a payer representative and hospital finance independently grade the final disposition and patient explanation.
+
+Record staff minutes spent checking sources, correcting, contacting the payer and reconciling. Report those minutes per correctly resolved case, together with the share of cases needing a follow-up or correction and the number of unresolved cases. Measure elapsed payer response time and time to the final bank credit separately. Record each premature closure, incorrect patient charge, wrong guarantee revision and unauthorized disclosure. A count of interface confirmations measures checkpoints. Staff time requires observing people doing the work.
+
+On the seeded Pattaya path, the operator confirms one simulated trade and records two bank credits. Record whether the operator accurately explains why the insurer owes THB 300 and the patient owes THB 0 for FX. Include a lost booking response and an expired offer. Check that the operator retrieves the saved trade or requests a new offer without producing a duplicate booking.
+
+### Policy review economics
+
 The 168-page US experiment estimated **$1.27 per policy question** for two generation stages. Their paired time sums had a **12.5-second median**. All 70 substantive field assignments had source-localized support in a project AI audit of 16 answerable scenarios asked in two languages. Coordinator review, full-case cost, human time savings and payer outcomes remain unmeasured. [Benchmark and limitations](us-hybrid-decision.md)
 
 At the Bank of Thailand's 20 November 2026 reference rate of THB 33.953/USD, $1.27 is about THB 43.12. A 2025 King Chulalongkorn Memorial Hospital posting offered THB 45,000–50,000/month for an experienced nurse handling private-insurance coverage checks. Assuming 160 paid hours/month, one comparable question breaks even on **8.3–9.2 net active staff minutes saved**. Three separately charged questions cost about THB 129 and require roughly **25–28 minutes** saved. This example uses one role's base salary and excludes benefits and non-model costs. Use the partner's loaded hourly rate and observed calls per case to calculate pilot economics. [Hospital posting](https://jobs.kcmh.or.th/uploads/announce/pos/POS680150.pdf) · [Bank of Thailand reference rate](https://app.bot.or.th/BTWS_STAT/statistics/ReportPage.aspx?language=eng&reportID=123)

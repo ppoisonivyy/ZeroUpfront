@@ -1,0 +1,10 @@
+.finance-title, .finance-list article > header { display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
+.finance-list article { padding: 1.25rem; }
+.finance-list article + article { border-top: 1px solid var(--shell-line); }
+.finance-list h2 { font-size: 1rem; overflow-wrap: anywhere; }
+.finance-list article p, .finance-list dt, .finance-list small { color: var(--muted); font-size: .83rem; }
+.finance-list dl { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: .75rem; margin: .85rem 0 .3rem; }
+.finance-list dd { margin: .2rem 0; font-weight: 600; font-variant-numeric: tabular-nums; }
+@media (max-width: 600px) {
+  .finance-title, .finance-list article > header { align-items: flex-start; flex-wrap: wrap; }
+}

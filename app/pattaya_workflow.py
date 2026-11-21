@@ -1,6 +1,7 @@
 """Local rehearsal transactions. The example has no bank, venue or payments connection."""
 
 from decimal import Decimal
+from uuid import uuid4
 
 import psycopg
 
@@ -65,8 +66,9 @@ def apply(dsn, ident, revision, action, version, *, quote_id=None, bank_document
             instrument = "spot" if action == "book_spot" else "forward"
             quote = next(offer for offer in review["quotes"] if offer["instrument"] == instrument)
             if quote_id != quote["quote_id"]:
-                raise WorkspaceError(409, "The bank quote changed or was not supplied. Refresh and confirm the displayed quote.")
-            data = dict(quote, reference=reference, counterparty="Simulated partner bank")
+                raise WorkspaceError(409, "The bank quote expired, changed or was not supplied. Refresh and confirm a current offer.")
+            data = dict(quote, reference=reference, counterparty="Simulated partner bank",
+                        bank_trade_id="SIM-FX-" + uuid4().hex, bank_status="confirmed")
             store.append_event(db, case, "fx_booking", data, actor or "Practice treasury desk", username)
             return store._detail(db, ident, revision)
         advice = pattaya_case.bank_message(ident, bank_document, hospital_slug=case.get("staff_practice_hospital"))

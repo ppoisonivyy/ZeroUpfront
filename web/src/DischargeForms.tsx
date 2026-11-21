@@ -13,6 +13,7 @@ const actionTitles: Record<ClaimAction | string, string> = {
   approve: "Sign off packet",
   submission: "Record submission",
   reply: "Record written payer reply",
+  supplement: "Prepare an insurer follow-up",
   payment: "Record payment received",
 };
 const PdfPage = lazy(() => import("./PdfPage"));
@@ -29,6 +30,7 @@ export function ClaimUpload({
   onCancel: () => void;
   useSampleByDefault?: boolean;
 }) {
+  const { hosted_ocr_enabled } = useStaffSession();
   const operation = useRef(crypto.randomUUID());
   const [useSample, setUseSample] = useState(
     useSampleByDefault && !!claim?.sample_bill_available,
@@ -163,7 +165,7 @@ export function ClaimUpload({
               </label>
             ))
           )}
-          {!useSample && (
+          {!useSample && hosted_ocr_enabled && (
             <label className="check-field">
               <input type="checkbox" name="ocr" value="true" />
               Allow OpenAI to process scanned pages of these exhibits if OCR is
@@ -218,6 +220,22 @@ export function ClaimMutation({
   const [outcome, setOutcome] = useState("query"),
     [busy, setBusy] = useState(false),
     [error, setError] = useState("");
+  const followUp = claim.payer_decision;
+  const payerReply = [...claim.events].reverse().find(event => event.kind === "reply");
+  const [draft, setDraft] = useState(() => {
+    const ref = payerReply?.data.reference || "the latest written decision";
+    const request = claim.insurer_status === "query"
+      ? "We are responding to your request for additional information."
+      : "Please reconsider the written decision for this claim.";
+    return `Regarding ${ref}:
+
+${request}
+
+Supporting evidence from claim revision R${claim.revision}: [list only the relevant documents and page numbers].
+
+Please confirm receipt and the date we can expect your written response.`;
+  });
+  const needsOwner = action === "supplement" || (action === "reply" && ["query", "partial", "declined"].includes(outcome));
   const needsMoney =
     action === "payment" ||
     (action === "reply" && ["partial", "confirmed"].includes(outcome));
@@ -296,11 +314,18 @@ export function ClaimMutation({
               </label>
             </>
           )}
-          {action === "submission" && (
+          {action === "supplement" && <>
+            <label className="stack-field"><span>Editable follow-up draft</span>
+              <textarea rows={7} value={draft} onChange={e => setDraft(e.target.value)} />
+            </label>
+            <p className="hint">Review the original payer decision, edit the draft, and send it through the approved payer channel. Saving below records what was actually sent.</p>
+          </>}
+          {(action === "submission" || action === "supplement") && (
             <>
               <p className="hint">
-                Record the claim already sent through the insurer’s usual
-                channel.
+                {action === "supplement"
+                  ? "Record the packet already sent in response to the insurer’s latest written decision."
+                  : "Record the claim already sent through the insurer’s usual channel."}
               </p>
               <label className="stack-field">
                 <span>Submission channel</span>
@@ -313,8 +338,8 @@ export function ClaimMutation({
               <span>
                 {action === "payment"
                   ? "Payment reference"
-                  : action === "submission"
-                    ? "Submission reference"
+                  : action === "submission" || action === "supplement"
+                    ? "Transmission reference"
                     : "Insurer reference"}
               </span>
               <input required name="reference" />
@@ -354,6 +379,22 @@ export function ClaimMutation({
               </label>
             </>
           )}
+          {action === "supplement" && <>
+            <label className="upload-field"><strong>Exact PDF sent to insurer</strong>
+              <input type="file" name="file" accept="application/pdf,.pdf" required />
+            </label>
+            <label className="check-field"><input type="checkbox" name="confirmed" value="true" required />
+              I verified the packet, recipient and transmission reference for this revision.
+            </label>
+          </>}
+          {needsOwner && <div className="input-grid">
+            <label className="stack-field"><span>Follow-up owner</span>
+              <input name="owner" required maxLength={120} defaultValue={action === "supplement" ? followUp?.owner || actor || "" : actor || ""} />
+            </label>
+            <label className="stack-field"><span>Follow-up due</span>
+              <input type="date" name="follow_up_date" required defaultValue={action === "supplement" ? followUp?.follow_up_date || "" : ""} />
+            </label>
+          </div>}
           {needsMoney && (
             <div className="input-grid">
               <label className="stack-field">

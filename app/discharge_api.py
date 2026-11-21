@@ -2,7 +2,6 @@
 
 from datetime import date
 import json
-import os
 from typing import Annotated, Literal
 from uuid import uuid4
 
@@ -13,6 +12,7 @@ from pydantic import BaseModel, ConfigDict, Field
 from app import discharge_store as store
 from app import payer_ai_reader as ai_reader
 from app.workspace_store import coordinate_ocr
+from app.hospital_platform import disclosure_client, hospital_allows, require_disclosure, require_hosted_ocr
 from app.staff_access import mode
 from app.case_workflow import validate_attachment
 from app.workspace_http_common import _actor, _pdf, _read_upload, _revision, accept_files, ocr_service_error
@@ -80,7 +80,8 @@ class WorklistPage(BaseModel):
 
 
 class Detail(Summary):
-    ai_review_enabled: bool = Field(default_factory=ai_reader.enabled)
+    ai_review_enabled: bool = Field(default_factory=lambda: hospital_allows("payer_second_read") and ai_reader.enabled())
+    guarantee_fee_read_enabled: bool = Field(default_factory=lambda: hospital_allows("guarantee_fees") and ai_reader.enabled())
     facility: str | None = None
     as_of: str | None = None
     prior_case_id: str | None
@@ -101,6 +102,8 @@ class Detail(Summary):
     settlement_status: str
     paid_by_currency: dict[str, int]
     case_paid_by_currency: dict[str, int]
+    patient_statement_facts: dict | None = None
+    reviewed_patient_statement: dict | None = None
     sample_bill_available: bool = False
     example_scenario: Literal["pattaya_fx"] | None = None
     staff_practice_hospital: str | None = None
@@ -121,9 +124,8 @@ def _evaluate(meta, raw, names, ocr, saved_ocr=None, *, pattaya_fixture=False):
 
     try:
         if ocr:
-            if os.getenv("WORKSPACE_ENABLE_OCR") != "1" or not os.getenv("OPENAI_API_KEY"):
-                raise HTTPException(503, "Cloud OCR is unavailable on this installation.")
-            with OpenAI(timeout=90, max_retries=1) as client:
+            require_hosted_ocr()
+            with disclosure_client(OpenAI, "hosted_ocr", timeout=90, max_retries=1) as client:
                 evidence = evaluate_discharge(meta, raw, names, ocr_client=client, **options)
         else:
             evidence = evaluate_discharge(meta, raw, names, **options)
@@ -314,6 +316,7 @@ def guarantee_fees(request: Request, ident: str, options: GuaranteeFeeRequest, i
     from app import guarantee_fees as fees
 
     revision, dsn = _revision(if_match), request.app.state.dsn
+    require_disclosure("guarantee_fees")
     source = _current_guarantee(dsn, ident, revision, options.event_id)
     if not ai_reader.enabled():
         raise HTTPException(503, "The OpenAI guarantee reader is unavailable. Review the original payer letter.")
@@ -465,6 +468,7 @@ def second_read(request: Request, response: Response, ident: str, options: ai_re
     base = _revision(if_match)
     if not options.confirmed:
         raise HTTPException(422, "Confirm sending this revision’s original PDFs for a provisional AI second read.")
+    require_disclosure("payer_second_read")
     if not ai_reader.enabled():
         raise HTTPException(503, "AI second read is disabled or unavailable on this installation.")
     dsn = request.app.state.dsn
@@ -562,9 +566,13 @@ def export(request: Request, ident: str, revision: Annotated[int, Query(ge=1)]):
 
 
 class Workflow(BaseModel):
-    action: Literal["submission", "reply", "payment"]
+    action: Literal["submission", "reply", "payment", "supplement", "patient_statement"]
     workflow_version: int = Field(ge=0)
     target_revision: int | None = Field(default=None, ge=1)
+    owner: str | None = None
+    follow_up_date: str | None = None
+    contact: str | None = None
+    next_update: str | None = None
     actor: str | None = None
     reference: str | None = None
     channel: str | None = None

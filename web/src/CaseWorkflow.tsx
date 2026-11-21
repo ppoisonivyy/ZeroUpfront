@@ -37,6 +37,7 @@ const eventNames: Record<string, string> = {
   hold: "Operational hold raised",
   resolve_hold: "Operational hold resolved",
   payment: "Payment recorded",
+  patient_statement: "Patient financial update reviewed",
   fx_booking: "Simulated bank FX booked",
 };
 const payerStatuses: Record<string, string> = {

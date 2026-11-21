@@ -4,7 +4,7 @@ import { ArrowLeft, ArrowRight, Building2, Eye, EyeOff, Hospital, Layers } from 
 import { hospitalPrefix, sameOriginSource } from "./api";
 import "./auth.css";
 
-type Session = { role?: "hospital" | "insurer"; insurer?: string; mode: "local" | "staff"; actor: string | null; username?: string | null; hospital_name?: string };
+type Session = { role?: "coordinator" | "finance" | "insurer"; insurer?: string; hosted_ocr_enabled?: boolean; mode: "local" | "staff"; actor: string | null; username?: string | null; hospital_name?: string };
 type Directory = { mode: "single" | "multi"; hospitals: { slug: string; name: string }[] };
 type Account = Session & { busy: boolean; problem: string; signOut: (switchHospital?: boolean, desk?: "hospital" | "insurer") => Promise<void> };
 const StaffSession = createContext<Account | null>(null);
@@ -161,5 +161,5 @@ function SessionGate({ children }: { children: ReactNode }) {
       <button className="primary entry-submit" disabled={busy} type="submit">{busy ? "Signing in…" : "Sign in"}<ArrowRight size={16} /></button>
     </form>
   </Entry>;
-  return <StaffSession.Provider value={{ ...session, busy, problem, signOut }}>{children}</StaffSession.Provider>;
+  return <StaffSession.Provider key={JSON.stringify([session.username, session.role])} value={{ ...session, busy, problem, signOut }}>{children}</StaffSession.Provider>;
 }

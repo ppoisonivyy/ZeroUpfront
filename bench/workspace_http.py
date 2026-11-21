@@ -67,9 +67,9 @@ def timed(samples, label, fn, *args, **kwargs):
     return response
 
 
-def upload(client, revision, filename, data):
+def upload(client, revision, filename, data, *, ocr=False):
     return client.post(CASE + "/estimate", headers={"If-Match": f'"{revision}"'},
-                       files={"file": (filename, data, "application/pdf")}, data={"confirmed": "true"})
+                       files={"file": (filename, data, "application/pdf")}, data={"confirmed": "true", "ocr": str(ocr).lower()})
 
 
 def cycle(client, samples, revision, revised, original):
@@ -119,7 +119,7 @@ def main():
         if args.live_scan:
             scan_timings = defaultdict(list)
             result = timed(scan_timings, "Cloud OCR", upload, client, revision, "scanned-estimate.pdf",
-                           (EXHIBITS / "scanned-estimate.pdf").read_bytes()).json()
+                           (EXHIBITS / "scanned-estimate.pdf").read_bytes(), ocr=True).json()
             source = next(source for source in result["sources"] if source["role"] == "estimate")
             assert (result["status"], result["clause"], result["total"], result["lines"]) == (
                 "needs_itemization", "AT-2", 82000, [])
