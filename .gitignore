@@ -4,3 +4,10 @@
 .env
 .env.*
 !.env.example
+
+.venv/
+__pycache__/
+.local/
+
+# The unpacked synthetic corpus is versioned.
+/ZeroUpfront-training-samples.zip

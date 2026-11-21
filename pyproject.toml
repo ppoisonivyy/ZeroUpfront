@@ -1,0 +1,9 @@
+[project]
+name = "zeroupfront-fixtures"
+version = "0.1.0"
+description = "Synthetic guarantee-of-payment test packets and optional OpenAI evaluation"
+requires-python = ">=3.12,<3.15"
+dependencies = ["openai>=2,<4", "pydantic>=2,<3", "pypdf>=5,<9"]
+
+[dependency-groups]
+fixtures = ["reportlab>=4,<6"]
