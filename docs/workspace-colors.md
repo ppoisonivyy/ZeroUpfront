@@ -8,6 +8,8 @@ In a tablet reading experiment with 40 Thai and 60 UK participants, 67.5% of the
 
 In a controlled electronics-website study with 30 participants per country in Canada, Germany and Japan, blue had the highest mean appeal of the gray, blue and yellow treatments. Blue beat yellow in each sample. The study did not compare blue with teal. A much larger international website-rating experiment also found substantial differences in preferred colorfulness and complexity across groups. Blue is a defensible first version for interactive elements. Our particular shade remains a design choice. [Cyr, Head and Larios](https://milenahead.ca/Articles/Colour%20Appeal%20in%20Website%20Design%20within%20and%20across%20Cultures-%20A%20Multi-Method%20Evaluation.pdf) · [Reinecke and Gajos](https://www.iis.seas.harvard.edu/papers/2014/reinecke14visual.shtml)
 
+A 2025 Brazilian study tested an electronics store and a news portal. Participants preferred blue in both settings, with a stronger preference for the store. Taken together, these experiments support trying blue as the action color. A matched test with Thai hospital staff would settle the choice for this product more directly. [Passarelli-de-Lima and colleagues, Displays, 2025](https://doi.org/10.1016/j.displa.2025.103146)
+
 ## Color roles
 
 | Element | Foreground | Background |
