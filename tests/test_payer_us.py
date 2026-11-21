@@ -108,6 +108,8 @@ def unfamiliar_case(scenario, blanks=None):
         invoice_rows.append((33, 610, "Grand total: EUR 7,115.55"))
     if scenario == "fep_only_estimate":
         invoice_rows[-1] = (33, 640, "Estimated invoice total: EUR 3,100.22")
+    if scenario == "fep_repeat_total":
+        invoice_rows.append((33, 615, "Total charges: EUR 7,020.64"))
     invoice = sheet(invoice_rows)
     summary = sheet(
         [
@@ -123,12 +125,27 @@ def unfamiliar_case(scenario, blanks=None):
             ),
         ]
     )
+    if scenario == "cms_no_named_member":
+        summary = sheet(
+            [
+                (36, 729, "Final discharge summary"),
+                (36, 703, f"Person {meta['member']}. Visit {meta['encounter']}."),
+                (36, 676, "Disposition: transfer to a short-term general hospital."),
+            ]
+        )
+    if scenario == "cms_competing_dispositions":
+        summary = joined(
+            summary, sheet([(36, 703, invoice_header), (36, 676, "Disposition: home.")])
+        )
     if family == "cms":
         rows = [
             (
                 544,
                 722,
-                "117" if scenario in {"cms_replacement", "cms_dcn_present"} else "111",
+                "117"
+                if scenario
+                in {"cms_replacement", "cms_dcn_present", "cms_pending_reference"}
+                else "111",
             ),
             (46, 291, "MEDICARE PART A"),
             (233, 247, "R37910183" if scenario == "cms_identity" else meta["member"]),
@@ -141,8 +158,10 @@ def unfamiliar_case(scenario, blanks=None):
             (442, 312, "7020"),
             (477, 312, "63" if scenario == "cms_fraction" else "64"),
         ]
-        if scenario == "cms_dcn_present":
-            rows.append((248, 205, "154209993"))
+        if scenario in {"cms_dcn_present", "cms_pending_reference"}:
+            rows.append(
+                (248, 205, "154209993" if scenario == "cms_dcn_present" else "pending")
+            )
         docs = {
             "bill": joined(
                 sheet([(35, 722, "Packet cover")]), form("cms", rows, blanks), invoice
@@ -173,6 +192,8 @@ def unfamiliar_case(scenario, blanks=None):
                 else "EUR 7,020.64",
             ),
         ]
+        if scenario == "fep_bank_and_assignment":
+            rows.append((170, 254, "Harbour Example Account"))
         if scenario != "fep_no_general_signature":
             rows.append((26, 31, "K. Written"))
         if election:
@@ -211,6 +232,87 @@ def unfamiliar_case(scenario, blanks=None):
     return meta, docs
 
 
+EXPECTED = {
+    "cms_baseline": (
+        [],
+        [
+            "cms_insured_id_agrees",
+            "cms_initial_claim_type",
+            "cms_disposition_agrees",
+            "cms_stated_total_agrees",
+        ],
+    ),
+    "cms_fraction": (
+        ["cms_total_mismatch"],
+        ["cms_insured_id_agrees", "cms_initial_claim_type", "cms_disposition_agrees"],
+    ),
+    "cms_identity": (["cms_member_mismatch"], []),
+    "cms_disposition": (
+        ["cms_disposition_mismatch"],
+        ["cms_insured_id_agrees", "cms_initial_claim_type", "cms_stated_total_agrees"],
+    ),
+    "cms_replacement": (
+        ["cms_original_claim_reference"],
+        ["cms_insured_id_agrees", "cms_disposition_agrees", "cms_stated_total_agrees"],
+    ),
+    "cms_dcn_present": (
+        [],
+        [
+            "cms_insured_id_agrees",
+            "cms_original_reference_present",
+            "cms_disposition_agrees",
+            "cms_stated_total_agrees",
+        ],
+    ),
+    "cms_hospice": (
+        [],
+        ["cms_insured_id_agrees", "cms_initial_claim_type", "cms_stated_total_agrees"],
+    ),
+    "fep_baseline": ([], ["fep_provider_assignment", "fep_stated_total_agrees"]),
+    "fep_member": ([], ["fep_member_reimbursement", "fep_stated_total_agrees"]),
+    "fep_escrow": (["fep_assignment_provider"], ["fep_stated_total_agrees"]),
+    "fep_physician_group": (["fep_assignment_provider"], ["fep_stated_total_agrees"]),
+    "fep_matching_provider": (
+        [],
+        ["fep_provider_assignment", "fep_stated_total_agrees"],
+    ),
+    "fep_fraction": (["fep_total_mismatch"], ["fep_provider_assignment"]),
+    "fep_currency": (["fep_currency_review"], ["fep_provider_assignment"]),
+    "fep_unlinked": (["fep_amount_review"], ["fep_provider_assignment"]),
+    "fep_ambiguous_totals": (["fep_amount_review"], ["fep_provider_assignment"]),
+    "fep_only_estimate": (["fep_amount_review"], ["fep_provider_assignment"]),
+    "fep_bank_and_assignment": (["fep_payee_review"], ["fep_stated_total_agrees"]),
+    "fep_mixed": (["fep_payee_review"], ["fep_stated_total_agrees"]),
+    "fep_two_choices": (["fep_payee_review"], ["fep_stated_total_agrees"]),
+    "fep_handwriting": (["fep_form_visual_review"], []),
+    "fep_rotated": (["fep_form_visual_review"], []),
+    "fep_two_editions": (["fep_form_version_review"], []),
+    "fep_placeholder": (["fep_payee_review"], ["fep_stated_total_agrees"]),
+    "fep_wrong_member": (["fep_member_payer_review"], []),
+    "fep_no_general_signature": (
+        ["fep_general_signature"],
+        ["fep_provider_assignment", "fep_stated_total_agrees"],
+    ),
+    "fep_no_assignment_signature": (
+        ["fep_assignment_signature"],
+        ["fep_stated_total_agrees"],
+    ),
+    "cms_no_named_member": (
+        [],
+        ["cms_initial_claim_type", "cms_disposition_agrees", "cms_stated_total_agrees"],
+    ),
+    "cms_competing_dispositions": (
+        [],
+        ["cms_insured_id_agrees", "cms_initial_claim_type", "cms_stated_total_agrees"],
+    ),
+    "cms_pending_reference": (
+        ["cms_original_reference_review"],
+        ["cms_insured_id_agrees", "cms_disposition_agrees", "cms_stated_total_agrees"],
+    ),
+    "fep_repeat_total": (["fep_amount_review"], ["fep_provider_assignment"]),
+}
+
+
 class USPayerFields(TestCase):
     def screen(self, scenario, blanks=None):
         meta, docs = unfamiliar_case(scenario, blanks)
@@ -232,45 +334,39 @@ class USPayerFields(TestCase):
         self.addCleanup(self.register.stop)
 
     def check_variants(self, blanks=None):
-        cases = {
-            "cms_baseline": ([], []),
-            "cms_fraction": (["cms_total_mismatch"], []),
-            "cms_identity": (["cms_member_mismatch"], []),
-            "cms_disposition": (["cms_disposition_mismatch"], []),
-            "cms_replacement": (["cms_original_claim_reference"], []),
-            "cms_dcn_present": ([], []),
-            "cms_hospice": ([], []),
-            "fep_baseline": ([], ["fep_provider_assignment"]),
-            "fep_member": ([], ["fep_member_reimbursement"]),
-            "fep_escrow": (["fep_assignment_provider"], []),
-            "fep_physician_group": (["fep_assignment_provider"], []),
-            "fep_matching_provider": ([], ["fep_provider_assignment"]),
-            "fep_fraction": (["fep_total_mismatch"], ["fep_provider_assignment"]),
-            "fep_currency": (["fep_currency_review"], ["fep_provider_assignment"]),
-            "fep_unlinked": (["fep_amount_review"], ["fep_provider_assignment"]),
-            "fep_ambiguous_totals": (
-                ["fep_amount_review"],
-                ["fep_provider_assignment"],
-            ),
-            "fep_only_estimate": (["fep_amount_review"], ["fep_provider_assignment"]),
-            "fep_mixed": (["fep_payee_review"], []),
-            "fep_two_choices": (["fep_payee_review"], []),
-            "fep_handwriting": (["fep_form_visual_review"], []),
-            "fep_rotated": (["fep_form_visual_review"], []),
-            "fep_two_editions": (["fep_form_version_review"], []),
-            "fep_placeholder": (["fep_payee_review"], []),
-            "fep_wrong_member": (["fep_member_payer_review"], []),
-            "fep_no_general_signature": (
-                ["fep_general_signature"],
-                ["fep_provider_assignment"],
-            ),
-            "fep_no_assignment_signature": (["fep_assignment_signature"], []),
-        }
-        for name, (warnings, facts) in cases.items():
+        for name, (warnings, facts) in EXPECTED.items():
             with self.subTest(scenario=name):
                 result = self.screen(name, blanks)
                 self.assertEqual(set(result.findings), set(warnings))
                 self.assertEqual({c["code"] for c in result.checks}, set(facts))
+                if name == "cms_baseline":
+                    proof = {
+                        c["code"]: [
+                            (r["role"], r["page"], r["quote"]) for r in c["sources"]
+                        ]
+                        for c in result.checks
+                    }
+                    self.assertIn(
+                        ("summary", 1, "Member R37910182"),
+                        proof["cms_insured_id_agrees"],
+                    )
+                    self.assertIn(
+                        ("bill", 3, "Invoice total: USD 7,020.64"),
+                        proof["cms_stated_total_agrees"],
+                    )
+                    self.assertTrue(
+                        any(
+                            role == "summary" and "transfer" in text
+                            for role, _, text in proof["cms_disposition_agrees"]
+                        )
+                    )
+                if name == "cms_dcn_present":
+                    proof = next(
+                        c
+                        for c in result.checks
+                        if c["code"] == "cms_original_reference_present"
+                    )
+                    self.assertIn("154209993", [r["quote"] for r in proof["sources"]])
                 if name in {"fep_escrow", "fep_physician_group"}:
                     refs = result.findings["fep_assignment_provider"]["sources"]
                     self.assertEqual(

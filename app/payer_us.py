@@ -136,6 +136,8 @@ def _money(text):
 
 
 def _linked(page, meta):
+    if page.annotations or page.page.images.keys():
+        return False
     return all(
         contains_identifier(normalized(page.text), meta[key])
         for key in ("member", "encounter")
@@ -161,8 +163,7 @@ def _compare_total(family, meta, originals, page, role, actual, quotes, review):
                         invoice.ref("bill", match[0]),
                     )
                 )
-    result = {entry for entry, _ in totals}
-    if not actual or len(result) != 1:
+    if not actual or len(totals) != 1:
         review.flag(
             family + "_amount_review",
             "Hospital billing",
@@ -172,24 +173,110 @@ def _compare_total(family, meta, originals, page, role, actual, quotes, review):
             severity="review",
         )
         return
-    expected = next(iter(result))
+    expected, invoice_ref = totals[0]
+    section = "CMS-1450 FL 47" if family == "cms" else "FEP section 4"
     if actual[0] != expected[0]:
         review.flag(
             family + "_currency_review",
             "Hospital billing",
             "The form and itemized invoice use different currencies. Verify the documented conversion before comparing amounts.",
             *form_refs,
-            totals[0][1],
+            invoice_ref,
         )
     elif actual[1] != expected[1]:
-        section = "CMS-1450 FL 47" if family == "cms" else "FEP section 4"
         review.flag(
             family + "_total_mismatch",
             "Hospital billing",
             f"{section} shows {actual[0]} {actual[1]:,.2f}. The linked itemized invoice shows {expected[0]} {expected[1]:,.2f}. Reconcile the difference.",
             *form_refs,
-            totals[0][1],
+            invoice_ref,
         )
+
+    else:
+        review.checked(
+            family + "_stated_total_agrees",
+            f"{section} and the linked itemized invoice both state {actual[0]} {actual[1]:,.2f}. Staff still need to review individual charges and credits.",
+            *form_refs,
+            invoice_ref,
+        )
+
+
+def _member_source(meta, originals, form_role, form_number):
+    labeled = re.compile(
+        r"\bmember(?:\s+(?:id|number|identifier))?\s*[:#]?\s+([A-Z0-9][A-Z0-9-]{2,47})\b",
+        re.IGNORECASE,
+    )
+    found = []
+    for role in ("summary", "records"):
+        for source in form_pages(originals, role):
+            if role == form_role and source.number == form_number:
+                continue
+            if (
+                source.annotations
+                or source.page.images.keys()
+                or not contains_identifier(normalized(source.text), meta["encounter"])
+            ):
+                continue
+            for line in source.text.splitlines():
+                for match in labeled.finditer(line):
+                    if match[1].casefold() == meta["member"].casefold() or any(
+                        c.isdigit() for c in match[1]
+                    ):
+                        found.append((match[1].casefold(), source.ref(role, match[0])))
+    if found and {value for value, _ in found} == {meta["member"].casefold()}:
+        return found[0][1]
+    return None
+
+
+def _cms_reference(page, role, payer, review):
+    if payer.casefold() not in {
+        "medicare",
+        "medicare part a",
+        "original medicare",
+        "medicare fee-for-service",
+        "medicare ffs",
+    }:
+        return
+    bill_type = _single(page, (537, 715, 570, 728))
+    if not re.fullmatch(r"0?\d{2}[178]", bill_type):
+        return
+    dcn = page.within(242, 199, 406, 211)
+    refs = [page.ref(role, bill_type), page.ref(role, "64 DOCUMENT CONTROL NUMBER")]
+    if bill_type.endswith("1"):
+        if not dcn:
+            review.checked(
+                "cms_initial_claim_type",
+                f"FL 4 shows {bill_type}, an admit-through-discharge claim. The prior-reference requirement for adjustments does not apply to this frequency.",
+                *refs,
+            )
+    elif not dcn:
+        review.flag(
+            "cms_original_claim_reference",
+            "Hospital billing",
+            f"CMS-1450 FL 4 gives bill type {bill_type}. Supply or confirm the prior Medicare document control number in FL 64A before submitting the adjustment.",
+            *refs,
+        )
+    else:
+        value = normalized(dcn[0].text)
+        if (
+            len(dcn) == 1
+            and re.fullmatch(r"[0-9][0-9-]{4,22}[0-9]", value)
+            and len(set(value.replace("-", ""))) > 1
+        ):
+            review.checked(
+                "cms_original_reference_present",
+                f"For bill type {bill_type}, FL 64A contains reference {value}. Match it to the original payer acknowledgement before filing.",
+                *refs,
+                page.ref(role, value),
+            )
+        else:
+            review.flag(
+                "cms_original_reference_review",
+                "Hospital billing",
+                "Confirm the readable original Medicare claim reference in FL 64A against the payer acknowledgement.",
+                *refs,
+                severity="review",
+            )
 
 
 def _cms(meta, originals, page, role, review):
@@ -226,22 +313,18 @@ def _cms(meta, originals, page, role, review):
             severity="review",
         )
         return
-    bill_type = _single(page, (537, 715, 570, 728))
-    dcn = page.within(242, 199, 406, 211)
-    if (
-        re.fullmatch(r"0?\d{2}[78]", bill_type)
-        and "medicare" in payer.casefold()
-        and not dcn
-    ):
-        review.flag(
-            "cms_original_claim_reference",
-            "Hospital billing",
-            f"CMS-1450 FL 4 gives bill type {bill_type}. Supply or confirm the prior Medicare document control number in FL 64A before submitting the adjustment.",
-            page.ref(role, bill_type),
-            page.ref(role, "64 DOCUMENT CONTROL NUMBER"),
+    corroboration = _member_source(meta, originals, role, page.number)
+    if corroboration:
+        review.checked(
+            "cms_insured_id_agrees",
+            f"FL 60A and the linked encounter record both identify insured member {member}.",
+            page.ref(role, member),
+            corroboration,
         )
+    _cms_reference(page, role, payer, review)
     status = _single(page, (234.5, 651, 253, 663))
     narratives = []
+    uncertain_disposition = False
     for summary in form_pages(originals, "summary"):
         if not _linked(summary, meta):
             continue
@@ -254,8 +337,11 @@ def _cms(meta, originals, page, role, review):
                         summary.ref("summary", match[0]),
                     )
                 )
+            elif re.match(r"^(?:discharge\s+)?disposition\s*[:=]", line.strip(), re.IGNORECASE):
+                uncertain_disposition = True
     if (
         status in {"01", "02"}
+        and not uncertain_disposition
         and narratives
         and all(code != status for code, _ in narratives)
     ):
@@ -268,6 +354,24 @@ def _cms(meta, originals, page, role, review):
             "cms_disposition_mismatch",
             "Clinical team",
             f"CMS-1450 FL 17 shows {status} ({meaning}). The linked discharge disposition differs. Confirm where the patient went.",
+            page.ref(role, "17 STAT"),
+            page.ref(role, status),
+            narratives[0][1],
+        )
+    elif (
+        status in {"01", "02"}
+        and narratives
+        and not uncertain_disposition
+        and all(value == status for value, _ in narratives)
+    ):
+        meaning = (
+            "home or self-care"
+            if status == "01"
+            else "transfer to a short-term hospital"
+        )
+        review.checked(
+            "cms_disposition_agrees",
+            f"FL 17 shows {status} ({meaning}). The linked discharge summary records the same disposition.",
             page.ref(role, "17 STAT"),
             page.ref(role, status),
             narratives[0][1],
@@ -309,10 +413,12 @@ def _fep_member(page, member):
     return ("R" + value).casefold() == member.casefold()
 
 
-def _facility_source(meta, originals):
+def _facility_source(meta, originals, form_role, form_number):
     expected = normalized(meta["facility"]).casefold()
     for role in ("summary", "bill"):
         for source in form_pages(originals, role):
+            if role == form_role and source.number == form_number:
+                continue
             if not _linked(source, meta):
                 continue
             for raw in source.text.splitlines():
@@ -400,11 +506,20 @@ def _fep(meta, originals, page, role, review):
         (394, 86, 464, 99),
     ]
     assignment = any(page.within(*box) for box in assignment_boxes)
+    # An account or routing entry in 5C conflicts with a provider assignment or check election.
+    bank_boxes = [
+        (167, 253, 336, 267.2),
+        (409, 253, 579, 267.2),
+        (136, 236, 515, 251),
+        (152, 193, 299, 211.5),
+        (152, 169, 602, 188.5),
+    ]
+    bank_details = any(page.within(*box) for box in bank_boxes)
     different_provider = bool(
         provider and provider.casefold() != normalized(meta["facility"]).casefold()
     )
     if different_provider:
-        hospital = _facility_source(meta, originals)
+        hospital = _facility_source(meta, originals, role, page.number)
         if hospital:
             review.flag(
                 "fep_assignment_provider",
@@ -427,7 +542,8 @@ def _fep(meta, originals, page, role, review):
         or method is None
         or len(currency) > 1
         or len(method) > 1
-        or (assignment and (currency or method))
+        or (assignment and (currency or method or bank_details))
+        or (bank_details and method == [0])
     ):
         review.flag(
             "fep_payee_review",
