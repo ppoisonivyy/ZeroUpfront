@@ -12,17 +12,19 @@ npm --prefix web run build
 uv run --locked python -m app.hospital_demo
 ```
 
-On the first interactive launch, choose a separate password for the username `judge` in each hospital. The prompts hide typed input. The app stores only salted password verifiers. On subsequent launches, the same accounts, original exhibits and saved revisions are available. Open the [hospital directory](http://127.0.0.1:8040/).
+On the first interactive launch, choose passwords for `judge` (hospital coordinator) and `reviewer` (Meridian Assist insurer) in each hospital. Both accounts use the same sign-in form. The prompts hide typed input. The app stores only salted password verifiers. On subsequent launches, the same accounts, original exhibits and saved revisions are available. Open the [hospital directory](http://127.0.0.1:8040/).
 
-To choose a new password, including after an unattended launch, leave the demo running and use a second terminal. A reset signs that hospital's judge account out on every device.
+To choose a new password, including after an unattended launch, leave the demo running and use a second terminal. A reset signs the selected account out on every device.
 
 ```sh
 uv run --locked python -m app.hospital_demo password canal-bridge
 uv run --locked python -m app.hospital_demo password lakeside
+uv run --locked python -m app.hospital_demo password canal-bridge --account reviewer
 ```
 
 | Encounter | What to try |
 | --- | --- |
+| ZU-0248 (Canal Bridge) | Review Amelia’s evidence as hospital staff and submit the reviewed revision. Sign in as `reviewer` to inspect the submitted packet and its sources in the Meridian Assist inbox. |
 | VISIT-CB-FX or VISIT-LS-FX | Compare the dated FX reference with simulated bank funding, inspect the bilingual fee reader and reconcile a THB 300 short receipt. [Pattaya walkthrough](demo.md#pattaya-fx-rehearsal) |
 | VISIT-CB-001 or VISIT-LS-001 | Open the duplicate pharmacy charge and inspect page 2. Preview the corrected bill, confirm the encounter and save. Review the new revision, preview the attachments and open the reviewed export. The first bill remains in version history. |
 | VISIT-CB-002 or VISIT-LS-002 | Review a complete packet directly. Record the external submission and the payer’s response as separate events. |
@@ -43,11 +45,12 @@ One release can serve multiple hospitals. Add each stable slug and public label 
 
 Provision a distinct PostgreSQL database and narrowly privileged role per hospital. Set the corresponding variables in the service. The database remembers its slug and startup rejects a connection mapped to another hospital’s existing binding. Publish the container through HTTPS and check `/readyz`. Readiness depends on **all** configured databases. Separate releases can limit the impact of a database outage or meet different residency requirements. The configuration applies on restart. [Container deployment](deployment.md) · [Privacy by jurisdiction](privacy-by-jurisdiction.md)
 
-For these **fictional hospitals only**, run `python -m app.hospital_demo seed-configured` in the configured container to populate the examples. In an interactive administrative shell with the same secrets, provision a separate staff login in each database. Both commands prompt for the password.
+For these **fictional hospitals only**, run `python -m app.hospital_demo seed-configured` in the configured container to populate the examples. In an interactive administrative shell with the same secrets, provision a separate staff login in each database. Each command prompts for the password. To enable a payer inbox, add an insurer reviewer to the hospital database and supply the exact payer name on its submitted packets.
 
 ```sh
 DATABASE_URL="$CANAL_DATABASE_URL" python -m app.staff_access add judge --name "Canal Bridge coordinator"
 DATABASE_URL="$LAKESIDE_DATABASE_URL" python -m app.staff_access add judge --name "Lakeside coordinator"
+DATABASE_URL="$CANAL_DATABASE_URL" python -m app.staff_access add reviewer --name "Meridian Assist reviewer" --insurer "Meridian Assist"
 ```
 
 Give each judge their own account for an individual audit trail. Deliver credentials privately. Configure provider secrets, web HTTPS and database certificate verification before issuing the link. [Staff access and encryption](security-and-encryption.md)

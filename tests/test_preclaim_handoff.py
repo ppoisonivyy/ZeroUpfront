@@ -1,17 +1,19 @@
 """Exercise an evidence revision across two independently authenticated hospital and payer workspaces."""
-from concurrent.futures import ThreadPoolExecutor
-from contextlib import ExitStack
+
 import json
 import os
 import secrets
 import shutil
 import unittest
+from concurrent.futures import ThreadPoolExecutor
+from contextlib import ExitStack
 from unittest.mock import patch
 
-from fastapi.testclient import TestClient
 import psycopg
+from fastapi.testclient import TestClient
 
-from app import hospital_demo, preclaim_fixture as fixture, preclaims
+from app import hospital_demo, preclaims
+from app import preclaim_fixture as fixture
 from app.hospital_platform import Hospital, build_platform
 from app.staff_access import provision
 from app.workspace_api import create_workspace
@@ -48,21 +50,28 @@ class PreclaimHandoffTests(unittest.TestCase):
             reviewed = inbox + "/" + fixture.CASE
             self.assertEqual(staff.get(case).status_code, 401)
             for client, username in ((staff, "desk"), (payer, "reviewer"), (other, "other")):
-                login = client.post(north + "/access/login", json={"username":username,"password":password})
+                login = client.post(north + "/access/login", json={"username": username, "password": password})
                 self.assertEqual(login.status_code, 200, login.text)
+
             def act(action, revision):
-                return staff.post(case + "/" + action, json={"confirmed":True}, headers={"If-Match": f'"{revision}"'})
+                return staff.post(
+                    case + "/" + action, json={"confirmed": True}, headers={"If-Match": f'"{revision}"'}
+                )
+
             def concurrent(action, revision):
                 with ThreadPoolExecutor(max_workers=2) as pool:
                     return sorted(resp.status_code for resp in pool.map(lambda _: act(action, revision), range(2)))
+
             self.assertEqual(staff.get(inbox).status_code, 403)
             self.assertEqual(payer.get(case).status_code, 403)
-            self.assertEqual(payer.post(case + "/review", json={"confirmed":True}).status_code, 403)
+            self.assertEqual(payer.post(case + "/review", json={"confirmed": True}).status_code, 403)
             self.assertEqual(payer.get(inbox).json(), [])
             self.assertEqual(payer.get(reviewed).status_code, 404)
             self.assertEqual(payer.get(south + "/insurer/preclaims").status_code, 401)
             summary = next(x for x in staff.get(north + "/cases").json() if x["id"] == fixture.CASE)
-            self.assertEqual((summary["input_kind"], summary["workflow_stage"]), ("payer_preclaim", "needs_documents"))
+            self.assertEqual(
+                (summary["input_kind"], summary["workflow_stage"]), ("payer_preclaim", "needs_documents")
+            )
             original = staff.get(case).json()
             self.assertEqual(original["gap"]["code"], "missing_signed_report")
             self.assertTrue(original["rule"]["verified"])
@@ -78,32 +87,44 @@ class PreclaimHandoffTests(unittest.TestCase):
             self.assertIn(fixture.SIGNATURE, fixture.pages(replacement)[0])
             self.assertEqual(act("review", 1).status_code, 409)
             self.assertEqual(act("submit", 1).status_code, 409)
-            self.assertEqual(staff.post(case + "/attach-report", json={"confirmed":False},
-                            headers={"If-Match":'"1"'}).status_code, 422)
+            self.assertEqual(
+                staff.post(
+                    case + "/attach-report", json={"confirmed": False}, headers={"If-Match": '"1"'}
+                ).status_code,
+                422,
+            )
             self.assertEqual(concurrent("attach-report", 1), [200, 412])
             self.assertEqual(act("review", 1).status_code, 412)
             second = staff.get(case).json()
             self.assertEqual((second["revision"], second["status"], second["issues"]), (2, "ready_for_review", []))
             self.assertEqual(staff.get(sources["report"]).content, original_report)
             self.assertEqual(staff.get(second["sources"][1]["url"]).content, replacement)
-            self.assertIn("Draft for hospital staff review.", fixture.pages(staff.get(second["draft_url"]).content)[0])
+            self.assertIn(
+                "Draft for hospital staff review.", fixture.pages(staff.get(second["draft_url"]).content)[0]
+            )
             self.assertEqual(act("submit", 2).status_code, 409)
             self.assertEqual(concurrent("review", 2), [200, 409])
             self.assertEqual(payer.get(inbox).json(), [])
-            saved_form = staff.get(second["draft_url"]).content
+            self.assertIn(
+                "Draft for hospital staff review.", fixture.pages(staff.get(second["draft_url"]).content)[0]
+            )
+            saved_form = staff.get(staff.get(case).json()["draft_url"]).content
             self.assertIn("Hospital staff review: Desk", fixture.pages(saved_form)[0])
             self.assertEqual(concurrent("submit", 2), [200, 409])
             visible = payer.get(inbox).json()
             self.assertEqual(len(visible), 1)
             shared = payer.get(reviewed + "?revision=2").json()
             self.assertEqual(shared, visible[0])
-            self.assertEqual((shared["id"], shared["submitted_revision"], shared["status"]),
-                             (fixture.CASE, 2, "waiting_for_insurer"))
+            self.assertEqual(
+                (shared["id"], shared["submitted_revision"], shared["status"]),
+                (fixture.CASE, 2, "waiting_for_insurer"),
+            )
             self.assertEqual(payer.get(shared["draft_url"]).content, saved_form)
             for src in shared["sources"]:
                 staff_url = next(doc["url"] for doc in second["sources"] if doc["role"] == src["role"])
                 self.assertEqual(staff.get(staff_url).content, payer.get(src["url"]).content)
                 self.assertEqual(other.get(src["url"]).status_code, 404)
+            self.assertEqual(payer.get(reviewed + "/revisions/2/sources/draft").status_code, 404)
             self.assertEqual(payer.get(reviewed + "?revision=1").status_code, 404)
             self.assertEqual(payer.get(reviewed + "/revisions/1/sources/report").status_code, 404)
             self.assertEqual(other.get(inbox).json(), [])
@@ -111,10 +132,16 @@ class PreclaimHandoffTests(unittest.TestCase):
             self.assertEqual(other.get(shared["draft_url"]).status_code, 404)
             self.assertEqual(payer.get(south + "/insurer/preclaims").status_code, 401)
             for client, username in ((staff, "desk"), (payer, "reviewer")):
-                self.assertEqual(client.post(south + "/access/login",
-                                 json={"username":username,"password":password}).status_code, 200)
+                self.assertEqual(
+                    client.post(
+                        south + "/access/login", json={"username": username, "password": password}
+                    ).status_code,
+                    200,
+                )
             self.assertEqual(payer.get(south + "/insurer/preclaims").json(), [])
-            self.assertEqual(payer.get(shared["draft_url"].replace("/canal-bridge/", "/lakeside/")).status_code, 404)
+            self.assertEqual(
+                payer.get(shared["draft_url"].replace("/canal-bridge/", "/lakeside/")).status_code, 404
+            )
             south_case = case.replace("/canal-bridge/", "/lakeside/")
             self.assertEqual(staff.get(south_case).json()["status"], "needs_documents")
             self.assertNotEqual(staff.get(south_case + "/report-example").content, replacement)
@@ -125,17 +152,27 @@ class PreclaimHandoffTests(unittest.TestCase):
             # A foreign hospital's genuine signed sample must not satisfy the southern encounter.
             with psycopg.connect(dsns["lakeside"]) as db:
                 digest = _save_document(db, replacement)
-                db.execute("UPDATE zeroupfront_demo.preclaims SET replacement=%s WHERE id=%s", (digest, fixture.CASE))
-            reject = staff.post(south_case + "/attach-report", json={"confirmed":True}, headers={"If-Match":'"1"'})
+                db.execute(
+                    "UPDATE zeroupfront_demo.preclaims SET replacement=%s WHERE id=%s", (digest, fixture.CASE)
+                )
+            reject = staff.post(
+                south_case + "/attach-report", json={"confirmed": True}, headers={"If-Match": '"1"'}
+            )
             self.assertEqual(reject.status_code, 422)
             # Physical page verification must read stored evidence, even when all metadata still matches.
             misplaced_clause = fixture.pdf("Wrong edition", [("Wrong page", [fixture.RULE])])
             with psycopg.connect(dsns["lakeside"]) as db:
                 digest = _save_document(db, misplaced_clause)
-                db.execute("UPDATE zeroupfront_demo.preclaim_revisions SET policy=%s WHERE case_id=%s AND revision=1",
-                           (digest, fixture.CASE))
+                db.execute(
+                    "UPDATE zeroupfront_demo.preclaim_revisions SET policy=%s WHERE case_id=%s AND revision=1",
+                    (digest, fixture.CASE),
+                )
             held = staff.get(south_case).json()
             self.assertFalse(held["rule"]["verified"])
             self.assertEqual(held["gap"]["code"], "unverified_rule")
-            self.assertEqual(staff.post(south_case + "/attach-report", json={"confirmed":True},
-                             headers={"If-Match":'"1"'}).status_code, 409)
+            self.assertEqual(
+                staff.post(
+                    south_case + "/attach-report", json={"confirmed": True}, headers={"If-Match": '"1"'}
+                ).status_code,
+                409,
+            )
