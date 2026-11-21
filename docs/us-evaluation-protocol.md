@@ -1,0 +1,21 @@
+# US policy accuracy experiment
+
+Recorded on 21 November 2026 before inspecting model answers. The source is the 168-page OPM 2026 Blue Cross and Blue Shield Service Benefit Plan brochure, Standard and Basic options, SHA-256 `e5b371dbff81c71808da05fb2a4e2bad7b11c39bb3b49fdee1505c043111a7c1`. Physical page 1 is the cover. Only the published policy enters this evaluation. The questions include synthetic situations and missing individual facts. [Official policy](https://www.opm.gov/healthcare-insurance/healthcare/plan-information/plans/pdf/2026/brochures/71-005.pdf)
+
+**Question to resolve.** Can a coordinator get the correct administrative fact, with the pages needed to support it, when the answer depends on the plan option, an exception or an unavailable case fact? Full-edition reading has previously fitted in Astra's context window. This experiment tests what it actually answers. [Earlier size measurement](context-budget.md)
+
+## Compared methods
+
+1. **Full edition.** Give Astra all 168 numbered text pages and one question per request.
+2. **Retrieval.** Search overlapping passages of the same numbered text and provide Astra with the selected policy pages and the same question. Use lexical and explicit OpenAI embedding ranks. Record the evidence available before scoring the model answer.
+3. **Agreement with review.** Evaluate a policy for releasing an answer to the staff review screen. Run both methods. Release typed facts only when the values agree, both cite verifiable excerpts from their own inputs, and their verified page sets share at least one physical page. Display the union of their verified evidence. Two explicit abstentions with empty values report missing evidence. Any disagreement, noncompletion, missing field or invalid quote requires review. The routing function receives the request contract and method outputs. Answer keys and required-page labels are used only afterwards to score it.
+
+The third method uses the same model in both arms. Correlated mistakes remain possible. Requiring a shared page can withhold a correct answer backed by two equivalent provisions. The measurement reports that cost. In casework, a known task also loads mandatory dependencies from the independently reviewed rulebook and the insurer alone supplies a payment guarantee. [Rulebook design](policy-representation.md)
+
+## Scoring and controls
+
+- Freeze the source hash, question wording, field types/choices, expected values and alternative-page groups before inference. Use discrete, checkable facts, paired English and Thai wording, and situations where the policy alone cannot establish the answer. The two languages share policy scenarios; show counts per language and per unique scenario. Build the index independently of any labels and use the same model, reasoning setting and output contract for both arms.
+- Count fully correct typed answers, individual field matches, correct abstentions and unsupported assertions. Use exact types so a Boolean cannot pass as an integer. Prefer independent literal/number scoring to another model judging accuracy. Evaluate unanswerable cases separately so many abstentions cannot inflate an answerable score.
+- For an answerable question, count whether every required evidence group is represented and whether each quote is present on its cited physical page. Include precision against the accepted pages separately. A valid quotation alone cannot prove it entails the answer. Review apparent false positives and negatives against the PDF. Preserve the frozen score and document any newly discovered legitimate alternative or ambiguous label.
+- For the agreement policy, publish the number of answerable cases released, correct and incorrect releases, cases routed to review, and assertions on questions that should have been left unresolved. A method that releases zero answers cannot claim perfect accuracy.
+- Record input/output usage, model configuration, cache behavior when available, elapsed time and deployment limits alongside results. Failures, retries and replicate calls remain visible. Cost is secondary to correctness. This one public policy and an authored question set do not estimate accuracy across insurers, patients or policy years.
