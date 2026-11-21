@@ -74,3 +74,9 @@ jobs:
       - run: uv sync --locked --python 3.12
       - run: docker build -t zeroupfront:release .
       - run: uv run --locked python bench/container_release.py
+      - name: Exercise two hospitals and competing staff writes against the built client
+        run: |
+          export PATH="$(pg_config --bindir):$PATH"
+          mkdir -p web/dist
+          docker run --rm --entrypoint tar zeroupfront:release -C web/dist -cf - . | tar -xf - -C web/dist
+          uv run --locked python bench/hospital_concurrency.py --cases-per-hospital 2 --concurrent-cases 2
