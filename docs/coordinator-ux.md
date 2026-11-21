@@ -1,6 +1,6 @@
 # Coordinator workspace design review
 
-Give the hospital coordinator one place to answer three questions. What holds up this request? Which source proves it? What can I do next? The desktop workflow opens a case from the queue, keeps the original evidence beside the selected finding, and asks for staff approval of a particular revision. The synthetic app implements this flow, including clickable attachment previews and a PDF with the original exhibits embedded. Production authentication, arbitrary document intake and insurer submission are future work. [Run the demo](../README.md#coordinator-workspace) · [Application contracts](application-design.md)
+Give the hospital coordinator one place to answer three questions. What holds up this request? Which source proves it? What can I do next? The desktop workflow opens a case from the queue, keeps the original evidence beside the selected finding, and asks for staff approval of a particular revision. The synthetic app implements this flow, including clickable attachment previews and a PDF with the original exhibits embedded. The shared release supports staff sign-in over HTTPS. Staff inspect unfamiliar layouts and send reviewed packets through their hospital’s existing payer channel. [Run the demo](../README.md#coordinator-workspace) · [Application contracts](application-design.md)
 
 ## Walk through case Z002
 
