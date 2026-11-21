@@ -13,6 +13,7 @@ from pydantic import BaseModel, ConfigDict, Field
 from app import discharge_store as store
 from app import payer_ai_reader as ai_reader
 from app.workspace_store import coordinate_ocr
+from app.staff_access import mode
 from app.case_workflow import validate_attachment
 from app.workspace_http_common import _actor, _pdf, _read_upload, _revision, accept_files, ocr_service_error
 
@@ -105,7 +106,7 @@ def _evaluate(meta, raw, names, ocr, saved_ocr=None, *, pattaya_fixture=False):
     options = {"_saved_ocr": saved_ocr} if saved_ocr else {}
     if pattaya_fixture:
         options["_pattaya_fixture"] = True
-    if os.getenv("WORKSPACE_AUTH_MODE", "staff") != "local" and meta.get("as_of", "") > date.today().isoformat():
+    if mode() != "local" and meta.get("as_of", "") > date.today().isoformat():
         raise HTTPException(422, "The review date cannot be in the future.")
 
     try:
@@ -214,7 +215,7 @@ def intake(
 
 
 def _require_practice_mode():
-    if os.getenv("WORKSPACE_AUTH_MODE", "staff") != "local":
+    if mode() != "local":
         raise HTTPException(404, "Local discharge example not found.")
 
 
@@ -297,10 +298,12 @@ def pattaya_action(request: Request, ident: str, command: PracticeAction, if_mat
     return pattaya_workflow.apply(request.app.state.dsn, ident, _revision(if_match), command.action, command.workflow_version)
 
 
-def _sample_bill(case):
+def _sample_bill(dsn, case):
     from app.discharge_claim import load_discharge_fixture
 
-    if os.getenv("WORKSPACE_AUTH_MODE", "staff") != "local" or not case.get("sample_bill_available"):
+    if case.get("sample_bill_available") and case.get("sample_bill_digest"):
+        return store.corrected_example_bill(dsn, case["sample_bill_digest"]), "corrected-bill.pdf"
+    if mode() != "local" or not case.get("sample_bill_available"):
         raise HTTPException(404, "No local corrected bill is available for this revision.")
     _, raw, names = load_discharge_fixture("aligned")
     return raw["bill"], names["bill"]
@@ -308,7 +311,7 @@ def _sample_bill(case):
 
 @router.get("/{ident}/sample-bill", response_class=Response, responses=PDF)
 def sample_bill(request: Request, ident: str):
-    raw, _ = _sample_bill(store.detail(request.app.state.dsn, ident))
+    raw, _ = _sample_bill(request.app.state.dsn, store.detail(request.app.state.dsn, ident))
     return _pdf(raw, f"{ident}-corrected-bill.pdf")
 
 
@@ -360,7 +363,7 @@ def documents(
     if sample_bill:
         if any(uploads.values()):
             raise HTTPException(422, "Choose a local corrected bill or upload exhibits.")
-        sample, filename = _sample_bill(case)
+        sample, filename = _sample_bill(dsn, case)
         new_raw, new_names = {"bill": sample}, {"bill": filename}
     else:
         new_raw, new_names = _files(uploads)
@@ -369,7 +372,7 @@ def documents(
     meta = _screen_metadata(case)
     if as_of:
         meta["as_of"] = as_of.isoformat()
-    elif os.getenv("WORKSPACE_AUTH_MODE", "staff") != "local":
+    elif mode() != "local":
         meta["as_of"] = date.today().isoformat()
     result = _evaluate(meta, raw, names, ocr, case.get("ocr_pages"))
     return store.replace(dsn, ident, base, result, raw, names)
@@ -390,6 +393,8 @@ def recheck(request: Request, ident: str, if_match: Match = None):
     result = _evaluate(_screen_metadata(case), raw, names, False, case.get("ocr_pages"))
     if case.get("sample_bill_available"):
         result["sample_bill_available"] = True
+        if case.get("sample_bill_digest"):
+            result["sample_bill_digest"] = case["sample_bill_digest"]
     return store.replace(dsn, ident, base, result, raw, names, recheck=True)
 
 

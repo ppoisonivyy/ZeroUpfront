@@ -1,0 +1,84 @@
+{
+  "additional_free_text_cases": {
+    "north": {
+      "approval_http": 409,
+      "finding": "unrecognized_layout",
+      "status": "needs_review"
+    },
+    "south": {
+      "approval_http": 409,
+      "finding": "unrecognized_layout",
+      "status": "needs_review"
+    }
+  },
+  "admissions": {
+    "north": {
+      "foreign_revision": 404,
+      "intake": 201,
+      "originals_checked": 3
+    },
+    "south": {
+      "foreign_revision": 404,
+      "intake": 201,
+      "originals_checked": 3
+    }
+  },
+  "cases_per_hospital": 50,
+  "completed_workflows_per_second": 12.05,
+  "concurrent_cases": 8,
+  "inventory": {
+    "north": {
+      "discharge_approvals": 100,
+      "discharge_cases": 51,
+      "discharge_events": 250,
+      "discharge_intake_requests": 50,
+      "discharge_revisions": 151
+    },
+    "south": {
+      "discharge_approvals": 100,
+      "discharge_cases": 51,
+      "discharge_events": 250,
+      "discharge_intake_requests": 50,
+      "discharge_revisions": 151
+    }
+  },
+  "observed_http_status_counts": {
+    "200": 2223,
+    "201": 204,
+    "401": 3,
+    "404": 1411,
+    "409": 602,
+    "412": 200
+  },
+  "post_restart_workers": 2,
+  "race_outcomes": {
+    "approve_revision_2": {
+      "200+409": 100
+    },
+    "approve_revision_3": {
+      "200+409": 100
+    },
+    "correct_held_bill": {
+      "200+412": 100
+    },
+    "keyed_intake": {
+      "201+201": 100
+    },
+    "record_payment": {
+      "200+409": 100
+    },
+    "resubmit_revision_3": {
+      "200+409": 100
+    },
+    "submit_revision_2": {
+      "200+409": 100
+    },
+    "supply_queried_records": {
+      "200+412": 100
+    }
+  },
+  "workers": 2,
+  "workflow_p50_seconds": 0.649,
+  "workflow_p95_seconds": 0.792,
+  "workflow_seconds": 8.298
+}

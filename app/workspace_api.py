@@ -7,7 +7,7 @@ from typing import Annotated, Literal
 from uuid import uuid4
 from datetime import date
 
-from fastapi import FastAPI, File, Form, Header, HTTPException, Query, Request, Response, UploadFile
+from fastapi import APIRouter, FastAPI, File, Form, Header, HTTPException, Query, Request, Response, UploadFile
 from fastapi.responses import JSONResponse
 from openai import APIError, OpenAI
 from pydantic import BaseModel, ConfigDict, Field, StringConstraints, field_validator
@@ -17,7 +17,8 @@ from app import discharge_store
 from app.discharge_api import router as discharge_router
 from app.workspace_http_common import INTAKE_BYTES, MultipartBodyLimit, _actor, _pdf, _read_upload, _revision, ocr_service_error
 from app.case_workflow import validate_attachment
-from app.staff_access import install_access, initialize_access
+from app.staff_access import install_access, initialize_access, mode
+from app.hospital_platform import HospitalContext, bind_database, build_platform
 from app.workspace_documents import CASE_INSURERS, evaluate_estimate, packet_bytes, seed_cases
 
 FIXTURES = Path(__file__).resolve().parents[1] / "fixtures"
@@ -101,7 +102,7 @@ def _documents(case_id, estimate):
 def _sample(case_id, detail):
     if case_id == "Z002":
         return (FIXTURES / "cases" / "Z002" / "revised-estimate.pdf").read_bytes()
-    if detail.get("sample_estimate_available") and os.getenv("WORKSPACE_AUTH_MODE","staff") == "local":
+    if detail.get("sample_estimate_available") and mode() == "local":
         from app.journey_examples import exhibits
         return exhibits("clean")[1]["estimate"]
     raise HTTPException(404, "No bundled correction is available for this case.")
@@ -125,12 +126,15 @@ def _evaluate(case_id, data, filename):
 
 @asynccontextmanager
 async def lifespan(app):
-    dsn = os.getenv("DATABASE_URL")
+    hospital = getattr(app.state, "hospital", None)
+    dsn = hospital.dsn if hospital else os.getenv("DATABASE_URL")
     if not dsn:
         raise RuntimeError("Set DATABASE_URL to the PostgreSQL database for the synthetic coordinator workspace.")
     seeds = []
-    seed = os.getenv("WORKSPACE_SEED_DEMO", "1" if os.getenv("WORKSPACE_AUTH_MODE", "staff") == "local" else "0")
-    for case in seed_cases() if seed == "1" else []:
+    if hospital:
+        bind_database(hospital)
+    seed = not hospital and os.getenv("WORKSPACE_SEED_DEMO", "1" if mode() == "local" else "0") == "1"
+    for case in seed_cases() if seed else []:
         case_id = case["id"]
         estimate = (FIXTURES / "cases" / case_id / "estimate.pdf").read_bytes()
         seeds.append((case, _documents(case_id, estimate)))
@@ -138,29 +142,24 @@ async def lifespan(app):
     discharge_store.initialize(dsn)
     initialize_access(dsn)
     app.state.dsn = dsn
-    app.state.hospital_name = os.getenv("WORKSPACE_HOSPITAL_NAME", "").strip()
+    app.state.hospital_name = hospital.name if hospital else os.getenv("WORKSPACE_HOSPITAL_NAME", "").strip()
     yield
 
 
-app = FastAPI(title="ZeroUpfront coordinator API", version="1.1", lifespan=lifespan)
-app.add_middleware(MultipartBodyLimit)
-# Register access last so a request passes authentication before it consumes spool space.
-install_access(app)
-app.include_router(discharge_router)
+router = APIRouter()
 
 
-@app.exception_handler(store.WorkspaceError)
 async def workspace_error(request, exc):
     headers = {"Retry-After": str(exc.retry_after)} if exc.retry_after is not None else None
     return JSONResponse(status_code=exc.status, content={"detail": str(exc)}, headers=headers)
 
 
-@app.get("/api/cases", response_model=list[Summary])
+@router.get("/api/cases", response_model=list[Summary])
 def cases(request: Request):
     return store.list_cases(request.app.state.dsn)
 
 
-@app.get("/api/cases/{case_id}", response_model=Case)
+@router.get("/api/cases/{case_id}", response_model=Case)
 def case(request: Request, case_id: str, revision: Annotated[int | None, Query(ge=1)] = None):
     return store.case_detail(request.app.state.dsn, case_id, revision)
 
@@ -168,7 +167,7 @@ def case(request: Request, case_id: str, revision: Annotated[int | None, Query(g
 PDF_RESPONSES = {200: {"content": {"application/pdf": {"schema": {"type": "string", "format": "binary"}}}}}
 
 
-@app.get("/api/cases/{case_id}/sample-estimate", response_class=Response, responses=PDF_RESPONSES)
+@router.get("/api/cases/{case_id}/sample-estimate", response_class=Response, responses=PDF_RESPONSES)
 def sample_estimate(request: Request, case_id: str):
     detail = store.case_detail(request.app.state.dsn, case_id)
     return _pdf(_sample(case_id, detail), f"{case_id}-revised-estimate.pdf")
@@ -189,7 +188,7 @@ def _intake(metadata, documents, names, ocr, saved_ocr=None):
         raise ocr_service_error(exc) from exc
 
 
-@app.post("/api/cases", response_model=Case, status_code=201)
+@router.post("/api/cases", response_model=Case, status_code=201)
 def create_case(request: Request, policy: Annotated[UploadFile, File()], plan: Annotated[UploadFile, File()],
                 estimate: Annotated[UploadFile, File()], member: Annotated[str, Form(min_length=1, max_length=200)],
                 insurer: Annotated[str, Form(min_length=1, max_length=200)],
@@ -222,10 +221,10 @@ def create_case(request: Request, policy: Annotated[UploadFile, File()], plan: A
         return store.create_case(db, result, documents, request_key)
 
 
-@app.post("/api/examples/{scenario}", response_model=Case, status_code=201)
+@router.post("/api/examples/{scenario}", response_model=Case, status_code=201)
 def local_example(request: Request, scenario: str):
     from app.journey_examples import LOCAL_EXAMPLES, NAMES, admission, exhibits, payer_reply
-    if os.getenv("WORKSPACE_AUTH_MODE", "staff") != "local" or scenario not in LOCAL_EXAMPLES:
+    if mode() != "local" or scenario not in LOCAL_EXAMPLES:
         raise HTTPException(404, "Local case example not found.")
     meta, documents = exhibits(scenario)
     meta["id"] = "C" + uuid4().hex
@@ -241,7 +240,7 @@ def local_example(request: Request, scenario: str):
     return store.create_example(request.app.state.dsn, evidence, documents, events)
 
 
-@app.post("/api/cases/{case_id}/estimate", response_model=Case)
+@router.post("/api/cases/{case_id}/estimate", response_model=Case)
 def replace_estimate(request: Request, case_id: str, file: Annotated[UploadFile | None, File()] = None,
                      sample: Annotated[bool, Form()] = False, confirmed: Annotated[bool, Form()] = False,
                      ocr: Annotated[bool, Form()] = False,
@@ -273,13 +272,13 @@ def replace_estimate(request: Request, case_id: str, file: Annotated[UploadFile 
     return store.replace_estimate(dsn, case_id, base, evidence, _documents(case_id, data))
 
 
-@app.post("/api/cases/{case_id}/approve", response_model=Case)
+@router.post("/api/cases/{case_id}/approve", response_model=Case)
 def approve_case(request: Request, case_id: str, approval: Approval, if_match: Annotated[str | None, Header()] = None):
     return store.approve(request.app.state.dsn, case_id, _revision(if_match), _actor(request, approval.reviewer),
                          getattr(request.state, "username", None))
 
 
-@app.get("/api/cases/{case_id}/export", response_class=Response, responses=PDF_RESPONSES)
+@router.get("/api/cases/{case_id}/export", response_class=Response, responses=PDF_RESPONSES)
 def export_case(request: Request, case_id: str, revision: Annotated[int, Query(ge=1)]):
     dsn = request.app.state.dsn
     approved, originals = store.revision_snapshot(dsn, case_id, revision, approved=True)
@@ -293,7 +292,7 @@ def export_case(request: Request, case_id: str, revision: Annotated[int, Query(g
     return _pdf(pdf, f"{case_id}-r{revision}-request.pdf", "attachment")
 
 
-@app.get("/api/cases/{case_id}/revisions/{revision}/sources/{role}", response_class=Response, responses=PDF_RESPONSES)
+@router.get("/api/cases/{case_id}/revisions/{revision}/sources/{role}", response_class=Response, responses=PDF_RESPONSES)
 def case_source(request: Request, case_id: str, revision: int, role: Role):
     pdf, _ = store.source_pdf(request.app.state.dsn, case_id, revision, role)
     return _pdf(pdf, f"{case_id}-r{revision}-{role}.pdf")
@@ -305,7 +304,7 @@ class ManualReview(BaseModel):
     checks: list[dict] = Field(default_factory=list)
 
 
-@app.post("/api/cases/{case_id}/evidence", response_model=Case)
+@router.post("/api/cases/{case_id}/evidence", response_model=Case)
 def record_evidence(request: Request, case_id: str, review: ManualReview, if_match: Annotated[str | None, Header()] = None):
     from app.intake_documents import manual_evidence
     dsn, base = request.app.state.dsn, _revision(if_match)
@@ -325,7 +324,7 @@ def record_evidence(request: Request, case_id: str, review: ManualReview, if_mat
     return store.replace_estimate(dsn, case_id, base, result, originals, reviewed=True)
 
 
-@app.get("/api/cases/{case_id}/clarification", response_class=Response, responses=PDF_RESPONSES)
+@router.get("/api/cases/{case_id}/clarification", response_class=Response, responses=PDF_RESPONSES)
 def clarification(request: Request, case_id: str, revision: Annotated[int, Query(ge=1)]):
     from app.workspace_documents import clarification_bytes
     dsn = request.app.state.dsn
@@ -371,7 +370,7 @@ class EventForm(BaseModel):
     file: UploadFile | None = None
 
 
-@app.post("/api/cases/{case_id}/workflow", response_model=Case)
+@router.post("/api/cases/{case_id}/workflow", response_model=Case)
 def record_workflow(request: Request, case_id: str,
                     form: Annotated[EventForm, Form(media_type="multipart/form-data")],
                     if_match: Annotated[str | None, Header()] = None):
@@ -389,8 +388,24 @@ def record_workflow(request: Request, case_id: str,
                               form.model_dump(exclude={"file"}), raw, filename)
 
 
-@app.get("/api/cases/{case_id}/revisions/{revision}/events/{event_id}/source",
+@router.get("/api/cases/{case_id}/revisions/{revision}/events/{event_id}/source",
          response_class=Response, responses=PDF_RESPONSES)
 def event_source(request: Request, case_id: str, revision: int, event_id: int):
     raw = store.event_source(request.app.state.dsn, case_id, revision, event_id)
     return _pdf(raw, f"{case_id}-r{revision}-event-{event_id}.pdf")
+
+def create_workspace(hospital=None):
+    workspace = FastAPI(title="ZeroUpfront coordinator API", version="1.1", lifespan=lifespan,
+                        docs_url=None, redoc_url=None)
+    workspace.state.hospital = hospital
+    workspace.add_exception_handler(store.WorkspaceError, workspace_error)
+    workspace.add_middleware(MultipartBodyLimit)
+    install_access(workspace)
+    if hospital:
+        workspace.add_middleware(HospitalContext, hospital=hospital)
+    workspace.include_router(discharge_router)
+    workspace.include_router(router)
+    return workspace
+
+
+app = build_platform(create_workspace)

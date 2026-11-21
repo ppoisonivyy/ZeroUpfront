@@ -4,5 +4,5 @@ import react from "@vitejs/plugin-react";
 export default defineConfig({
   plugins: [react()],
   build: { license: { fileName: "assets/third-party-licenses.md" } },
-  server: { proxy: { "/api": "http://127.0.0.1:8038" } },
+  server: { proxy: { "/api": "http://127.0.0.1:8038", "^/h/[^/]+/api/": "http://127.0.0.1:8038" } },
 });

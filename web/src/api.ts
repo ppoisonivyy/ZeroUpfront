@@ -105,15 +105,19 @@ export function displayDate(raw: string) {
     timeZone: "UTC",
   }).format(new Date(raw + "T00:00:00Z"));
 }
-export const casePath = (id: string) => "/api/cases/" + encodeURIComponent(id);
+export const hospitalPrefix = window.location.pathname.match(/^\/h\/[^/]+(?=\/|$)/)?.[0] || "";
+export const casePath = (id: string) => hospitalPrefix + "/api/cases/" + encodeURIComponent(id);
 export function sameOriginSource(path: string) {
   const url = new URL(path, window.location.origin);
   if (
     url.origin !== window.location.origin ||
-    !["http:", "https:"].includes(url.protocol)
+    !["http:", "https:"].includes(url.protocol) || url.username || url.password
   ) {
     throw new Error("This document has an unsupported address.");
   }
+  if (url.pathname.startsWith("/api/")) url.pathname = hospitalPrefix + url.pathname;
+  if (!url.pathname.startsWith(hospitalPrefix + "/api/"))
+    throw new Error("This address is outside the current hospital workspace.");
   return url.href;
 }
 export class RequestError extends Error {
@@ -127,7 +131,7 @@ export class RequestError extends Error {
 export async function api(path: string, options?: RequestInit) {
   let response: Response;
   try {
-    response = await fetch(path, { cache: "no-store", ...options });
+    response = await fetch(sameOriginSource(path), { cache: "no-store", ...options });
   } catch (err) {
     if (options?.signal?.aborted) throw err;
     throw new Error(

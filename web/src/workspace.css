@@ -21,6 +21,12 @@
 }
 .workspace-context strong, .workspace-context span { display: block; overflow-wrap: anywhere; }
 .workspace-context span { color: var(--muted); font-size: .8rem; }
+.mast-context { max-width: min(32vw, 310px); min-width: 0; }
+.mast-context span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.mast-context > svg { flex: none; }
+.account-actions { border-top: 1px solid var(--line); padding-top: 6px; margin-top: 6px; }
+.account-actions button { display: flex; align-items: center; gap: 8px; width: 100%; min-height: 40px; border: 0; padding: 6px 0; background: none; color: var(--action); font: inherit; font-size: .86rem; text-align: start; }
+.account-actions button:hover { text-decoration: underline; }
 .workspace-context nav { border-top: 1px solid var(--line); margin-top: 10px; padding-top: 6px; }
 .workspace-context a { display: flex; justify-content: space-between; align-items: center; padding-block: 7px; font-size: .85rem; }
 .app-content main { padding-block: 28px 56px; }
@@ -39,8 +45,12 @@
   .workspace-grid > .viewer { grid-column: 1; grid-row: 1; }
 }
 @media (max-width: 650px) {
-  .mast-inner { flex-wrap: wrap; gap: 0 12px; padding-top: 9px; }
-  .mast-nav { order: 3; width: 100%; }
+  .mast-inner { display: grid; grid-template-columns: minmax(0, .95fr) minmax(0, 1.05fr); gap: 0 8px; padding-top: 8px; }
+  .mast-brand { font-size: 1.06rem; gap: 6px; }
+  .mast-context { grid-area: 1 / 2; justify-self: end; max-width: 100%; min-height: 42px; padding-inline: 7px; gap: 4px; }
+  .mast-context span { white-space: normal; overflow-wrap: anywhere; text-align: start; line-height: 1.2; }
+  .workspace-context .account-actions button { min-height: 44px; }
+  .mast-nav { grid-column: 1 / -1; width: 100%; }
   .mast-nav a { min-height: 40px; }
 }
 .app-content, .app-layout main { min-width: 0; }

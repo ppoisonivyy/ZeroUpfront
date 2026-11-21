@@ -34,6 +34,13 @@ jobs:
         with:
           version: "0.12.7"
       - run: uv sync --locked --python 3.12
+      - name: Verify pip requirements match the locked runtime
+        run: |
+          uv export --locked --no-dev --no-emit-project --format requirements-txt -o requirements.txt > /dev/null
+          git diff --exit-code -- requirements.txt
+          uv venv --python 3.12 --seed /tmp/zu-pip
+          /tmp/zu-pip/bin/python -m pip install --require-hashes -r requirements.txt
+          /tmp/zu-pip/bin/python -m pip check
       - name: Locate PostgreSQL tools before running backend integration tests
         run: pg_config --bindir >> "$GITHUB_PATH"
       - run: initdb --version && pg_ctl --version
@@ -67,3 +74,9 @@ jobs:
       - run: uv sync --locked --python 3.12
       - run: docker build -t zeroupfront:release .
       - run: uv run --locked python bench/container_release.py
+      - name: Exercise two hospitals and competing staff writes against the built client
+        run: |
+          export PATH="$(pg_config --bindir):$PATH"
+          mkdir -p web/dist
+          docker run --rm --entrypoint tar zeroupfront:release -C web/dist -cf - . | tar -xf - -C web/dist
+          uv run --locked python bench/hospital_concurrency.py --cases-per-hospital 2 --concurrent-cases 2

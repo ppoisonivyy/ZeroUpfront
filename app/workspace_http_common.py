@@ -5,6 +5,7 @@ from tempfile import TemporaryFile
 from fastapi import HTTPException, Request, Response
 from fastapi.responses import JSONResponse
 from starlette.concurrency import run_in_threadpool
+from starlette._utils import get_route_path
 from starlette.datastructures import Headers
 from starlette.datastructures import UploadFile as MultipartFile
 from openai import APIConnectionError, APITimeoutError, AuthenticationError, PermissionDeniedError, RateLimitError
@@ -30,7 +31,7 @@ class MultipartBodyLimit:
             return await self.app(scope, receive, send)
 
         # Only the hospital's protected case workflows accept uploaded files.
-        workflow = scope["path"].split("/")[:3]
+        workflow = get_route_path(scope).split("/")[:3]
         if scope["method"] != "POST" or workflow not in (["", "api", "cases"], ["", "api", "discharge"]):
             return await JSONResponse({"detail": "This route does not accept multipart uploads."},
                                       status_code=415)(scope, receive, send)

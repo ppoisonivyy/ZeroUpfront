@@ -4,6 +4,7 @@ from contextlib import contextmanager, nullcontext
 
 import psycopg
 from psycopg.types.json import Jsonb
+from app.hospital_platform import hospital_path
 from app.case_workflow import projection, validate_event
 
 
@@ -139,7 +140,7 @@ def _events(db, case_id, revision):
         WHERE case_id=%s AND revision=%s ORDER BY version
     """, (case_id, revision)).fetchall()
     return [dict(id=ident, kind=kind, actor=actor, username=username, created_at=stamp.isoformat(), data=data, filename=name,
-                 source_url=f"/api/cases/{case_id}/revisions/{revision}/events/{ident}/source" if name else None)
+                 source_url=hospital_path(f"/api/cases/{case_id}/revisions/{revision}/events/{ident}/source") if name else None)
             for ident, kind, actor, stamp, data, name, username in rows]
 
 
@@ -179,7 +180,7 @@ def _detail(db, case_id, revision=None):
     for number, status, total, reviewer, username, evidence in rows:
         history.append({"revision": number, "status": status, "total": total})
         if evidence is not None:
-            sources = [dict(source, url=f"/api/cases/{case_id}/revisions/{number}/sources/{source['role']}")
+            sources = [dict(source, url=hospital_path(f"/api/cases/{case_id}/revisions/{number}/sources/{source['role']}"))
                        for source in evidence["sources"]]
             detail = dict(evidence, revision=number, sources=sources, status=status,
                           reviewer=reviewer, reviewer_username=username, insurer_status="not_sent")

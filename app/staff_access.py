@@ -8,17 +8,22 @@ import secrets
 
 from argon2 import PasswordHasher
 from argon2.exceptions import VerificationError
+from argon2.profiles import RFC_9106_LOW_MEMORY
 from fastapi import HTTPException, Request, Response
+from fastapi.exception_handlers import request_validation_exception_handler
+from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 import psycopg
 from starlette.concurrency import run_in_threadpool
+from starlette._utils import get_route_path
+from app.hospital_platform import current_hospital, hospital_path
 
 
-HASHER = PasswordHasher()
+HASHER = PasswordHasher.from_parameters(RFC_9106_LOW_MEMORY)
 COOKIE = "zu_staff_session"
 SESSION_SECONDS = 8 * 60 * 60
-PUBLIC_ROUTES = {"/api/access/session", "/api/access/login"}
+PUBLIC_ROUTES = {"/api/hospitals", "/api/access/session", "/api/access/login"}
 LOCAL_HOSTS = {"localhost", "127.0.0.1", "::1"}
 
 DDL = """
@@ -39,6 +44,8 @@ CREATE TABLE IF NOT EXISTS zeroupfront_demo.login_attempts (
 
 
 def mode():
+    if current_hospital.get() is not None:
+        return "staff"
     chosen = os.environ.get("WORKSPACE_AUTH_MODE", "staff")
     if chosen not in {"local", "staff"}:
         raise RuntimeError("WORKSPACE_AUTH_MODE must be staff or local.")
@@ -138,6 +145,12 @@ class Login(BaseModel):
 
 
 def install_access(app):
+    @app.exception_handler(RequestValidationError)
+    async def validation_error(request, exc):
+        if get_route_path(request.scope) == "/api/access/login":
+            return JSONResponse({"detail": "Enter a valid username and password."}, status_code=422)
+        return await request_validation_exception_handler(request, exc)
+
     def session_data(request, actor, username):
         data = {"mode": mode(), "actor": actor, "username": username}
         if request.app.state.hospital_name:
@@ -146,7 +159,8 @@ def install_access(app):
 
     @app.middleware("http")
     async def require_access(request: Request, call_next):
-        if not request.url.path.startswith("/api/"):
+        path = get_route_path(request.scope)
+        if not path.startswith("/api/"):
             return await call_next(request)
         local = mode() == "local"
         if local and not _local_request(request):
@@ -160,7 +174,7 @@ def install_access(app):
         account = None
         if not local:
             account = await run_in_threadpool(_staff, request.app.state.dsn, request.cookies.get(COOKIE))
-            if request.url.path not in PUBLIC_ROUTES and not account:
+            if path not in PUBLIC_ROUTES and not account:
                 return JSONResponse({"detail": "Sign in to this hospital workspace."}, 401,
                                     headers={"Cache-Control": "no-store"})
         request.state.actor = account[1] if account else None
@@ -203,7 +217,7 @@ def install_access(app):
             """, (_digest(token), username, SESSION_SECONDS))
             db.execute("DELETE FROM zeroupfront_demo.login_attempts WHERE bucket=%s", (_digest("account/"+username),))
         response.set_cookie(COOKIE, token, httponly=True, secure=request.url.scheme == "https",
-                            samesite="strict", max_age=SESSION_SECONDS, path="/api")
+                            samesite="strict", max_age=SESSION_SECONDS, path=hospital_path("/api"))
         return session_data(request, record[1], username)
 
     @app.post("/api/access/logout")
@@ -211,7 +225,7 @@ def install_access(app):
         with psycopg.connect(request.app.state.dsn) as db:
             db.execute("DELETE FROM zeroupfront_demo.staff_sessions WHERE token_hash=%s",
                        (_digest(request.cookies.get(COOKIE, "")),))
-        response.delete_cookie(COOKIE, path="/api", httponly=True, samesite="strict")
+        response.delete_cookie(COOKIE, path=hospital_path("/api"), httponly=True, samesite="strict")
         return session_data(request, None, None)
 
 
