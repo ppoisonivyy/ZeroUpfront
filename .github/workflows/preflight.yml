@@ -21,3 +21,10 @@ jobs:
       - run: uv run --locked python app/finance_eval.py
       - run: uv run --locked python app/eval_documents.py --require-complete
       - run: uv run --locked python app/eval_documents.py --samples ZeroUpfront-training-samples
+
+      - name: Locate PostgreSQL tools for disposable case-revision trials
+        run: pg_config --bindir >> "$GITHUB_PATH"
+      - name: Exercise same-case replacement and late worker completion
+        run: uv run --locked --with 'psycopg[binary]==3.3.2' python bench/case_revision.py --repetitions 3
+      - name: Check encounter, lease and export guards
+        run: uv run --locked --with 'psycopg[binary]==3.3.2' python bench/case_revision_guards.py --repetitions 3
