@@ -28,9 +28,28 @@
 .pattaya-reviews li { border-bottom: 1px solid var(--line); padding: 8px 0; }
 .pattaya-reviews li:last-child { border-bottom: 0; }
 .pattaya-reviews li p { margin: 1px 0; }
-.pattaya-reviews small, .pattaya-model small { overflow-wrap: anywhere; }
-.pattaya-body .pattaya-model { margin-bottom: 0; }
+.pattaya-reviews small { overflow-wrap: anywhere; }
+.pattaya-reference { margin: 14px 0; padding: 11px 13px; border-left: 3px solid var(--action); background: #eaf2ee; border-radius: 0 6px 6px 0; }
+.pattaya-reference h4 { font-size: .78rem; margin: 0 0 4px; }
+.pattaya-reference-rate { display: flex; align-items: baseline; flex-wrap: wrap; gap: 2px 10px; }
+.pattaya-reference-rate strong { font-size: 1rem; font-variant-numeric: tabular-nums; }
+.pattaya-reference-rate span { font-size: .76rem; color: var(--muted); }
+.pattaya-reference a { display: inline-flex; gap: 3px; align-items: center; text-decoration: underline; font-size: .8rem; color: var(--action); }
+.pattaya-reference .text-action { margin-top: 0; }
+.pattaya-quotes legend { font-weight: 650; }
+.pattaya-quotes label { min-height: 46px; }
+.pattaya-quotes label:focus-within { outline: 2px solid var(--action); outline-offset: 2px; }
 @media (max-width: 760px) {
   .pattaya-balances { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .pattaya-columns { grid-template-columns: minmax(0, 1fr); }
 }
+.guarantee-fees { border: 1px solid var(--line); border-radius: 8px; padding: 14px; margin: 14px 0; min-width: 0; }
+.guarantee-fees h3 { font-size: 1rem; margin: 0 0 5px; }
+.guarantee-fees p { font-size: .85rem; line-height: 1.5; margin: 6px 0 10px; }
+.guarantee-fees .text-action { min-height: 28px; }
+.guarantee-fee-results { border-top: 1px solid var(--line); padding-top: 12px; margin-top: 12px; }
+.guarantee-fee-results dl { margin: 10px 0; }
+.guarantee-fee-results dl > div { border-left: 2px solid var(--line); padding-left: 10px; margin: 8px 0; }
+.guarantee-fee-results dt { font-size: .76rem; color: var(--muted); }
+.guarantee-fee-results dd { margin: 3px 0; font-size: .88rem; font-weight: 600; overflow-wrap: anywhere; }
+.guarantee-fee-results .guarantee-fee-citation { font-weight: 400; line-height: 1.5; }

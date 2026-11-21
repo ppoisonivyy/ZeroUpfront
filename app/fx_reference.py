@@ -2,6 +2,7 @@
 from datetime import date, timedelta
 from decimal import Decimal, ROUND_HALF_UP
 from functools import lru_cache
+from http.client import HTTPException
 import json
 from urllib.error import URLError
 from urllib.request import Request, urlopen
@@ -35,7 +36,7 @@ def _historical_rate(trade_date):
 def reference():
     try:
         as_of, rate = _historical_rate(date.fromisoformat(TRADE_DATE))
-    except (URLError, OSError, ValueError, TypeError, KeyError, ArithmeticError):
+    except (URLError, HTTPException, OSError, ValueError, TypeError, KeyError, ArithmeticError):
         return {**PROVIDER, "status": "unavailable"}
     return {**PROVIDER, "status": "available", "rate_date": as_of.isoformat(),
             "rate_thb_per_usd": str(rate),

@@ -24,7 +24,7 @@ class CitationTests(unittest.TestCase):
         self.assertEqual(result["status"], "cited")
         self.assertEqual(result["findings"][0]["page"], 2)
         for invalid in (item("bank_fees", 1, fee, "patient"), item("bank_fees", 2, "Bank fees payable by insurer."),
-                        item("bank_fees", 2, fee, "unclear")):
+                        item("bank_fees", 2, fee, "unclear"), item("bank_fees", 2, fee, "insurer")):
             changed = fees.verify(fees.Reading(clauses=[invalid, reading.clauses[1]]), [difference, fee])
             self.assertEqual(changed["status"], "needs_review")
             self.assertEqual(len(changed["findings"]), 1)

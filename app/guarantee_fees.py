@@ -70,6 +70,15 @@ def verify(reading, pages):
         if not re.search(topic, quote, re.I):
             pending.append(f"{name}: the cited words do not specify this obligation.")
             continue
+        party_terms = {
+            "insurer": r"insur(er|ance|ing)|underwriter|payer|ผู้รับประกัน|บริษัทประกัน|ผู้ประกันภัย",
+            "patient": r"patient|member|insured|beneficiary|ผู้ป่วย|ผู้เอาประกัน|สมาชิก",
+            "hospital": r"hospital|facility|provider|โรงพยาบาล|สถานพยาบาล",
+        }
+        role = party_terms.get(item.payer)
+        if role and not re.search(role, quote, re.I):
+            pending.append(f"{name}: the cited passage does not identify the reported party clearly.")
+            continue
         findings.append(item.model_dump(exclude={"state"}))
     if pending:
         return _review(" ".join(pending) + " Staff must review the original before assigning responsibility.", findings)

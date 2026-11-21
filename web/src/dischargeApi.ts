@@ -18,6 +18,7 @@ export type ClaimFinding = {
 };
 export type DischargeClaim = {
   ai_review_enabled?: boolean;
+  staff_practice_hospital?: string | null;
   example_scenario?: string | null;
   id: string;
   revision: number;

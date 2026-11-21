@@ -16,6 +16,7 @@ import { SourceView } from "./SourceView";
 import { RecordedEvent } from "./CaseWorkflow";
 import { ClaimMutation, ClaimUpload } from "./DischargeForms";
 import DischargeOcr from "./DischargeOcr";
+import { GuaranteeFees } from "./GuaranteeFees";
 import { PattayaSettlement } from "./PattayaSettlement";
 import { useStaffSession } from "./Auth";
 import { PayerSecondRead } from "./PayerSecondRead";
@@ -51,7 +52,7 @@ function ClaimDetail({
 }) {
   const { mode } = useStaffSession();
   const pattayaExample = claim.example_scenario === "pattaya_fx";
-  const showPattaya = mode === "local" && !pinned && pattayaExample;
+  const showPattaya = !pinned && pattayaExample && (mode === "local" || !!claim.staff_practice_hospital);
   const [panel, setPanel] = useState<Panel>("overview"),
     [selection, setSelection] = useState<Source | null>(null),
     [error, setError] = useState(""),
@@ -123,6 +124,12 @@ function ClaimDetail({
       viewer?.focus({ preventScroll: true });
       viewer?.scrollIntoView({ block: "start" });
     }
+  };
+  const openLetter = (letter: Source) => {
+    setSelection(letter);
+    const viewer = document.getElementById("source-view");
+    viewer?.focus({ preventScroll: true });
+    viewer?.scrollIntoView({ block: "start" });
   };
   if (panel === "ocr" && canVerifyOcr)
     return <DischargeOcr claim={claim} onSaved={saved} onBack={overview} />;
@@ -280,13 +287,9 @@ function ClaimDetail({
           <a href={claimHref(claim.id)}>Open current claim</a>
         </p>
       )}
+      {!pinned && !superseded && !pattayaExample && <GuaranteeFees claim={claim} openLetter={openLetter} />}
       {showPattaya ? (
-        <PattayaSettlement claim={claim} onUpdated={onUpdated} reload={reload} openLetter={source => {
-          setSelection(source);
-          const viewer = document.getElementById("source-view");
-          viewer?.focus({ preventScroll: true });
-          viewer?.scrollIntoView({ block: "start" });
-        }} />
+        <PattayaSettlement claim={claim} onUpdated={onUpdated} reload={reload} openLetter={openLetter} />
       ) : <dl className="facts claim-facts">
         <div>
           <dt>Final bill total</dt>

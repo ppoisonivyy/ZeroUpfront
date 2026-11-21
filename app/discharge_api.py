@@ -94,6 +94,7 @@ class Detail(Summary):
     case_paid_by_currency: dict[str, int]
     sample_bill_available: bool = False
     example_scenario: Literal["pattaya_fx"] | None = None
+    staff_practice_hospital: str | None = None
     letter_kind: str | None = None
     ocr_review_available: bool = False
     ocr_page_count: int = 0
@@ -259,7 +260,6 @@ class PracticeAction(PracticeConfirmation):
 def _pattaya_case(dsn, ident, revision):
     from app import pattaya_workflow
 
-    _require_practice_mode()
     case = store.detail(dsn, ident)
     pattaya_workflow.require_case(case)
     if case["revision"] != revision:
@@ -276,10 +276,50 @@ def pattaya_review(request: Request, response: Response, ident: str, revision: A
     return pattaya_agents.review(case)
 
 
+@router.get("/{ident}/pattaya/reference-rate")
+def pattaya_reference(request: Request, ident: str, revision: Annotated[int, Query(ge=1)]):
+    from app.fx_reference import reference
+
+    _pattaya_case(request.app.state.dsn, ident, revision)
+    return reference()
+
+
+class GuaranteeFeeRequest(PracticeConfirmation):
+    event_id: int = Field(gt=0, strict=True)
+
+
+def _current_guarantee(dsn, ident, revision, event_id):
+    case = store.detail(dsn, ident)
+    if case["revision"] != revision:
+        raise HTTPException(412, "Open the current discharge revision to read its guarantee.")
+    reply = next((e for e in reversed(case["events"]) if e["kind"] == "reply"), None)
+    if not reply or reply["id"] != event_id or not reply["source_url"] or reply["data"]["outcome"] not in {"confirmed", "partial"}:
+        raise HTTPException(409, "Open the latest confirmed or partial payer decision with an original PDF.")
+    return reply["source_url"]
+
+
+@router.post("/{ident}/guarantee-fees")
+def guarantee_fees(request: Request, ident: str, options: GuaranteeFeeRequest, if_match: Match = None):
+    from app import guarantee_fees as fees
+
+    revision, dsn = _revision(if_match), request.app.state.dsn
+    source = _current_guarantee(dsn, ident, revision, options.event_id)
+    if not ai_reader.enabled():
+        raise HTTPException(503, "The OpenAI guarantee reader is unavailable. Review the original payer letter.")
+    raw = store.source(dsn, ident, revision, event_id=options.event_id)
+    try:
+        result = fees.read(raw)
+    except APIError as exc:
+        raise HTTPException(ocr_service_error(exc).status_code, "The guarantee reader is unavailable. Review the original payer letter.") from exc
+    _current_guarantee(dsn, ident, revision, options.event_id)
+    return {**result, "source_url": source}
+
+
 @router.post("/{ident}/pattaya/agent-review")
 def pattaya_model_review(request: Request, response: Response, ident: str, options: PracticeConfirmation, if_match: Match = None):
     from app import pattaya_agents
 
+    _require_practice_mode()
     revision = _revision(if_match)
     case = _pattaya_case(request.app.state.dsn, ident, revision)
     result = pattaya_agents.review(case, use_model=True)
@@ -294,8 +334,9 @@ def pattaya_model_review(request: Request, response: Response, ident: str, optio
 def pattaya_action(request: Request, ident: str, command: PracticeAction, if_match: Match = None):
     from app import pattaya_workflow
 
-    _require_practice_mode()
-    return pattaya_workflow.apply(request.app.state.dsn, ident, _revision(if_match), command.action, command.workflow_version)
+    dsn, revision = request.app.state.dsn, _revision(if_match)
+    return pattaya_workflow.apply(dsn, ident, revision, command.action, command.workflow_version,
+                                 actor=request.state.actor, username=request.state.username)
 
 
 def _sample_bill(dsn, case):
