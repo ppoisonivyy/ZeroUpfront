@@ -10,11 +10,20 @@ type Props = {
   page?: number;
   label: string;
   onText?: (text: string) => void;
+  onReady?: () => void;
+  fixedPage?: boolean;
 };
 export default function PdfPage(props: Props) {
   return <DocumentPage key={props.url + "#" + (props.page ?? 1)} {...props} />;
 }
-function DocumentPage({ url, page = 1, label, onText }: Props) {
+function DocumentPage({
+  url,
+  page = 1,
+  label,
+  onText,
+  onReady,
+  fixedPage = false,
+}: Props) {
   const frame = useRef<HTMLDivElement>(null);
   const [width, setWidth] = useState(0);
   const [doc, setDoc] = useState<PDFDocumentProxy | null>(null);
@@ -74,6 +83,7 @@ function DocumentPage({ url, page = 1, label, onText }: Props) {
       if (stopped) return;
       host!.replaceChildren(canvas);
       setStatus("");
+      onReady?.();
       if (onText) {
         const content = await pdfPage.getTextContent().catch(() => null);
         if (!stopped && content)
@@ -92,7 +102,7 @@ function DocumentPage({ url, page = 1, label, onText }: Props) {
       rendering?.cancel();
       canvas.remove();
     };
-  }, [doc, active, width, label, onText]);
+  }, [doc, active, width, label, onText, onReady]);
   function selectPage(value: number) {
     if (doc && Number.isInteger(value) && value >= 1 && value <= doc.numPages) {
       setActive(value);
@@ -101,7 +111,7 @@ function DocumentPage({ url, page = 1, label, onText }: Props) {
   }
   return (
     <>
-      {doc && doc.numPages > 1 && (
+      {doc && doc.numPages > 1 && !fixedPage && (
         <div className="pdf-pager">
           <button
             type="button"

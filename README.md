@@ -45,7 +45,7 @@ Choose **Try a case** on the pre-arrival worklist to start a fresh synthetic exa
 
 The launcher saves case history in a dedicated PostgreSQL cluster under `.local/workspace/`. Use `--data-dir .local/rehearsal/postgres --port 8040` to start an isolated rehearsal. A networked installation uses staff accounts and a dedicated `DATABASE_URL`. Staff record transmissions made through their hospital's existing payer channel. [Staff deployment guide](docs/deployment.md)
 
-Digital processing works offline. For supported scanned admissions, configure a funded server-side `OPENAI_API_KEY` and `WORKSPACE_ENABLE_OCR=1` in `.env`, then run `uv run --locked --env-file .env python app/run_workspace.py`. The long-policy evaluation commands below run separately. [Measured workspace performance](docs/workspace-performance.md)
+Digital processing works offline. For supported scanned pre-arrival and discharge exhibits, configure a funded server-side `OPENAI_API_KEY` and `WORKSPACE_ENABLE_OCR=1` in `.env`, then run `uv run --locked --env-file .env python app/run_workspace.py`. When the only remaining discharge finding concerns OCR, **Verify scanned pages** lets staff compare each original page with its transcript and record the verification. The new revision then goes through ordinary staff review. The long-policy evaluation commands below run separately. [Measured workspace performance](docs/workspace-performance.md)
 
 ### Research tools
 

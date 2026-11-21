@@ -1,4 +1,5 @@
 """Fully local, independently labeled discharge billing and letter-comparison checks."""
+import copy
 import hashlib
 import io
 import json
@@ -10,12 +11,13 @@ from unittest.mock import Mock
 
 import httpx
 from openai import APIConnectionError, AuthenticationError, RateLimitError
-from PIL import Image
+from PIL import Image, ImageDraw
 from pypdf import PdfReader, PdfWriter
 from reportlab.lib.utils import ImageReader
 from reportlab.pdfgen.canvas import Canvas
 
-from app.discharge_claim import ROOT, discharge_packet_bytes, evaluate_discharge, load_discharge_fixture
+from app.discharge_claim import (ROOT, confirm_discharge_ocr, discharge_ocr_review_pages, discharge_packet_bytes,
+                                 evaluate_discharge, load_discharge_fixture)
 from app.document_text import Transcript, contains_quote
 from fixtures.discharge import build
 
@@ -39,6 +41,29 @@ def revised_pdf(raw, change):
         c.showPage()
     c.save()
     return stream.getvalue()
+
+
+def mock_transcribed_packet(scenario="aligned"):
+    meta, raw, names = load_discharge_fixture(scenario)
+    responses = []
+    originals = dict(raw)
+    for role in ("bill", "summary"):
+        buf = io.BytesIO()
+        canvas = Canvas(buf, invariant=1)
+        for page in PdfReader(io.BytesIO(raw[role])).pages:
+            text = page.extract_text()
+            image = Image.new("L", (1000, 1300), 255)
+            ImageDraw.Draw(image).multiline_text((20, 30), text, fill=0, spacing=4)
+            canvas.drawImage(ImageReader(image), 0, 0, width=590, height=800)
+            canvas.showPage()
+            responses.append(SimpleNamespace(status="completed", output_parsed=Transcript(legibility="complete", text=text)))
+        canvas.save()
+        originals[role] = buf.getvalue()
+    client = Mock()
+    client.responses.parse.side_effect = responses
+    held = evaluate_discharge(meta, originals, names, ocr_client=client)
+    assert client.responses.parse.call_count == 4
+    return {**held, "revision": 1}, originals
 
 
 class DischargeClaimTests(unittest.TestCase):
@@ -189,6 +214,61 @@ class DischargeClaimTests(unittest.TestCase):
             client.responses.parse.side_effect = error
             with self.assertRaises(type(error)):
                 evaluate_discharge(meta, raw, names, ocr_client=client)
+
+    def test_all_ocr_pages_rechecked_as_one_new_review_and_audited_in_export(self):
+        held, originals = mock_transcribed_packet()
+        candidate = discharge_ocr_review_pages(held)
+        self.assertEqual({(p["role"], p["page"]) for p in candidate},
+                         {("bill", 1), ("bill", 2), ("summary", 1), ("summary", 2)})
+        for item in candidate:
+            self.assertEqual(item["transcript_sha256"], hashlib.sha256(item["text"].encode()).hexdigest())
+            self.assertEqual(item["sha256"], hashlib.sha256(originals[item["role"]]).hexdigest())
+        confirmation = held["ocr_review_pages"]
+        cleared = confirm_discharge_ocr(held, originals, "Scan reviewer", list(reversed(confirmation)))
+        self.assertEqual((cleared["status"], cleared["findings"], cleared["payable_minor"]), ("ready_for_review", [], None))
+        self.assertEqual(cleared["ocr_attestation"]["source_revision"], 1)
+        self.assertEqual(held["status"], "needs_review")
+        with self.assertRaises(ValueError):
+            discharge_packet_bytes({**cleared, "revision": 2}, originals)
+        approved = reviewed(cleared)
+        pdf = PdfReader(io.BytesIO(discharge_packet_bytes(approved, originals)))
+        audit = " ".join(page.extract_text() for page in pdf.pages[1:])
+        self.assertIn("Scan reviewer", audit)
+        self.assertIn("source revision 1", audit)
+        for item in confirmation:
+            self.assertIn(item["transcript_sha256"], "".join(audit.split()))
+        for name in ("summary", "bill"):
+            self.assertEqual(list(pdf.attachments[name + ".pdf"]), [originals[name]])
+
+    def test_ocr_attestation_cannot_cover_missing_repeated_stale_tampered_or_unresolved_pages(self):
+        held, originals = mock_transcribed_packet()
+        expected = held["ocr_review_pages"]
+        for submitted in (expected[:-1], [*expected[:-1], expected[0]],
+                          [{**expected[0], "sha256": "a"*64}, *expected[1:]],
+                          [{**expected[0], "transcript_sha256": "b"*64}, *expected[1:]],
+                          [{**expected[0], "page": True}, *expected[1:]]):
+            with self.subTest(sample=submitted[0]["page"]), self.assertRaises(ValueError):
+                confirm_discharge_ocr(held, originals, "Reviewer", submitted)
+        with self.assertRaisesRegex(ValueError, "named"):
+            confirm_discharge_ocr(held, originals, " ", expected)
+        tampered = copy.deepcopy(held)
+        tampered["ocr_pages"]["summary"]["pages"]["1"] += " revised wording"
+        with self.assertRaisesRegex(ValueError, "transcript"):
+            confirm_discharge_ocr(tampered, originals, "Reviewer", expected)
+        with self.assertRaisesRegex(ValueError, "original"):
+            confirm_discharge_ocr(held, {**originals, "summary": originals["bill"]}, "Reviewer", expected)
+        complex_case, files = mock_transcribed_packet("over_cap")
+        with self.assertRaisesRegex(ValueError, "beyond OCR"):
+            confirm_discharge_ocr(complex_case, files, "Reviewer", complex_case["ocr_review_pages"])
+        # Replay of the actual originals catches a financially material issue even if
+        # a stale stored view omitted it from its displayed finding list.
+        complex_case["findings"] = [f for f in complex_case["findings"] if f["code"] == "verify_ocr"]
+        with self.assertRaisesRegex(ValueError, "sole open finding"):
+            confirm_discharge_ocr(complex_case, files, "Reviewer", complex_case["ocr_review_pages"])
+        approved = reviewed(confirm_discharge_ocr(held, originals, "Reviewer", expected))
+        wrong_attestation = {**approved["ocr_attestation"], "source_revision": 2}
+        with self.assertRaisesRegex(ValueError, "revision"):
+            discharge_packet_bytes({**approved, "ocr_attestation": wrong_attestation}, originals)
 
 
 if __name__ == "__main__":

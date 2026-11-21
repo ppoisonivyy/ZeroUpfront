@@ -1,10 +1,13 @@
 """Exercise the independent discharge and payment workflows through their public API."""
 
 from concurrent.futures import ThreadPoolExecutor
+from datetime import date, timedelta
 from contextlib import ExitStack
 from io import BytesIO
 import json
+import hashlib
 import os
+import secrets
 from pathlib import Path
 import shutil
 import unittest
@@ -12,12 +15,16 @@ from unittest.mock import patch
 
 from fastapi.testclient import TestClient
 from pypdf import PdfReader
+from PIL import Image, ImageDraw
+from reportlab.lib.utils import ImageReader
+from reportlab.pdfgen.canvas import Canvas
 import httpx
 from openai import AuthenticationError, APIConnectionError, RateLimitError
 
 from app.discharge_claim import load_discharge_fixture
 from app.journey_examples import pdf
 from app.workspace_api import app
+from app.staff_access import provision
 from app.workspace_http_common import ocr_service_error
 from bench.case_revision import temporary_database
 
@@ -216,3 +223,153 @@ class DischargeApiTests(unittest.TestCase):
                 response = ocr_service_error(exc)
                 self.assertEqual(response.status_code, status)
                 self.assertIn(phrase, response.detail)
+
+    def scanned(self, scenario="aligned", *, first_with_ocr=True):
+        meta, raw, names = load_discharge_fixture(scenario)
+        transcripts = [page.extract_text() for page in PdfReader(BytesIO(raw["summary"])).pages]
+        out = BytesIO()
+        writer = Canvas(out, invariant=1)
+        for text in transcripts:
+            image = Image.new("L", (900, 1200), "white")
+            ImageDraw.Draw(image).multiline_text((15, 15), text, fill="black", spacing=6)
+            writer.drawImage(ImageReader(image), 0, 0, width=575, height=790)
+            writer.showPage()
+        writer.save()
+        raw["summary"] = out.getvalue()
+        files = {role: (names[role], content, "application/pdf") for role, content in raw.items()}
+        data = {k: v for k, v in meta.items() if k != "id"} | {
+            "confirmed": "true",
+            "ocr": str(first_with_ocr).lower(),
+        }
+        with (
+            patch.dict(os.environ, WORKSPACE_ENABLE_OCR="1", OPENAI_API_KEY="mock-test-value"),
+            patch("app.discharge_api.OpenAI"),
+            patch("app.intake_documents.ocr_page", side_effect=lambda source, page, client: transcripts[page - 1]),
+        ):
+            response = self.client.post(ROOT, data=data, files=files)
+        self.assertEqual(response.status_code, 201, response.text)
+        return ROOT + "/" + response.json()["id"], response.json(), raw, names, transcripts
+
+    def test_ocr_attestation_verifies_each_exact_original_and_creates_a_new_reviewable_revision(self):
+        path, case, raw, names, transcripts = self.scanned()
+        self.assertTrue(case["ocr_review_available"])
+        self.assertEqual(case["ocr_page_count"], len(transcripts))
+        for key in ("ocr_pages", "ocr_review_pages"):
+            self.assertNotIn(key, case)
+            self.assertNotIn(key, self.client.get(ROOT).json()[-1])
+        source = self.client.get(path + "/revisions/1/ocr-review").json()
+        self.assertTrue(source["eligible"])
+        for item in source["pages"]:
+            self.assertEqual(item["text"], transcripts[item["page"] - 1])
+            self.assertEqual(
+                hashlib.sha256(self.client.get(item["source_url"]).content).hexdigest(), item["sha256"]
+            )
+        keys = ("role", "page", "sha256", "transcript_sha256")
+        pages = [{key: item[key] for key in keys} for item in source["pages"]]
+
+        def verify(entries):
+            return self.client.post(
+                path + "/verify-ocr", headers=match(1), json={"reviewer": "OCR coordinator", "pages": entries}
+            )
+
+        for invalid in (pages[:1], pages + pages[:1], [pages[0] | {"transcript_sha256": "0" * 64}, *pages[1:]]):
+            self.assertEqual(verify(invalid).status_code, 422)
+        with ThreadPoolExecutor(2) as pool:
+            replay = [
+                future.result(timeout=15) for future in [pool.submit(verify, pages), pool.submit(verify, pages)]
+            ]
+        self.assertEqual(sorted(r.status_code for r in replay), [200, 412])
+        current = self.client.get(path).json()
+        self.assertEqual((current["revision"], current["status"]), (2, "ready_for_review"))
+        self.assertEqual(current["ocr_attestation"]["source_revision"], 1)
+        self.assertFalse(self.client.get(path + "/revisions/1/ocr-review").json()["eligible"])
+        self.assertEqual(self.client.get(path + "?revision=1").json()["status"], "needs_review")
+        self.assertEqual(self.client.get(path + "/export?revision=2").status_code, 409)
+        self.assertEqual(self.approve(path, 2).status_code, 200)
+        packet = self.client.get(path + "/export?revision=2")
+        self.assertEqual(packet.status_code, 200, packet.text[:200])
+        self.assertEqual(PdfReader(BytesIO(packet.content)).attachments[names["summary"]], [raw["summary"]])
+        unchanged = self.client.post(
+            path + "/documents",
+            headers=match(2),
+            data={"confirmed": "true"},
+            files={"summary": (names["summary"], raw["summary"])},
+        )
+        self.assertEqual(
+            (unchanged.json()["revision"], unchanged.json()["status"]), (2, "staff_reviewed"), unchanged.text
+        )
+        _, changed, corrected_names = load_discharge_fixture("duplicate_line")
+        amended = self.client.post(
+            path + "/documents",
+            headers=match(2),
+            data={"confirmed": "true"},
+            files={"bill": (corrected_names["bill"], changed["bill"])},
+        )
+        self.assertEqual((amended.json()["revision"], amended.json()["status"]), (3, "needs_review"))
+        self.assertIsNone(amended.json()["ocr_attestation"])
+        self.assertFalse(amended.json()["ocr_review_available"])
+        barred = self.client.post(
+            path + "/verify-ocr", headers=match(3), json={"reviewer": "Reviewer", "pages": pages}
+        )
+        self.assertEqual(barred.status_code, 409)
+        self.assertEqual(self.client.get(path + "/export?revision=2").status_code, 412)
+        _, blank, blank_names = load_discharge_fixture("unreadable_summary")
+        invalidated = self.client.post(
+            path + "/documents",
+            headers=match(3),
+            data={"confirmed": "true"},
+            files={"summary": (blank_names["summary"], blank["summary"])},
+        )
+        self.assertEqual(invalidated.json()["ocr_page_count"], 0)
+        self.assertIn("unreadable_summary", {f["code"] for f in invalidated.json()["findings"]})
+        self.assertEqual(self.client.get(path + "/revisions/4/ocr-review").json()["pages"], [])
+
+    def test_staff_transcripts_require_session_and_attestation_binds_real_actor(self):
+        path, *_ = self.scanned()
+        with patch.dict(os.environ, WORKSPACE_AUTH_MODE="staff", WORKSPACE_COOKIE_SECURE="0"):
+            self.client.cookies.clear()
+            self.addCleanup(self.client.cookies.clear)
+            url = path + "/revisions/1/ocr-review"
+            self.assertEqual(self.client.get(url).status_code, 401)
+            password = secrets.token_urlsafe(32)
+            provision(app.state.dsn, "ocr-quality", "OCR reviewer", password)
+            credentials = {"username": "ocr-quality", "password": password}
+            self.assertEqual(self.client.post("/api/access/login", json=credentials).status_code, 200)
+            shown = self.client.get(url)
+            self.assertEqual(shown.status_code, 200, shown.text)
+            entries = [
+                {k: p[k] for k in ("role", "page", "transcript_sha256", "sha256")} for p in shown.json()["pages"]
+            ]
+            verified = self.client.post(
+                path + "/verify-ocr", headers=match(1), json={"reviewer": "Other name", "pages": entries}
+            )
+            self.assertEqual(verified.status_code, 200, verified.text)
+            self.assertEqual(verified.json()["ocr_attestation"]["username"], "ocr-quality")
+            self.assertEqual(verified.json()["ocr_attestation"]["reviewer"], "OCR reviewer")
+            meta, raw, names = load_discharge_fixture()
+            future = (date.today() + timedelta(days=1)).isoformat()
+            invalid = self.client.post(
+                ROOT,
+                data=meta | {"confirmed": "true", "as_of": future},
+                files={role: (names[role], data) for role, data in raw.items()},
+            )
+            self.assertEqual(invalid.status_code, 422)
+            self.assertIn("future", invalid.json()["detail"])
+
+    def test_later_review_date_changes_material_finding_and_preserves_old_result(self):
+        meta, raw, names = load_discharge_fixture()
+        earlier = (date.fromisoformat(meta["discharge_date"]) - timedelta(days=1)).isoformat()
+        files = {k: (names[k], data) for k, data in raw.items()}
+        initial = self.client.post(ROOT, data=meta | {"as_of": earlier, "confirmed": "true"}, files=files)
+        self.assertEqual(initial.status_code, 201, initial.text)
+        self.assertIn("discharge_in_future", {f["code"] for f in initial.json()["findings"]})
+        path = ROOT + "/" + initial.json()["id"]
+        later = self.client.post(
+            path + "/documents",
+            headers=match(1),
+            data={"confirmed": "true", "as_of": meta["discharge_date"]},
+            files={"bill": files["bill"]},
+        )
+        self.assertEqual(later.status_code, 200, later.text)
+        self.assertEqual((later.json()["revision"], later.json()["status"]), (2, "ready_for_review"))
+        self.assertEqual(self.client.get(path + "?revision=1").json()["status"], "needs_review")

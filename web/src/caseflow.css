@@ -452,3 +452,33 @@
   align-items: center;
   gap: 8px;
 }
+.ocr-switch {
+  display: flex;
+  align-items: end;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+}
+.ocr-compare {
+  align-items: stretch;
+}
+.ocr-transcript {
+  white-space: pre-wrap;
+  line-height: 1.55;
+  overflow: auto;
+  font:
+    400 0.86rem/1.6 ui-monospace,
+    monospace;
+  overflow-wrap: anywhere;
+  max-height: 36rem;
+  margin: 0;
+  padding: 14px 18px;
+  color: var(--ink);
+}
+.ocr-compare .pdf-scroll {
+  max-height: 36rem;
+}
+.ocr-name {
+  max-width: 360px;
+  margin-top: 16px;
+}

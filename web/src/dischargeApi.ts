@@ -25,6 +25,13 @@ export type DischargeClaim = {
   insurer?: string;
   facility?: string;
   sample_bill_available?: boolean;
+  ocr_review_available?: boolean;
+  ocr_page_count?: number;
+  ocr_attestation?: {
+    reviewer?: string;
+    actor?: string;
+    pages?: unknown[];
+  } | null;
   settlement_status: string;
   case_paid_by_currency?: Record<string, number>;
   paid_by_currency: Record<string, number>;

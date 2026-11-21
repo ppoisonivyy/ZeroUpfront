@@ -8,7 +8,7 @@ from uuid import uuid4
 
 from fastapi import APIRouter, File, Form, Header, HTTPException, Query, Request, Response, UploadFile
 from openai import APIError, OpenAI
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from app import discharge_store as store
 from app.case_workflow import validate_attachment
@@ -20,6 +20,21 @@ Role = Literal["bill", "summary", "letter", "records"]
 Upload = Annotated[UploadFile | None, File()]
 Match = Annotated[str | None, Header(alias="If-Match")]
 PDF = {200: {"content": {"application/pdf": {"schema": {"type": "string", "format": "binary"}}}}}
+
+
+class PageAttestation(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    role: Role
+    page: Annotated[int, Field(strict=True, ge=1, le=200)]
+    sha256: Annotated[str, Field(pattern="^[a-f0-9]{64}$")]
+    transcript_sha256: Annotated[str, Field(pattern="^[a-f0-9]{64}$")]
+
+
+class AttestationSummary(BaseModel):
+    reviewer: str
+    username: str | None = None
+    source_revision: int
+    pages: list[PageAttestation]
 
 
 class Summary(BaseModel):
@@ -58,19 +73,27 @@ class Detail(Summary):
     paid_by_currency: dict[str, int]
     case_paid_by_currency: dict[str, int]
     sample_bill_available: bool = False
+    letter_kind: str | None = None
+    ocr_review_available: bool = False
+    ocr_page_count: int = 0
+    ocr_attestation: AttestationSummary | None = None
 
 
-def _evaluate(meta, raw, names, ocr):
+def _evaluate(meta, raw, names, ocr, saved_ocr=None):
     from app.discharge_claim import evaluate_discharge
+
+    options = {"_saved_ocr": saved_ocr} if saved_ocr else {}
+    if os.getenv("WORKSPACE_AUTH_MODE", "staff") != "local" and meta.get("as_of", "") > date.today().isoformat():
+        raise HTTPException(422, "The review date cannot be in the future.")
 
     try:
         if ocr:
             if os.getenv("WORKSPACE_ENABLE_OCR") != "1" or not os.getenv("OPENAI_API_KEY"):
                 raise HTTPException(503, "Cloud OCR is unavailable on this installation.")
             with OpenAI(timeout=90, max_retries=1) as client:
-                evidence = evaluate_discharge(meta, raw, names, ocr_client=client)
+                evidence = evaluate_discharge(meta, raw, names, ocr_client=client, **options)
         else:
-            evidence = evaluate_discharge(meta, raw, names)
+            evidence = evaluate_discharge(meta, raw, names, **options)
     except ValueError as exc:
         raise HTTPException(422, str(exc)) from exc
     except APIError as exc:
@@ -191,6 +214,7 @@ def documents(
     file: Upload = None,
     ocr: Annotated[bool, Form()] = False,
     sample_bill: Annotated[bool, Form()] = False,
+    as_of: Annotated[date | None, Form()] = None,
 ):
     if not confirmed:
         raise HTTPException(422, "Confirm the replacement belongs to this discharge encounter.")
@@ -225,8 +249,55 @@ def documents(
         )
         if case.get(k) is not None
     }
-    result = _evaluate(meta, raw, names, ocr)
+    if as_of:
+        meta["as_of"] = as_of.isoformat()
+    elif os.getenv("WORKSPACE_AUTH_MODE", "staff") != "local":
+        meta["as_of"] = date.today().isoformat()
+    result = _evaluate(meta, raw, names, ocr, case.get("ocr_pages"))
     return store.replace(dsn, ident, base, result, raw, names)
+
+
+class OcrVerification(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    reviewer: str | None = None
+    pages: Annotated[list[PageAttestation], Field(min_length=1, max_length=800)]
+
+
+@router.get("/{ident}/revisions/{revision}/ocr-review")
+def review_pages(request: Request, ident: str, revision: int):
+    from app.discharge_claim import discharge_ocr_review_pages
+
+    case = store.detail(request.app.state.dsn, ident, revision)
+    sources = {source["role"]: source["url"] for source in case["sources"]}
+    try:
+        pages = [dict(page, source_url=sources[page["role"]]) for page in discharge_ocr_review_pages(case)]
+    except ValueError as exc:
+        raise HTTPException(409, str(exc)) from exc
+    return {
+        "revision": revision,
+        "eligible": case["ocr_review_available"] and revision == case["history"][0]["revision"],
+        "pages": pages,
+        "reviewed_by": (case.get("ocr_attestation") or {}).get("reviewer"),
+    }
+
+
+@router.post("/{ident}/verify-ocr", response_model=Detail)
+def verify_ocr(request: Request, ident: str, review: OcrVerification, if_match: Match = None):
+    from app.discharge_claim import confirm_discharge_ocr
+
+    dsn, base = request.app.state.dsn, _revision(if_match)
+    actor = _actor(request, review.reviewer)
+    case, raw, names = store.snapshot(dsn, ident, base)
+    if not case["ocr_review_available"]:
+        raise HTTPException(409, "Only an outstanding transcription-only review can be confirmed.")
+    try:
+        result = confirm_discharge_ocr(case, raw, actor, [page.model_dump() for page in review.pages])
+    except ValueError as exc:
+        raise HTTPException(422, str(exc)) from exc
+    if result.get("status") != "ready_for_review" or result.get("findings"):
+        raise HTTPException(409, "Unresolved findings still require an updated discharge packet.")
+    result["ocr_attestation"]["username"] = getattr(request.state, "username", None)
+    return store.replace(dsn, ident, base, result, raw, names, attested=True)
 
 
 class Approval(BaseModel):

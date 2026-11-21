@@ -16,6 +16,7 @@ import { AttachmentList } from "./Attachments";
 import { SourceView } from "./SourceView";
 import { RecordedEvent } from "./CaseWorkflow";
 import { ClaimMutation, ClaimUpload } from "./DischargeForms";
+import DischargeOcr from "./DischargeOcr";
 import {
   claimPath,
   claimHref,
@@ -34,6 +35,7 @@ type Panel =
   | "approve"
   | "history"
   | "export"
+  | "ocr"
   | ClaimAction;
 const examples: Record<string, string> = {
   aligned: "Aligned discharge packet",
@@ -252,6 +254,12 @@ function ClaimDetail({
   const actionable =
     claim.status === "ready_for_review" ||
     claim.status === "ready_for_staff_review";
+  const canVerifyOcr =
+    !pinned &&
+    claim.ocr_review_available === true &&
+    claim.status === "needs_review" &&
+    claim.findings.length > 0 &&
+    claim.findings.every((f) => f.code === "verify_ocr");
   const pick = (s: Source) => {
     setSelection(s);
     if (matchMedia("(max-width:760px)").matches)
@@ -259,6 +267,8 @@ function ClaimDetail({
         .getElementById("source-view")
         ?.scrollIntoView({ block: "start" });
   };
+  if (panel === "ocr" && canVerifyOcr)
+    return <DischargeOcr claim={claim} onSaved={saved} onBack={overview} />;
   if ((panel === "correct" || panel === "sample") && !pinned)
     return (
       <ClaimUpload
@@ -521,7 +531,24 @@ function ClaimDetail({
                 <ChevronRight size={15} />
               </button>
             ))}
+            {claim.ocr_attestation && (
+              <p className="notice">
+                <Check size={15} />
+                Scan verification recorded
+                {claim.ocr_attestation.reviewer || claim.ocr_attestation.actor
+                  ? " by " +
+                    (claim.ocr_attestation.reviewer ||
+                      claim.ocr_attestation.actor)
+                  : ""}{" "}
+                for this revision.
+              </p>
+            )}
             <div className="actions">
+              {canVerifyOcr && (
+                <button className="primary" onClick={() => setPanel("ocr")}>
+                  Verify scanned pages
+                </button>
+              )}
               {actionable && !pinned && (
                 <button className="primary" onClick={() => setPanel("approve")}>
                   Review discharge packet

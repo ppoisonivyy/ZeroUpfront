@@ -116,6 +116,8 @@ def _detail(db, ident, rev=None):
     if not row:
         raise WorkspaceError(404, "Discharge case or revision not found.")
     evidence, rev, prior, prior_rev, actor, username = row
+    review_pages = evidence.get("ocr_review_pages") or []
+    codes = {finding["code"] for finding in evidence.get("findings", [])}
     history = [
         dict(revision=n, status=status, total=amount)
         for n, status, amount in db.execute(
@@ -160,6 +162,8 @@ def _detail(db, ident, rev=None):
     )
     return dict(
         evidence,
+        ocr_page_count=len(review_pages),
+        ocr_review_available=bool(review_pages and codes == {"verify_ocr"} and not actor),
         id=ident,
         revision=rev,
         history=history,
@@ -266,7 +270,7 @@ def snapshot(dsn, ident, base, *, approved=False):
         return case, {role: raw for role, _, raw in rows}, {role: name for role, name, _ in rows}
 
 
-def replace(dsn, ident, base, evidence, raw, names):
+def replace(dsn, ident, base, evidence, raw, names, *, attested=False):
     with psycopg.connect(dsn) as db:
         _head(db, ident, base)
         existing = dict(
@@ -275,7 +279,30 @@ def replace(dsn, ident, base, evidence, raw, names):
                 (ident, base),
             ).fetchall()
         )
-        if existing != {role: document_digest(data) for role, data in raw.items()}:
+        changed = existing != {role: document_digest(data) for role, data in raw.items()}
+        if attested and changed:
+            raise WorkspaceError(409, "A transcription attestation must keep every reviewed original unchanged.")
+        if not changed and not attested:
+            before = db.execute(
+                """SELECT evidence FROM zeroupfront_demo.discharge_revisions
+                                  WHERE case_id=%s AND revision=%s""",
+                (ident, base),
+            ).fetchone()[0]
+            # A later review date or a new transcription can change the decision even with identical bytes.
+            # A replay of an already attested page must not invalidate its saved human review.
+            comparable = (
+                "currency",
+                "bill_total_minor",
+                "source_reported_cap_minor",
+                "source_reported_patient_share_minor",
+                "letter_kind",
+                "ocr_review_pages",
+            )
+            changed = any(before.get(key) != evidence.get(key) for key in comparable)
+            changed |= [f for f in before["findings"] if f["code"] != "verify_ocr"] != [
+                f for f in evidence["findings"] if f["code"] != "verify_ocr"
+            ]
+        if changed or attested:
             _write(db, ident, base + 1, evidence, raw, names)
             db.execute("UPDATE zeroupfront_demo.discharge_cases SET head=%s WHERE id=%s", (base + 1, ident))
         return _detail(db, ident)

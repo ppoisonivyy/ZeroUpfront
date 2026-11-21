@@ -1,5 +1,6 @@
 """Compare digital and image-only versions of the committed fictional discharge summary via loopback HTTP."""
 import argparse
+import hashlib
 from io import BytesIO
 import json
 import os
@@ -47,7 +48,7 @@ def blank_last_page(original):
     return stream.getvalue()
 
 
-def post(client, label, metadata, originals, names, summary, live):
+def post(client, label, metadata, originals, names, summary, live, *, verify_scan=False):
     files = {role: (names[role], summary if role == "summary" else data, "application/pdf") for role, data in originals.items()}
     form = {key: value for key, value in metadata.items() if key != "id"}
     form.update(confirmed="true", ocr=str(live).lower())
@@ -70,6 +71,41 @@ def post(client, label, metadata, originals, names, summary, live):
                                                    for r in f["sources"]})}
     print(json.dumps(result, ensure_ascii=False), flush=True)
     assert case["payable_minor"] is None
+    if verify_scan:
+        url = "/api/discharge/" + case["id"]
+        panel = client.get(url + "/revisions/1/ocr-review")
+        panel.raise_for_status()
+        pages = panel.json()["pages"]
+        assert panel.json()["eligible"] and len(pages) == 2
+        twin = PdfReader(BytesIO(originals["summary"]))
+        confirmation = []
+        for item in pages:
+            assert item["role"] == "summary" and item["sha256"] == hashlib.sha256(summary).hexdigest()
+            expected = twin.pages[item["page"] - 1].extract_text()
+            assert " ".join(expected.split()) == " ".join(item["text"].split()), (
+                "Synthetic source and OCR differ; the harness cannot attest to this page.", item["page"])
+            assert hashlib.sha256(item["text"].encode()).hexdigest() == item["transcript_sha256"]
+            confirmation.append({k: item[k] for k in ("role", "page", "sha256", "transcript_sha256")})
+        headers = {"If-Match": '"1"'}
+        revised = client.post(url + "/verify-ocr", headers=headers,
+                              json={"reviewer": "Synthetic page verification harness", "pages": confirmation})
+        revised.raise_for_status()
+        assert (revised.json()["revision"], revised.json()["status"]) == (2, "ready_for_review")
+        assert client.get(url + "/export?revision=2").status_code == 409
+        approved = client.post(url + "/approve", headers={"If-Match": '"2"'},
+                               json={"reviewer": "Synthetic approval harness"})
+        approved.raise_for_status()
+        assert approved.json()["status"] == "staff_reviewed" and approved.json()["payable_minor"] is None
+        exported = client.get(url + "/export?revision=2")
+        exported.raise_for_status()
+        packet = PdfReader(BytesIO(exported.content))
+        audit = " ".join(p.extract_text() for p in packet.pages)
+        assert "Scan verification record" in audit and "Synthetic page verification harness" in audit
+        assert list(packet.attachments[names["summary"]]) == [summary]
+        print(json.dumps({"input": "verified_scan_export", "original_pages_compared": len(pages),
+                          "new_revision": 2, "review_status": approved.json()["status"],
+                          "export_http_status": exported.status_code, "visible_packet_pages": len(packet.pages),
+                          "embedded_files": len(packet.attachments), "payable_minor": approved.json()["payable_minor"]}), flush=True)
     return result
 
 
@@ -88,7 +124,7 @@ def main():
         assert digital["case_status"] == "ready_for_review" and all(digital["exact_source_fields"].values())
         assert offline["case_status"] == "needs_review" and offline["unreadable_summary_pages"] == [1, 2]
         if args.live:
-            scan = post(client, "raster_astra", meta, originals, names, raster, True)
+            scan = post(client, "raster_astra", meta, originals, names, raster, True, verify_scan=True)
             partial = post(client, "blank_second_page_astra", meta, originals, names, blank_last_page(original), True)
             assert scan["case_status"] == partial["case_status"] == "needs_review"
             expected_pages = {"procedure": 1, "admission": 1, "discharge": 1, "signoff": 2}
