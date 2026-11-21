@@ -36,8 +36,8 @@ export function DischargeList({ prior }: { prior?: string }) {
   const [retry, setRetry] = useState(0);
   const [result, setResult] = useState<{ key: string; data?: DischargeWorklist; error?: string }>({ key: "" });
   const { queue, page } = filter;
-  const query = new URLSearchParams({ queue, search: filter.search, page: String(page) }).toString();
-  const key = query + ":" + retry;
+  const { search: submittedSearch } = filter;
+  const key = JSON.stringify([queue, submittedSearch, page, retry]);
   useEffect(() => {
     const term = search.trim();
     if (term === filter.search) return;
@@ -46,7 +46,14 @@ export function DischargeList({ prior }: { prior?: string }) {
   }, [search, filter.search]);
   useEffect(() => {
     const abort = new AbortController();
-    api("/api/discharge/worklist?" + query, { signal: abort.signal })
+    const url = "/api/discharge/worklist";
+    const request = submittedSearch
+      ? api(url + "/search", {
+          method: "POST", signal: abort.signal, headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ queue, page, search: submittedSearch }),
+        })
+      : api(url + "?" + new URLSearchParams({ queue, page: String(page) }), { signal: abort.signal });
+    request
       .then(response => response.json())
       .then((data: DischargeWorklist) => {
         if (abort.signal.aborted) return;
@@ -58,7 +65,7 @@ export function DischargeList({ prior }: { prior?: string }) {
         if (!abort.signal.aborted) setResult({ key, error: err instanceof Error ? err.message : "Claims could not be loaded." });
       });
     return () => abort.abort();
-  }, [query, key]);
+  }, [queue, submittedSearch, page, key]);
   const current = result.key === key && filter.search === search.trim() ? result : undefined;
   const data = current?.data;
   const setQueue = (next: DischargeQueue) => setFilter(prev => ({ ...prev, queue: next, page: 1 }));

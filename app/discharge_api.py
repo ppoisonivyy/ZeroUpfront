@@ -131,15 +131,26 @@ def queue(request: Request):
     return store.summaries(request.app.state.dsn)
 
 
+class WorklistFilters(BaseModel):
+    page: int = Field(default=1, ge=1, le=2_147_483_647)
+    page_size: int = Field(default=25, ge=1, le=100)
+    queue: Literal["all", "needs", "ready", "payer"] = "all"
+
+
+class WorklistSearch(WorklistFilters):
+    search: str = Field(max_length=250)
+
+
 @router.get("/worklist", response_model=WorklistPage)
-def worklist(
-    request: Request,
-    page: Annotated[int, Query(ge=1, le=2_147_483_647)] = 1,
-    page_size: Annotated[int, Query(ge=1, le=100)] = 25,
-    queue: Literal["all", "needs", "ready", "payer"] = "all",
-    search: Annotated[str, Query(max_length=250)] = "",
-):
-    return store.worklist(request.app.state.dsn, queue, search.strip(), page, page_size)
+def worklist(request: Request, filters: Annotated[WorklistFilters, Query()]):
+    if request.query_params.get("search"):
+        raise HTTPException(422, "Send claim search text in the body of POST /api/discharge/worklist/search.")
+    return store.worklist(request.app.state.dsn, filters.queue, "", filters.page, filters.page_size)
+
+
+@router.post("/worklist/search", response_model=WorklistPage)
+def search_worklist(request: Request, filters: WorklistSearch):
+    return store.worklist(request.app.state.dsn, filters.queue, filters.search.strip(), filters.page, filters.page_size)
 
 
 @router.post("", response_model=Detail, status_code=201, dependencies=[Depends(accept_files("bill", "summary", "letter", "records"))])

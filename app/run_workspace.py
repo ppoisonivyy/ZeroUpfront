@@ -60,7 +60,7 @@ def main():
     previous = signal.signal(signal.SIGTERM, _terminate)
     try:
         with workspace_database(args.data_dir.resolve()):
-            uvicorn.run("app.workspace_server:app", host="127.0.0.1", port=args.port)
+            uvicorn.run("app.workspace_server:app", host="127.0.0.1", port=args.port, access_log=False)
     finally:
         signal.signal(signal.SIGTERM, previous)
 
