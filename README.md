@@ -1,6 +1,6 @@
 # ZeroUpfront
 
-ZeroUpfront helps hospital billing coordinators catch problems in an inpatient insurance claim before they send it to the payer. At discharge, someone has to reconcile what the hospital billed, what the clinical record supports, what the insurer authorized and who should receive payment. A repeated pharmacy charge or a payment assignment naming a different hospital can send staff back through the whole packet.
+ZeroUpfront helps hospital staff prepare an inpatient insurance request and trace each claim back to its documents. Before admission, a coordinator sees which policy requirement is missing and can send the reviewed revision to the insurer’s desk. At discharge, the coordinator reconciles the final bill, clinical record and authorization before recording the payer’s decision and payment.
 
 The workspace puts each discrepancy beside the original PDF page. A coordinator can inspect the evidence, request a correction, review the new revision and export the packet with its original attachments. Staff record external submission, the insurer’s written decision and actual payment separately. The insurer decides what it will pay. [Watch the walkthrough with visible clicks (MP4)](docs/figures/discharge-walkthrough.mp4?raw=1) · [View the animation (GIF)](docs/figures/discharge-walkthrough.gif) · [Follow the case through a simulated payment](docs/demo.md)
 
@@ -10,16 +10,27 @@ The workspace puts each discrepancy beside the original PDF page. A coordinator 
 
 ## Run the demo
 
-For the **password-protected two-hospital demo**, build the client with the first two commands below, then run `uv run --locked python -m app.hospital_demo`. Choose the judge passwords when prompted and open the [hospital directory](http://127.0.0.1:8040/). In Canal Bridge, select **VISIT-CB-001** to inspect and correct a duplicate charge. Lakeside has its own accounts, claim history and original PDFs. [Full demo and hosting guide](docs/hospital-workspaces.md)
-
-
-The local rehearsal uses fictional patient and billing data and works without an API key. From the repository root, with Python 3.12, uv, Node 24 with npm, and PostgreSQL’s `initdb` and `pg_ctl` on your PATH, run the following as a regular user.
+The two-hospital demo uses synthetic patients and runs without an API key. From the repository root, with Python 3.12, uv, Node 24 with npm, and PostgreSQL’s `initdb` and `pg_ctl` on your PATH, run the following as a regular user.
 
 ```sh
 npm --prefix web ci
 npm --prefix web run build
-uv run --locked python app/run_workspace.py
+uv run --locked python -m app.hospital_demo
 ```
+
+On the first interactive launch, choose passwords for `judge` (hospital coordinator) and `reviewer` (Meridian Assist insurer) for each hospital. For an existing demo, the host supplies these credentials privately. Open the [hospital directory](http://127.0.0.1:8040/). [Account setup and password reset](docs/hospital-workspaces.md)
+
+### Try the hospital-to-insurer handoff
+
+1. Sign in to Canal Bridge as `judge`. Open **Amelia Morgan · ZU-0248**. Her THB 128,000 knee arthroscopy estimate is within the fictional plan’s limit, but the medical report lacks a signature. **View cited clause** opens the requirement on the original policy page.
+2. Attach the signed sample report, then choose **Review insurer form**. Inspect the draft and sources, select **Mark draft reviewed**, then **Submit to insurer desk**.
+3. Choose **Switch to insurer desk** in the workspace menu and sign in as `reviewer`. The Meridian Assist inbox holds the submitted revision and its PDFs. Back at the hospital desk, Amelia appears under **Waiting for insurer**. Payment approval remains the payer’s decision.
+
+The 30-second captioned film follows this handoff in a disposable copy of the staffed app and closes with a live payer-form regression. The recorder generates an MP4 locally. [Reproduce the film](demo/README.md) · [Read the captions](demo/captions.srt)
+
+### Try discharge and payment
+
+In the staffed Canal Bridge workspace, select **VISIT-CB-001** to inspect and correct a duplicate charge. Lakeside has its own accounts, claim history and original PDFs. A single-workspace rehearsal is also available. With the client built, run `uv run --locked python app/run_workspace.py`.
 
 1. Open the [local discharge worklist](http://127.0.0.1:8038/) and choose **Try duplicate bill example**.
 2. Open the finding. Page 2 shows the same pharmacy item twice. Choose **Try corrected bill**, inspect the replacement, confirm it belongs to the encounter and select **Save corrected packet**.
@@ -27,7 +38,7 @@ uv run --locked python app/run_workspace.py
 
 For the **Pattaya FX rehearsal**, sign in to Canal Bridge and open **VISIT-CB-FX**. Compare the ECB’s dated USD/THB reference from Frankfurter with the two simulated bank offers. Open the original guarantee or choose **Read fee terms with OpenAI** for page-cited Thai or English evidence. Record the THB 238,700 receipt against the THB 239,000 guarantee and follow the THB 300 balance through settlement. [Pattaya walkthrough](docs/demo.md#pattaya-fx-rehearsal)
 
-The hospital app uses the team’s forest-green workspace design. On desktop the original PDF and review action appear side by side. On a phone, tap a citation to jump to the page. The separate insurer handoff prototype uses fictional records saved in the browser. [Hospital and insurer design guide](docs/workspace-review/README.md)
+The hospital app uses the team’s forest-green workspace design. On desktop the original PDF and review action appear side by side. On a phone, tap a citation to jump to the page. The two-hospital app stores submitted revisions in PostgreSQL. Its earlier browser-only prototype documents the original handoff design. [Hospital and insurer design study](docs/workspace-review/README.md)
 
 ## Where OpenAI fits
 
@@ -35,7 +46,7 @@ For supported scans, OpenAI transcribes the page so staff can compare the text w
 
 ## What we verified
 
-The supported-format rehearsal runs from correction through review, export and simulated settlement. Separately, we filled published AIA Thailand, US CMS-1450 and Blue Cross Blue Shield Federal Employee Program forms with synthetic cases to test where screening should stop. On the **first blinded holdout**, the field readers identified **10 of 11** expected outcomes on the correct page. They missed a different named payee. After fixing that and a cents citation, a **fresh panel passed 8 of 8** payee and amount checks on its first run. All eight unverified claims stayed on hold. Actual payer acceptance and staff time savings remain unmeasured. [Blinded results](docs/payer-holdout.md) · [Fresh confirmation](docs/payer-confirmation.md)
+The supported-format rehearsal runs from correction through review, export and simulated settlement. Separately, we filled published AIA Thailand, US CMS-1450 and Blue Cross Blue Shield Federal Employee Program forms with synthetic cases to test where screening should stop. On the **first blinded holdout**, the field readers identified **10 of 11** expected outcomes on the correct page. They missed a different named payee. The recorder replays the same frozen cases on known form layouts. The current app located **11 of 11** target findings on the correct page, cited **6 of 6** changed printed values exactly, raised **0 of 45** false target alerts on aligned fields and held all **14 of 14** unverified claims. After fixing the payee and cents citation, a **fresh panel passed 8 of 8** payee and amount checks on its first run. All eight unverified claims stayed on hold. Actual payer acceptance and staff time savings remain unmeasured. [Blinded results](docs/payer-holdout.md) · [Fresh confirmation](docs/payer-confirmation.md)
 
 A database rehearsal created **10,000 distinct synthetic inpatient encounters**, kept 11,040 revisions and restored 47,048 original PDF blobs. All 760 timed HTTP requests passed their checks. The hospital worklist now displays 25 claims at a time and searches the full database. On the same machine, the median time to render the queue fell from **1.72 seconds to 0.82 seconds** across five browser sessions per version. [Database benchmark and restore instructions](docs/discharge-scale-benchmark.md) · [Browser measurements and search tradeoff](docs/ux-redesign.md)
 
