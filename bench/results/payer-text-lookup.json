@@ -1,0 +1,510 @@
+{
+  "observed_on": "2026-11-21",
+  "design": "One trial in each arm per case; four synthetic packets, maximum four concurrent workers; exactly one model-selected literal search required in lookup arm; no retries, validated_checks, adjudication or payer submission.",
+  "summary": {
+    "pdf": {
+      "packets": 4,
+      "complete_raw_targets": 4,
+      "median_elapsed_seconds": 8.5,
+      "requests": 4,
+      "input_tokens": 32429,
+      "cached_input_tokens": 7026,
+      "output_tokens": 1382
+    },
+    "lookup": {
+      "packets": 4,
+      "complete_raw_targets": 4,
+      "median_elapsed_seconds": 12.935,
+      "requests": 8,
+      "input_tokens": 66935,
+      "cached_input_tokens": 31005,
+      "output_tokens": 1483
+    }
+  },
+  "observations": [
+    {
+      "case": "aia-en-ink",
+      "arm": "lookup",
+      "models_returned": [
+        "gpt-6.2-astra",
+        "gpt-6.2-astra"
+      ],
+      "input_sha256": "2cc6b27bd3d00b07b56c71b90e1a797ad1a46c304e06765fee4321193e8e03c2",
+      "instructions_sha256": "42a7b39020720da77daa0186e2981f97956d3c21988874c8baf8ee7e5a40f281",
+      "requests": 2,
+      "elapsed_seconds": 14.23,
+      "input_tokens": 22344,
+      "cached_input_tokens": 10405,
+      "output_tokens": 384,
+      "tool_calls": [
+        {
+          "query": "AN-HO944",
+          "matching_pages": 9,
+          "returned_pages": [
+            [
+              "bill",
+              1
+            ],
+            [
+              "bill",
+              2
+            ],
+            [
+              "summary",
+              1
+            ],
+            [
+              "summary",
+              2
+            ],
+            [
+              "records",
+              2
+            ],
+            [
+              "records",
+              3
+            ],
+            [
+              "records",
+              4
+            ],
+            [
+              "letter",
+              1
+            ],
+            [
+              "letter",
+              2
+            ]
+          ]
+        }
+      ],
+      "raw_target": {
+        "field": "admission",
+        "state": "match",
+        "observation": "The Part B admission number and the discharge summary encounter reference are both AN-HO944.",
+        "pages": [
+          {
+            "role": "records",
+            "page": 2
+          },
+          {
+            "role": "summary",
+            "page": 1
+          }
+        ]
+      },
+      "grading": {
+        "target_field": "admission",
+        "expected_state": "match",
+        "exact_state": true,
+        "form_page_supported": true,
+        "valid_independent_pages": [
+          [
+            "summary",
+            1
+          ]
+        ],
+        "printed_value_named": true,
+        "comparison_value_named": true,
+        "all_citations_exist": true,
+        "complete": true
+      }
+    },
+    {
+      "case": "aia-en-ink",
+      "arm": "pdf",
+      "models_returned": [
+        "gpt-6.2-astra"
+      ],
+      "input_sha256": "2cc6b27bd3d00b07b56c71b90e1a797ad1a46c304e06765fee4321193e8e03c2",
+      "instructions_sha256": "42a7b39020720da77daa0186e2981f97956d3c21988874c8baf8ee7e5a40f281",
+      "requests": 1,
+      "elapsed_seconds": 8.64,
+      "input_tokens": 10761,
+      "cached_input_tokens": 0,
+      "output_tokens": 373,
+      "tool_calls": [],
+      "raw_target": {
+        "field": "admission",
+        "state": "match",
+        "observation": "Part B lists admission number AN-HO944, which matches the discharge summary’s encounter reference AN-HO944.",
+        "pages": [
+          {
+            "role": "records",
+            "page": 2
+          },
+          {
+            "role": "summary",
+            "page": 1
+          }
+        ]
+      },
+      "grading": {
+        "target_field": "admission",
+        "expected_state": "match",
+        "exact_state": true,
+        "form_page_supported": true,
+        "valid_independent_pages": [
+          [
+            "summary",
+            1
+          ]
+        ],
+        "printed_value_named": true,
+        "comparison_value_named": true,
+        "all_citations_exist": true,
+        "complete": true
+      }
+    },
+    {
+      "case": "cms-member",
+      "arm": "lookup",
+      "models_returned": [
+        "gpt-6.2-astra",
+        "gpt-6.2-astra"
+      ],
+      "input_sha256": "9eab6744eacc23bc554df5f902adafbf0b5fbcabdc43777da5b1d2ef111fc500",
+      "instructions_sha256": "42a7b39020720da77daa0186e2981f97956d3c21988874c8baf8ee7e5a40f281",
+      "requests": 2,
+      "elapsed_seconds": 11.74,
+      "input_tokens": 15249,
+      "cached_input_tokens": 7026,
+      "output_tokens": 355,
+      "tool_calls": [
+        {
+          "query": "HM0130871",
+          "matching_pages": 4,
+          "returned_pages": [
+            [
+              "bill",
+              3
+            ],
+            [
+              "summary",
+              1
+            ],
+            [
+              "summary",
+              2
+            ],
+            [
+              "records",
+              1
+            ]
+          ]
+        }
+      ],
+      "raw_target": {
+        "field": "member",
+        "state": "conflict",
+        "observation": "FL60 lists HM0130891; the itemized hospital invoice lists HM0130871, the member ID in the encounter metadata.",
+        "pages": [
+          {
+            "role": "bill",
+            "page": 1
+          },
+          {
+            "role": "bill",
+            "page": 3
+          }
+        ]
+      },
+      "grading": {
+        "target_field": "member",
+        "expected_state": "conflict",
+        "exact_state": true,
+        "form_page_supported": true,
+        "valid_independent_pages": [
+          [
+            "bill",
+            3
+          ]
+        ],
+        "printed_value_named": true,
+        "comparison_value_named": true,
+        "all_citations_exist": true,
+        "complete": true
+      }
+    },
+    {
+      "case": "cms-member",
+      "arm": "pdf",
+      "models_returned": [
+        "gpt-6.2-astra"
+      ],
+      "input_sha256": "9eab6744eacc23bc554df5f902adafbf0b5fbcabdc43777da5b1d2ef111fc500",
+      "instructions_sha256": "42a7b39020720da77daa0186e2981f97956d3c21988874c8baf8ee7e5a40f281",
+      "requests": 1,
+      "elapsed_seconds": 8.36,
+      "input_tokens": 7382,
+      "cached_input_tokens": 7026,
+      "output_tokens": 319,
+      "tool_calls": [],
+      "raw_target": {
+        "field": "member",
+        "state": "conflict",
+        "observation": "FL60 lists HM0130891. The itemized hospital account lists HM0130871, matching the encounter metadata.",
+        "pages": [
+          {
+            "role": "bill",
+            "page": 1
+          },
+          {
+            "role": "bill",
+            "page": 3
+          }
+        ]
+      },
+      "grading": {
+        "target_field": "member",
+        "expected_state": "conflict",
+        "exact_state": true,
+        "form_page_supported": true,
+        "valid_independent_pages": [
+          [
+            "bill",
+            3
+          ]
+        ],
+        "printed_value_named": true,
+        "comparison_value_named": true,
+        "all_citations_exist": true,
+        "complete": true
+      }
+    },
+    {
+      "case": "cms_wrong_member",
+      "arm": "lookup",
+      "models_returned": [
+        "gpt-6.2-astra",
+        "gpt-6.2-astra"
+      ],
+      "input_sha256": "8ab8a5f234eaa2bece48f3979f31a0e1a29022d57af27ac087ea4bd173a481dc",
+      "instructions_sha256": "42a7b39020720da77daa0186e2981f97956d3c21988874c8baf8ee7e5a40f281",
+      "requests": 2,
+      "elapsed_seconds": 10.2,
+      "input_tokens": 15231,
+      "cached_input_tokens": 7014,
+      "output_tokens": 355,
+      "tool_calls": [
+        {
+          "query": "TEST-MBI-0042",
+          "matching_pages": 4,
+          "returned_pages": [
+            [
+              "bill",
+              3
+            ],
+            [
+              "summary",
+              1
+            ],
+            [
+              "summary",
+              2
+            ],
+            [
+              "records",
+              1
+            ]
+          ]
+        }
+      ],
+      "raw_target": {
+        "field": "member",
+        "state": "conflict",
+        "observation": "FL60 lists TEST-MBI-0099. The encounter metadata and itemized hospital account identify the member as TEST-MBI-0042.",
+        "pages": [
+          {
+            "role": "bill",
+            "page": 1
+          },
+          {
+            "role": "bill",
+            "page": 3
+          }
+        ]
+      },
+      "grading": {
+        "target_field": "member",
+        "expected_state": "conflict",
+        "exact_state": true,
+        "form_page_supported": true,
+        "valid_independent_pages": [
+          [
+            "bill",
+            3
+          ]
+        ],
+        "printed_value_named": true,
+        "comparison_value_named": true,
+        "all_citations_exist": true,
+        "complete": true
+      }
+    },
+    {
+      "case": "cms_wrong_member",
+      "arm": "pdf",
+      "models_returned": [
+        "gpt-6.2-astra"
+      ],
+      "input_sha256": "8ab8a5f234eaa2bece48f3979f31a0e1a29022d57af27ac087ea4bd173a481dc",
+      "instructions_sha256": "42a7b39020720da77daa0186e2981f97956d3c21988874c8baf8ee7e5a40f281",
+      "requests": 1,
+      "elapsed_seconds": 7.31,
+      "input_tokens": 7370,
+      "cached_input_tokens": 0,
+      "output_tokens": 352,
+      "tool_calls": [],
+      "raw_target": {
+        "field": "member",
+        "state": "conflict",
+        "observation": "FL60 lists TEST-MBI-0099. The encounter metadata and itemized hospital account for US-H-042 identify the member as TEST-MBI-0042.",
+        "pages": [
+          {
+            "role": "bill",
+            "page": 1
+          },
+          {
+            "role": "bill",
+            "page": 3
+          }
+        ]
+      },
+      "grading": {
+        "target_field": "member",
+        "expected_state": "conflict",
+        "exact_state": true,
+        "form_page_supported": true,
+        "valid_independent_pages": [
+          [
+            "bill",
+            3
+          ]
+        ],
+        "printed_value_named": true,
+        "comparison_value_named": true,
+        "all_citations_exist": true,
+        "complete": true
+      }
+    },
+    {
+      "case": "fep-affiliation-unknown",
+      "arm": "lookup",
+      "models_returned": [
+        "gpt-6.2-astra",
+        "gpt-6.2-astra"
+      ],
+      "input_sha256": "1e50ec1bc0cd7e4f8ada8cc5c91c5856467323a26cf7a1480a37e76920571033",
+      "instructions_sha256": "42a7b39020720da77daa0186e2981f97956d3c21988874c8baf8ee7e5a40f281",
+      "requests": 2,
+      "elapsed_seconds": 14.13,
+      "input_tokens": 14111,
+      "cached_input_tokens": 6560,
+      "output_tokens": 389,
+      "tool_calls": [
+        {
+          "query": "VX-5248",
+          "matching_pages": 1,
+          "returned_pages": [
+            [
+              "letter",
+              1
+            ]
+          ]
+        }
+      ],
+      "raw_target": {
+        "field": "payee",
+        "state": "unknown",
+        "observation": "§5A–C show no member election. §5D names Banyan Reach Specialist Centre and bears a test mark. The hospital invoice identifies Banyan Reach General Hospital but lists VX-5428, not the letter’s VX-5248, so it does not corroborate the treating facility for this assignment on the requested encounter.",
+        "pages": [
+          {
+            "role": "records",
+            "page": 1
+          },
+          {
+            "role": "bill",
+            "page": 1
+          },
+          {
+            "role": "letter",
+            "page": 1
+          }
+        ]
+      },
+      "grading": {
+        "target_field": "payee",
+        "expected_state": "unknown",
+        "exact_state": true,
+        "form_page_supported": true,
+        "valid_independent_pages": [
+          [
+            "bill",
+            1
+          ]
+        ],
+        "printed_value_named": true,
+        "comparison_value_named": true,
+        "all_citations_exist": true,
+        "registered_encounter_named": true,
+        "intake_facility_named": true,
+        "complete": true
+      }
+    },
+    {
+      "case": "fep-affiliation-unknown",
+      "arm": "pdf",
+      "models_returned": [
+        "gpt-6.2-astra"
+      ],
+      "input_sha256": "1e50ec1bc0cd7e4f8ada8cc5c91c5856467323a26cf7a1480a37e76920571033",
+      "instructions_sha256": "42a7b39020720da77daa0186e2981f97956d3c21988874c8baf8ee7e5a40f281",
+      "requests": 1,
+      "elapsed_seconds": 10.43,
+      "input_tokens": 6916,
+      "cached_input_tokens": 0,
+      "output_tokens": 338,
+      "tool_calls": [],
+      "raw_target": {
+        "field": "payee",
+        "state": "unknown",
+        "observation": "§5A–C show no member election. §5D names Banyan Reach Specialist Centre and contains a visible assignment mark. The treating facility is listed as Banyan Reach General Hospital for VX-5428, but the case letter references VX-5248. The assignment cannot be attributed to VX-5248.",
+        "pages": [
+          {
+            "role": "records",
+            "page": 1
+          },
+          {
+            "role": "records",
+            "page": 3
+          },
+          {
+            "role": "letter",
+            "page": 1
+          }
+        ]
+      },
+      "grading": {
+        "target_field": "payee",
+        "expected_state": "unknown",
+        "exact_state": true,
+        "form_page_supported": true,
+        "valid_independent_pages": [
+          [
+            "records",
+            3
+          ]
+        ],
+        "printed_value_named": true,
+        "comparison_value_named": true,
+        "all_citations_exist": true,
+        "registered_encounter_named": true,
+        "intake_facility_named": true,
+        "complete": true
+      }
+    }
+  ]
+}
