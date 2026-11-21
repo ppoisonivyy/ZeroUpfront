@@ -1,0 +1,289 @@
+{
+  "platform": "macOS-27.2.1-arm64-arm-64bit",
+  "cpu": "arm64",
+  "runs": [
+    {
+      "claims": 100,
+      "seed_increment_seconds": 0.56,
+      "metrics": {
+        "queue_1": {
+          "requests": 30,
+          "workers": 1,
+          "p50_ms": 4.24,
+          "p95_ms": 4.59,
+          "max_ms": 4.59,
+          "requests_per_s": 234.42,
+          "median_response_bytes": 33821
+        },
+        "page_1": {
+          "requests": 30,
+          "workers": 1,
+          "p50_ms": 4.38,
+          "p95_ms": 4.85,
+          "max_ms": 4.87,
+          "requests_per_s": 228.3,
+          "median_response_bytes": 8502
+        },
+        "needs_page_1": {
+          "requests": 30,
+          "workers": 1,
+          "p50_ms": 4.83,
+          "p95_ms": 5.8,
+          "max_ms": 5.9,
+          "requests_per_s": 206.79,
+          "median_response_bytes": 8501
+        },
+        "member_search_1": {
+          "requests": 30,
+          "workers": 1,
+          "p50_ms": 5.07,
+          "p95_ms": 5.64,
+          "max_ms": 6.17,
+          "requests_per_s": 196.45,
+          "median_response_bytes": 437
+        },
+        "detail_1": {
+          "requests": 30,
+          "workers": 1,
+          "p50_ms": 4.11,
+          "p95_ms": 4.66,
+          "max_ms": 5.15,
+          "requests_per_s": 243.3,
+          "median_response_bytes": 11103
+        },
+        "source_1": {
+          "requests": 30,
+          "workers": 1,
+          "p50_ms": 2.64,
+          "p95_ms": 2.79,
+          "max_ms": 3.02,
+          "requests_per_s": 378.91,
+          "median_response_bytes": 4204
+        },
+        "queue_4": {
+          "requests": 30,
+          "workers": 4,
+          "p50_ms": 4.91,
+          "p95_ms": 7.04,
+          "max_ms": 7.5,
+          "requests_per_s": 739.85,
+          "median_response_bytes": 33821
+        },
+        "page_4": {
+          "requests": 30,
+          "workers": 4,
+          "p50_ms": 5.08,
+          "p95_ms": 6.7,
+          "max_ms": 7.14,
+          "requests_per_s": 724.95,
+          "median_response_bytes": 8502
+        },
+        "needs_page_4": {
+          "requests": 30,
+          "workers": 4,
+          "p50_ms": 4.94,
+          "p95_ms": 6.65,
+          "max_ms": 7.1,
+          "requests_per_s": 744.19,
+          "median_response_bytes": 8501
+        },
+        "member_search_4": {
+          "requests": 30,
+          "workers": 4,
+          "p50_ms": 4.88,
+          "p95_ms": 6.4,
+          "max_ms": 6.95,
+          "requests_per_s": 740.65,
+          "median_response_bytes": 437
+        },
+        "detail_4": {
+          "requests": 30,
+          "workers": 4,
+          "p50_ms": 4.35,
+          "p95_ms": 6.11,
+          "max_ms": 6.33,
+          "requests_per_s": 853.99,
+          "median_response_bytes": 11103
+        },
+        "source_4": {
+          "requests": 30,
+          "workers": 4,
+          "p50_ms": 3.01,
+          "p95_ms": 4.78,
+          "max_ms": 5.77,
+          "requests_per_s": 1192.13,
+          "median_response_bytes": 4204
+        },
+        "correction_4": {
+          "requests": 10,
+          "workers": 4,
+          "p50_ms": 45.36,
+          "p95_ms": 48.51,
+          "max_ms": 48.51,
+          "requests_per_s": 85.37,
+          "median_response_bytes": 10715
+        }
+      },
+      "inventory": {
+        "discharge_cases": 100,
+        "discharge_revisions": 120,
+        "discharge_sources": 470,
+        "discharge_approvals": 50,
+        "discharge_events": 100,
+        "documents": 488,
+        "database_bytes": 10868415,
+        "unique_members": 100,
+        "unique_encounters": 100,
+        "postgres_version": "18.6 (Homebrew)"
+      }
+    },
+    {
+      "claims": 10000,
+      "seed_increment_seconds": 49.05,
+      "metrics": {
+        "queue_1": {
+          "requests": 30,
+          "workers": 1,
+          "p50_ms": 126.18,
+          "p95_ms": 136.16,
+          "max_ms": 139.15,
+          "requests_per_s": 7.85,
+          "median_response_bytes": 3382041
+        },
+        "page_1": {
+          "requests": 30,
+          "workers": 1,
+          "p50_ms": 96.84,
+          "p95_ms": 102.95,
+          "max_ms": 104.18,
+          "requests_per_s": 10.25,
+          "median_response_bytes": 8504
+        },
+        "needs_page_1": {
+          "requests": 30,
+          "workers": 1,
+          "p50_ms": 95.28,
+          "p95_ms": 98.78,
+          "max_ms": 98.91,
+          "requests_per_s": 10.45,
+          "median_response_bytes": 8504
+        },
+        "member_search_1": {
+          "requests": 30,
+          "workers": 1,
+          "p50_ms": 96.71,
+          "p95_ms": 100.24,
+          "max_ms": 103.94,
+          "requests_per_s": 10.31,
+          "median_response_bytes": 445
+        },
+        "detail_1": {
+          "requests": 30,
+          "workers": 1,
+          "p50_ms": 4.36,
+          "p95_ms": 6.21,
+          "max_ms": 6.51,
+          "requests_per_s": 222.32,
+          "median_response_bytes": 10911
+        },
+        "source_1": {
+          "requests": 30,
+          "workers": 1,
+          "p50_ms": 2.63,
+          "p95_ms": 3.28,
+          "max_ms": 3.33,
+          "requests_per_s": 370.21,
+          "median_response_bytes": 4204
+        },
+        "queue_4": {
+          "requests": 30,
+          "workers": 4,
+          "p50_ms": 184.8,
+          "p95_ms": 233.54,
+          "max_ms": 236.98,
+          "requests_per_s": 20.14,
+          "median_response_bytes": 3382041
+        },
+        "page_4": {
+          "requests": 30,
+          "workers": 4,
+          "p50_ms": 101.83,
+          "p95_ms": 103.8,
+          "max_ms": 104.29,
+          "requests_per_s": 36.9,
+          "median_response_bytes": 8504
+        },
+        "needs_page_4": {
+          "requests": 30,
+          "workers": 4,
+          "p50_ms": 100.31,
+          "p95_ms": 102.57,
+          "max_ms": 103.39,
+          "requests_per_s": 37.49,
+          "median_response_bytes": 8504
+        },
+        "member_search_4": {
+          "requests": 30,
+          "workers": 4,
+          "p50_ms": 104.43,
+          "p95_ms": 108.38,
+          "max_ms": 108.42,
+          "requests_per_s": 35.95,
+          "median_response_bytes": 445
+        },
+        "detail_4": {
+          "requests": 30,
+          "workers": 4,
+          "p50_ms": 4.86,
+          "p95_ms": 6.88,
+          "max_ms": 7.24,
+          "requests_per_s": 750.58,
+          "median_response_bytes": 10911
+        },
+        "source_4": {
+          "requests": 30,
+          "workers": 4,
+          "p50_ms": 3.22,
+          "p95_ms": 4.48,
+          "max_ms": 4.93,
+          "requests_per_s": 1148.41,
+          "median_response_bytes": 4204
+        },
+        "correction_4": {
+          "requests": 30,
+          "workers": 4,
+          "p50_ms": 46.18,
+          "p95_ms": 63.31,
+          "max_ms": 63.39,
+          "requests_per_s": 81.62,
+          "median_response_bytes": 10715
+        }
+      },
+      "inventory": {
+        "discharge_cases": 10000,
+        "discharge_revisions": 11040,
+        "discharge_sources": 43160,
+        "discharge_approvals": 5000,
+        "discharge_events": 10000,
+        "documents": 47048,
+        "database_bytes": 189101759,
+        "unique_members": 10000,
+        "unique_encounters": 10000,
+        "postgres_version": "18.6 (Homebrew)"
+      }
+    }
+  ],
+  "restored_inventory": {
+    "discharge_cases": 10000,
+    "discharge_revisions": 11040,
+    "discharge_sources": 43160,
+    "discharge_approvals": 5000,
+    "discharge_events": 10000,
+    "documents": 47048,
+    "database_bytes": 179508927,
+    "unique_members": 10000,
+    "unique_encounters": 10000,
+    "postgres_version": "18.6 (Homebrew)"
+  },
+  "dump_bytes": 31200491
+}
